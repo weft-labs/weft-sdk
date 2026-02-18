@@ -1,0 +1,52 @@
+name: Sync OpenAPI Spec
+
+on:
+  repository_dispatch:
+    types: ["weft-app-openapi-updated"]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
+      - name: Fetch spec from dispatch payload
+        if: github.event_name == 'repository_dispatch'
+        env:
+          OPENAPI_URL: ${{ github.event.client_payload.openapi_url }}
+          OPENAPI_YAML: ${{ github.event.client_payload.openapi_yaml }}
+        run: |
+          if [ -n "$OPENAPI_URL" ]; then
+            curl -sSL "$OPENAPI_URL" -o spec/openapi.yaml
+          else
+            echo "$OPENAPI_YAML" > spec/openapi.yaml
+          fi
+      - name: Generate SDKs
+        run: ./scripts/generate-all.sh
+      - name: Verify generated output
+        run: ./scripts/test-sdk.sh
+      - name: Create PR if changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected"
+            exit 0
+          fi
+
+          BRANCH="sync-spec-$(date +%Y%m%d%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore: sync openapi spec"
+          git push origin "$BRANCH"
+          gh pr create --title "chore: sync openapi spec" --body "Auto-generated from weft-app openapi.yaml" --base main

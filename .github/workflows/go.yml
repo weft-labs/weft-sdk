@@ -1,0 +1,35 @@
+name: Go SDK
+
+on:
+  pull_request:
+    paths:
+      - "go/**"
+      - "spec/**"
+      - "scripts/**"
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+    paths:
+      - "go/**"
+      - "spec/**"
+      - "scripts/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+      - name: Generate SDK
+        run: ../scripts/generate-go.sh
+      - name: Verify generated output
+        run: ../scripts/test-sdk.sh
+      - name: Test
+        run: go test ./...

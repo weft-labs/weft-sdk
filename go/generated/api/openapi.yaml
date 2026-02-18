@@ -1,0 +1,1083 @@
+openapi: 3.1.0
+info:
+  description: API for agent-first payments and discovery.
+  title: Weft API
+  version: 0.2.0
+servers:
+- description: Production
+  url: https://api.weftlabs.com
+- description: Staging
+  url: https://staging-api.weftlabs.com
+- description: Development
+  url: http://localhost:3000
+tags:
+- description: Account creation and authentication flows
+  name: Auth
+- description: Current user account information
+  name: Account
+- description: Payment history and transaction details
+  name: Payments
+- description: Manage API keys for authentication
+  name: API Keys
+- description: Agent directory and profiles
+  name: Agents
+paths:
+  /api/v1/docs:
+    get:
+      operationId: getApiDocs
+      responses:
+        "200":
+          content:
+            application/yaml:
+              schema:
+                type: string
+          description: OpenAPI document
+      summary: Fetch OpenAPI spec
+  /api/v1/auth/sign_up:
+    post:
+      operationId: signUp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+          description: Account created
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      summary: Create an account
+      tags:
+      - Auth
+  /api/v1/auth/confirm:
+    post:
+      operationId: confirmAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+          description: Account confirmed
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid token
+      summary: Confirm an account
+      tags:
+      - Auth
+  /api/v1/auth/resend-confirmation:
+    post:
+      operationId: resendConfirmation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendConfirmationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Confirmation sent
+      summary: Resend confirmation email
+      tags:
+      - Auth
+  /api/v1/auth/sign_in:
+    post:
+      operationId: signIn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+          description: Signed in
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid credentials
+      summary: Sign in with email and password
+      tags:
+      - Auth
+  /api/v1/auth/password/reset:
+    post:
+      operationId: requestPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Reset email sent
+      summary: Request password reset
+      tags:
+      - Auth
+  /api/v1/auth/password/update:
+    post:
+      operationId: updatePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordUpdateRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Password updated
+      summary: Update password with reset token
+      tags:
+      - Auth
+  /api/v1/me:
+    get:
+      operationId: getMe
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+          description: Current user account
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: Get current account
+      tags:
+      - Account
+  /api/v1/payments:
+    get:
+      operationId: listPayments
+      parameters:
+      - description: Page number
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - description: Items per page
+        explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 25
+          maximum: 100
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+          description: List of payments
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: List payments
+      tags:
+      - Payments
+  /api/v1/payments/{id}:
+    get:
+      operationId: getPayment
+      parameters:
+      - description: Payment ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+          description: Payment details
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Payment not found
+      security:
+      - bearerAuth: []
+      summary: Get payment details
+      tags:
+      - Payments
+  /api/v1/api_keys:
+    get:
+      operationId: listApiKeys
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyListResponse"
+          description: List of API keys
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: List API keys
+      tags:
+      - API Keys
+    post:
+      operationId: createApiKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiKeyRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreatedResponse"
+          description: "API key created (includes raw key, shown only once)"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      security:
+      - bearerAuth: []
+      summary: Create an API key
+      tags:
+      - API Keys
+  /api/v1/api_keys/{id}:
+    delete:
+      operationId: revokeApiKey
+      parameters:
+      - description: API key ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: API key revoked
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: API key not found
+      security:
+      - bearerAuth: []
+      summary: Revoke an API key
+      tags:
+      - API Keys
+  /api/v1/agents:
+    get:
+      operationId: listAgents
+      parameters:
+      - description: Page number
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - description: Items per page
+        explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 25
+          maximum: 100
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentListResponse"
+          description: List of agents
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: List agents
+      tags:
+      - Agents
+  /api/v1/agents/{id}:
+    get:
+      operationId: getAgent
+      parameters:
+      - description: Agent ID or slug
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+          description: Agent details
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Agent not found
+      security:
+      - bearerAuth: []
+      summary: Get agent details
+      tags:
+      - Agents
+components:
+  schemas:
+    ErrorResponse:
+      example:
+        error:
+          code: code
+          details: "{}"
+          message: message
+          request_id: request_id
+      properties:
+        error:
+          $ref: "#/components/schemas/Error"
+      required:
+      - error
+    MessageResponse:
+      example:
+        data:
+          message: message
+      properties:
+        data:
+          $ref: "#/components/schemas/MessageResponse_data"
+      required:
+      - data
+    AuthResponse:
+      example:
+        data:
+          confirmation_required: true
+          user:
+            id: 0
+            email: email
+            status: status
+          token: token
+      properties:
+        data:
+          $ref: "#/components/schemas/AuthResponse_data"
+      required:
+      - data
+    User:
+      example:
+        id: 0
+        email: email
+        status: status
+      properties:
+        id:
+          type: integer
+        email:
+          format: email
+          type: string
+        status:
+          type: string
+      required:
+      - email
+      - id
+    MeResponse:
+      example:
+        data:
+          public_profile: true
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          display_name: display_name
+          email: email
+          public_slug: public_slug
+          status: active
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountDetails"
+      required:
+      - data
+    AccountDetails:
+      example:
+        public_profile: true
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        display_name: display_name
+        email: email
+        public_slug: public_slug
+        status: active
+      properties:
+        id:
+          type: integer
+        email:
+          format: email
+          type: string
+        status:
+          enum:
+          - active
+          - blocked
+          type: string
+        display_name:
+          type: string
+          nullable: true
+        public_profile:
+          type: boolean
+        public_slug:
+          type: string
+          nullable: true
+        created_at:
+          format: date-time
+          type: string
+      required:
+      - created_at
+      - email
+      - id
+      - public_profile
+      - status
+    Payment:
+      example:
+        amount: 6
+        resource_url: resource_url
+        resource_host: resource_host
+        tx_hash: tx_hash
+        recipient_address: recipient_address
+        settlement_latency_ms: 5
+        api_key_name: api_key_name
+        network: network
+        fee_amount: 1
+        amount_formatted: amount_formatted
+        currency: currency
+        id: 0
+        settled_at: 2000-01-23T04:56:07.000+00:00
+        payer_address: payer_address
+      properties:
+        id:
+          type: integer
+        tx_hash:
+          type: string
+        payer_address:
+          type: string
+        recipient_address:
+          type: string
+        amount:
+          description: "Amount in atomic units (1 USDC = 1,000,000)"
+          type: integer
+        amount_formatted:
+          description: Human-readable amount (e.g. "1.00 USDC")
+          type: string
+        currency:
+          type: string
+        network:
+          description: CAIP-2 chain identifier
+          type: string
+        resource_url:
+          type: string
+          nullable: true
+        resource_host:
+          type: string
+          nullable: true
+        fee_amount:
+          type: integer
+        settlement_latency_ms:
+          type: integer
+          nullable: true
+        settled_at:
+          format: date-time
+          type: string
+        api_key_name:
+          type: string
+      required:
+      - amount
+      - amount_formatted
+      - api_key_name
+      - currency
+      - id
+      - network
+      - payer_address
+      - recipient_address
+      - settled_at
+      - tx_hash
+    PaymentListResponse:
+      example:
+        pagination:
+          per_page: 2
+          total: 7
+          page: 5
+          total_pages: 9
+        data:
+        - amount: 6
+          resource_url: resource_url
+          resource_host: resource_host
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          settlement_latency_ms: 5
+          api_key_name: api_key_name
+          network: network
+          fee_amount: 1
+          amount_formatted: amount_formatted
+          currency: currency
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          payer_address: payer_address
+        - amount: 6
+          resource_url: resource_url
+          resource_host: resource_host
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          settlement_latency_ms: 5
+          api_key_name: api_key_name
+          network: network
+          fee_amount: 1
+          amount_formatted: amount_formatted
+          currency: currency
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          payer_address: payer_address
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Payment"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    PaymentResponse:
+      example:
+        data:
+          amount: 6
+          resource_url: resource_url
+          resource_host: resource_host
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          settlement_latency_ms: 5
+          api_key_name: api_key_name
+          network: network
+          fee_amount: 1
+          amount_formatted: amount_formatted
+          currency: currency
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          payer_address: payer_address
+      properties:
+        data:
+          $ref: "#/components/schemas/Payment"
+      required:
+      - data
+    ApiKey:
+      example:
+        last_used_at: 2000-01-23T04:56:07.000+00:00
+        revoked_at: 2000-01-23T04:56:07.000+00:00
+        key_prefix: key_prefix
+        name: name
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        key_prefix:
+          description: First 16 characters of the key for identification
+          type: string
+        last_used_at:
+          format: date-time
+          type: string
+          nullable: true
+        revoked_at:
+          format: date-time
+          type: string
+          nullable: true
+        created_at:
+          format: date-time
+          type: string
+      required:
+      - created_at
+      - id
+      - key_prefix
+    ApiKeyCreated:
+      example:
+        key_prefix: key_prefix
+        name: name
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        raw_key: raw_key
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        key_prefix:
+          type: string
+        raw_key:
+          description: Full API key (shown only once at creation)
+          type: string
+        created_at:
+          format: date-time
+          type: string
+      required:
+      - created_at
+      - id
+      - key_prefix
+      - raw_key
+    ApiKeyListResponse:
+      example:
+        data:
+        - last_used_at: 2000-01-23T04:56:07.000+00:00
+          revoked_at: 2000-01-23T04:56:07.000+00:00
+          key_prefix: key_prefix
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+        - last_used_at: 2000-01-23T04:56:07.000+00:00
+          revoked_at: 2000-01-23T04:56:07.000+00:00
+          key_prefix: key_prefix
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/ApiKey"
+          type: array
+      required:
+      - data
+    ApiKeyCreatedResponse:
+      example:
+        data:
+          key_prefix: key_prefix
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          raw_key: raw_key
+      properties:
+        data:
+          $ref: "#/components/schemas/ApiKeyCreated"
+      required:
+      - data
+    CreateApiKeyRequest:
+      example:
+        name: name
+      properties:
+        name:
+          description: A friendly name for the API key
+          type: string
+    Agent:
+      example:
+        wallet_address: wallet_address
+        visibility: public_profile
+        stats:
+          payments_received: 5
+          first_seen: 2000-01-23T04:56:07.000+00:00
+          total_paid: 6
+          payments_made: 5
+          last_active: 2000-01-23T04:56:07.000+00:00
+          total_received: 1
+          unique_counterparties: 2
+        claimed: true
+        name: name
+        verified: true
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        category: agent
+        slug: slug
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        wallet_address:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          enum:
+          - agent
+          - data_seller
+          - service_provider
+          - facilitator
+          type: string
+        visibility:
+          enum:
+          - public_profile
+          - private_profile
+          - unlisted
+          type: string
+        verified:
+          type: boolean
+        claimed:
+          description: Whether the agent is claimed by a user
+          type: boolean
+        stats:
+          $ref: "#/components/schemas/AgentStats"
+        created_at:
+          format: date-time
+          type: string
+      required:
+      - category
+      - claimed
+      - created_at
+      - id
+      - name
+      - slug
+      - verified
+      - visibility
+      - wallet_address
+    AgentStats:
+      example:
+        payments_received: 5
+        first_seen: 2000-01-23T04:56:07.000+00:00
+        total_paid: 6
+        payments_made: 5
+        last_active: 2000-01-23T04:56:07.000+00:00
+        total_received: 1
+        unique_counterparties: 2
+      properties:
+        total_paid:
+          type: integer
+        total_received:
+          type: integer
+        payments_made:
+          type: integer
+        payments_received:
+          type: integer
+        unique_counterparties:
+          type: integer
+        first_seen:
+          format: date-time
+          type: string
+          nullable: true
+        last_active:
+          format: date-time
+          type: string
+          nullable: true
+    AgentListResponse:
+      example:
+        pagination:
+          per_page: 2
+          total: 7
+          page: 5
+          total_pages: 9
+        data:
+        - wallet_address: wallet_address
+          visibility: public_profile
+          stats:
+            payments_received: 5
+            first_seen: 2000-01-23T04:56:07.000+00:00
+            total_paid: 6
+            payments_made: 5
+            last_active: 2000-01-23T04:56:07.000+00:00
+            total_received: 1
+            unique_counterparties: 2
+          claimed: true
+          name: name
+          verified: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          category: agent
+          slug: slug
+        - wallet_address: wallet_address
+          visibility: public_profile
+          stats:
+            payments_received: 5
+            first_seen: 2000-01-23T04:56:07.000+00:00
+            total_paid: 6
+            payments_made: 5
+            last_active: 2000-01-23T04:56:07.000+00:00
+            total_received: 1
+            unique_counterparties: 2
+          claimed: true
+          name: name
+          verified: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          category: agent
+          slug: slug
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Agent"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    AgentResponse:
+      example:
+        data:
+          wallet_address: wallet_address
+          visibility: public_profile
+          stats:
+            payments_received: 5
+            first_seen: 2000-01-23T04:56:07.000+00:00
+            total_paid: 6
+            payments_made: 5
+            last_active: 2000-01-23T04:56:07.000+00:00
+            total_received: 1
+            unique_counterparties: 2
+          claimed: true
+          name: name
+          verified: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          category: agent
+          slug: slug
+      properties:
+        data:
+          $ref: "#/components/schemas/Agent"
+      required:
+      - data
+    Pagination:
+      example:
+        per_page: 2
+        total: 7
+        page: 5
+        total_pages: 9
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+      required:
+      - page
+      - per_page
+      - total
+      - total_pages
+    SignUpRequest:
+      example:
+        password: password
+        password_confirmation: password_confirmation
+        email: email
+      properties:
+        email:
+          format: email
+          type: string
+        password:
+          type: string
+        password_confirmation:
+          type: string
+      required:
+      - email
+      - password
+      - password_confirmation
+    SignInRequest:
+      example:
+        password: password
+        email: email
+      properties:
+        email:
+          format: email
+          type: string
+        password:
+          type: string
+      required:
+      - email
+      - password
+    ConfirmRequest:
+      example:
+        confirmation_token: confirmation_token
+      properties:
+        confirmation_token:
+          type: string
+      required:
+      - confirmation_token
+    ResendConfirmationRequest:
+      example:
+        email: email
+      properties:
+        email:
+          format: email
+          type: string
+      required:
+      - email
+    PasswordResetRequest:
+      example:
+        email: email
+      properties:
+        email:
+          format: email
+          type: string
+      required:
+      - email
+    PasswordUpdateRequest:
+      example:
+        password: password
+        password_confirmation: password_confirmation
+        reset_password_token: reset_password_token
+      properties:
+        reset_password_token:
+          type: string
+        password:
+          type: string
+        password_confirmation:
+          type: string
+      required:
+      - password
+      - password_confirmation
+      - reset_password_token
+    Error:
+      example:
+        code: code
+        details: "{}"
+        message: message
+        request_id: request_id
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+        request_id:
+          type: string
+      required:
+      - code
+      - message
+    MessageResponse_data:
+      example:
+        message: message
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    AuthResponse_data:
+      example:
+        confirmation_required: true
+        user:
+          id: 0
+          email: email
+          status: status
+        token: token
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+          nullable: true
+        confirmation_required:
+          type: boolean
+      required:
+      - confirmation_required
+      - user
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: APIKey
+      scheme: bearer
+      type: http

@@ -1,0 +1,96 @@
+{
+  "name": "@weft/sdk",
+  "version": "0.2.0",
+  "description": "Unified Weft SDK for the Weft API and x402 Facilitator",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.mts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./facilitator": {
+      "import": {
+        "types": "./dist/esm/facilitator/index.d.mts",
+        "default": "./dist/esm/facilitator/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/facilitator/index.d.ts",
+        "default": "./dist/cjs/facilitator/index.js"
+      }
+    },
+    "./facilitator/middleware": {
+      "import": {
+        "types": "./dist/esm/facilitator/middleware/index.d.mts",
+        "default": "./dist/esm/facilitator/middleware/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/facilitator/middleware/index.d.ts",
+        "default": "./dist/cjs/facilitator/middleware/index.js"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./dist/esm/server.d.mts",
+        "default": "./dist/esm/server.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/server.d.ts",
+        "default": "./dist/cjs/server.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "lint": "eslint . --ext .ts --fix",
+    "lint:check": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "generate": "../scripts/generate-typescript.sh",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "weft",
+    "x402",
+    "payments",
+    "micropayments",
+    "coinbase",
+    "sdk"
+  ],
+  "author": "Weft Labs",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weft-labs/weft-sdk"
+  },
+  "peerDependencies": {
+    "@x402/core": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
+    "eslint": "^9.24.0",
+    "fast-check": "^3.23.2",
+    "prettier": "3.5.2",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

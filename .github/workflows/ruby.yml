@@ -1,0 +1,36 @@
+name: Ruby SDK
+
+on:
+  pull_request:
+    paths:
+      - "ruby/**"
+      - "spec/**"
+      - "scripts/**"
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+    paths:
+      - "ruby/**"
+      - "spec/**"
+      - "scripts/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ruby
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+      - name: Generate SDK
+        run: ../scripts/generate-ruby.sh
+      - name: Verify generated output
+        run: ../scripts/test-sdk.sh
+      - name: Test
+        run: bundle exec rake test

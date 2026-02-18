@@ -1,0 +1,44 @@
+name: Python SDK
+
+on:
+  pull_request:
+    paths:
+      - "python/**"
+      - "spec/**"
+      - "scripts/**"
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+    paths:
+      - "python/**"
+      - "spec/**"
+      - "scripts/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install hatchling
+          pip install -e .
+          pip install pytest pytest-asyncio ruff mypy
+      - name: Generate SDK
+        run: ../scripts/generate-python.sh
+      - name: Verify generated output
+        run: ../scripts/test-sdk.sh
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: mypy src
+      - name: Test
+        run: pytest
