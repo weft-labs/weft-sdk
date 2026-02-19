@@ -21,3 +21,7 @@ rm -rf "${OUT_DIR}/generated"
 mkdir -p "${OUT_DIR}/generated"
 
 cp -R "${TMP_DIR}/"* "${OUT_DIR}/generated/"
+
+# Fix placeholder import path in generated docs and source
+find "${OUT_DIR}/generated" -type f \( -name '*.go' -o -name '*.md' \) \
+  -exec sed -i '' 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +

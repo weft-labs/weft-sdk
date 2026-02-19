@@ -17,7 +17,12 @@ docker run --rm \
   -o /local/ruby/.generated \
   --additional-properties=moduleName=Weft,gemName=weft-sdk,gemVersion=0.2.0
 
-rm -rf "${OUT_DIR}/lib/weft/generated"
+rm -rf "${OUT_DIR}/lib/weft/generated" "${OUT_DIR}/docs"
 mkdir -p "${OUT_DIR}/lib/weft/generated"
 
 cp -R "${TMP_DIR}/lib/weft-sdk/"* "${OUT_DIR}/lib/weft/generated/"
+
+# Copy generated docs
+if [ -d "${TMP_DIR}/docs" ]; then
+  cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
+fi

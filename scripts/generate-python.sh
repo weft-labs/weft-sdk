@@ -17,7 +17,12 @@ docker run --rm \
   -o /local/python/.generated \
   --additional-properties=packageName=weft_sdk.generated,projectName=weft-sdk,packageVersion=0.2.0
 
-rm -rf "${OUT_DIR}/src/weft_sdk/generated"
+rm -rf "${OUT_DIR}/src/weft_sdk/generated" "${OUT_DIR}/docs"
 mkdir -p "${OUT_DIR}/src/weft_sdk"
 
 cp -R "${TMP_DIR}/weft_sdk/generated" "${OUT_DIR}/src/weft_sdk/"
+
+# Copy generated docs
+if [ -d "${TMP_DIR}/docs" ]; then
+  cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
+fi
