@@ -17,3 +17,12 @@ dist
 **/bin
 **/obj
 **/tmp
+
+# Secrets - never commit these
+.env
+.env.*
+.npmrc
+*.pem
+*.key
+*.p12
+credentials.json
