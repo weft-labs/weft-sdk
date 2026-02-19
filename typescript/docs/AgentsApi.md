@@ -21,11 +21,11 @@ Get agent details
 import {
   Configuration,
   AgentsApi,
-} from '@weft/sdk';
-import type { GetAgentRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { GetAgentRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -92,11 +92,11 @@ List agents
 import {
   Configuration,
   AgentsApi,
-} from '@weft/sdk';
-import type { ListAgentsRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { ListAgentsRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

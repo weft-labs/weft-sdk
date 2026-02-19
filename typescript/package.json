@@ -1,5 +1,5 @@
 {
-  "name": "@weft/sdk",
+  "name": "@weft-labs/sdk",
   "version": "0.2.0",
   "description": "Unified Weft SDK for the Weft API and x402 Facilitator",
   "main": "./dist/cjs/index.js",

@@ -16,7 +16,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { ApiKey } from '@weft/sdk'
+import type { ApiKey } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

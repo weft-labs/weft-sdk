@@ -7,7 +7,7 @@ client (hand-crafted wrappers).
 ## Layout
 
 - `spec/openapi.yaml` — synced from `weft-app/docs/openapi.yaml`
-- `typescript/` — npm package `@weft/sdk`
+- `typescript/` — npm package `@weft-labs/sdk`
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
 - `go/` — Go module `github.com/weft-labs/weft-sdk/go`

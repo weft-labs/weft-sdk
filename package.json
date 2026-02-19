@@ -1,5 +1,5 @@
 {
-  "name": "@weft/sdk",
+  "name": "@weft-labs/sdk",
   "version": "0.2.0",
   "private": true,
   "description": "Unified Weft SDK monorepo (git install helper)",

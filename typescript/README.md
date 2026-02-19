@@ -1,17 +1,17 @@
-# @weft/sdk (TypeScript)
+# @weft-labs/sdk (TypeScript)
 
 Unified Weft SDK for the Weft API and x402 Facilitator.
 
 ## Install
 
 ```bash
-npm install @weft/sdk @x402/core
+npm install @weft-labs/sdk @x402/core
 ```
 
 ## Weft API (generated)
 
 ```typescript
-import { Configuration, PaymentsApi } from "@weft/sdk";
+import { Configuration, PaymentsApi } from "@weft-labs/sdk";
 
 const config = new Configuration({
   basePath: "https://staging.weft.network",
@@ -25,7 +25,7 @@ const list = await payments.listPayments();
 ## Facilitator (hand-crafted)
 
 ```typescript
-import { createFacilitatorClient, getFeeInfo } from "@weft/sdk/facilitator";
+import { createFacilitatorClient, getFeeInfo } from "@weft-labs/sdk/facilitator";
 
 const facilitator = createFacilitatorClient();
 const fee = await getFeeInfo();

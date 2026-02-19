@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { Pagination } from '@weft/sdk'
+import type { Pagination } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

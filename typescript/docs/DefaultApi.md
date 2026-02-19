@@ -20,11 +20,11 @@ Fetch OpenAPI spec
 import {
   Configuration,
   DefaultApi,
-} from '@weft/sdk';
-import type { GetApiDocsRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { GetApiDocsRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const api = new DefaultApi();
 
   try {

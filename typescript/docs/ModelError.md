@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { ModelError } from '@weft/sdk'
+import type { ModelError } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

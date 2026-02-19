@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SignInRequest } from '@weft/sdk'
+import type { SignInRequest } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

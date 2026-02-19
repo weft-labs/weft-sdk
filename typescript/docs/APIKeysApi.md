@@ -22,11 +22,11 @@ Create an API key
 import {
   Configuration,
   APIKeysApi,
-} from '@weft/sdk';
-import type { CreateApiKeyOperationRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { CreateApiKeyOperationRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -93,11 +93,11 @@ List API keys
 import {
   Configuration,
   APIKeysApi,
-} from '@weft/sdk';
-import type { ListApiKeysRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { ListApiKeysRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -155,11 +155,11 @@ Revoke an API key
 import {
   Configuration,
   APIKeysApi,
-} from '@weft/sdk';
-import type { RevokeApiKeyRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { RevokeApiKeyRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

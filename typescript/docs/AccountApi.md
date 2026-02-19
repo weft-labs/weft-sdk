@@ -20,11 +20,11 @@ Get current account
 import {
   Configuration,
   AccountApi,
-} from '@weft/sdk';
-import type { GetMeRequest } from '@weft/sdk';
+} from '@weft-labs/sdk';
+import type { GetMeRequest } from '@weft-labs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft/sdk SDK...");
+  console.log("🚀 Testing @weft-labs/sdk SDK...");
   const config = new Configuration({ 
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { User } from '@weft/sdk'
+import type { User } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {
