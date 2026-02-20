@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Weft Labs']
   spec.summary       = 'Unified Weft SDK for the Weft API and x402 Facilitator'
   spec.license       = 'Apache-2.0'
-  spec.files         = Dir['lib/**/*', 'README.md']
+  spec.files         = Dir['lib/**/*', 'docs/**/*', 'README.md']
   spec.required_ruby_version = '>= 3.2.0'
 
   spec.metadata['homepage_uri'] = 'https://github.com/weft-labs/weft-sdk'

@@ -17,11 +17,16 @@ docker run --rm \
   -o /local/go/.generated \
   --additional-properties=packageName=generated,moduleName=github.com/weft-labs/weft-sdk/go/generated
 
-rm -rf "${OUT_DIR}/generated"
+rm -rf "${OUT_DIR}/generated" "${OUT_DIR}/docs"
 mkdir -p "${OUT_DIR}/generated"
 
 cp -R "${TMP_DIR}/"* "${OUT_DIR}/generated/"
 
+# Extract docs to go/docs/ (consistent with TypeScript, Python, Ruby)
+if [ -d "${OUT_DIR}/generated/docs" ]; then
+  cp -R "${OUT_DIR}/generated/docs" "${OUT_DIR}/docs"
+fi
+
 # Fix placeholder import path in generated docs and source
-find "${OUT_DIR}/generated" -type f \( -name '*.go' -o -name '*.md' \) \
+find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -type f \( -name '*.go' -o -name '*.md' \) \
   -exec sed -i '' 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +

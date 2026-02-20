@@ -45,8 +45,14 @@ dev = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/weft_sdk", "docs", "README.md"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/weft_sdk"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"docs" = "weft_sdk/docs"
 
 [tool.hatch.metadata]
 allow-direct-references = true
