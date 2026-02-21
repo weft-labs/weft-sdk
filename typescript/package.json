@@ -50,8 +50,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "lint": "eslint . --ext .ts --fix",
-    "lint:check": "eslint . --ext .ts",
+    "lint": "eslint --fix",
+    "lint:check": "eslint",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "generate": "../scripts/generate-typescript.sh",
