@@ -1,49 +1,49 @@
 {
   "name": "@weft-labs/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Unified Weft SDK for the Weft API and x402 Facilitator",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/cjs/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.mts",
-        "default": "./dist/esm/index.mjs"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       }
     },
     "./facilitator": {
       "import": {
-        "types": "./dist/esm/facilitator/index.d.mts",
-        "default": "./dist/esm/facilitator/index.mjs"
+        "types": "./dist/facilitator/index.d.mts",
+        "default": "./dist/facilitator/index.mjs"
       },
       "require": {
-        "types": "./dist/cjs/facilitator/index.d.ts",
-        "default": "./dist/cjs/facilitator/index.js"
+        "types": "./dist/facilitator/index.d.ts",
+        "default": "./dist/facilitator/index.js"
       }
     },
     "./facilitator/middleware": {
       "import": {
-        "types": "./dist/esm/facilitator/middleware/index.d.mts",
-        "default": "./dist/esm/facilitator/middleware/index.mjs"
+        "types": "./dist/facilitator/middleware/index.d.mts",
+        "default": "./dist/facilitator/middleware/index.mjs"
       },
       "require": {
-        "types": "./dist/cjs/facilitator/middleware/index.d.ts",
-        "default": "./dist/cjs/facilitator/middleware/index.js"
+        "types": "./dist/facilitator/middleware/index.d.ts",
+        "default": "./dist/facilitator/middleware/index.js"
       }
     },
     "./server": {
       "import": {
-        "types": "./dist/esm/server.d.mts",
-        "default": "./dist/esm/server.mjs"
+        "types": "./dist/server.d.mts",
+        "default": "./dist/server.mjs"
       },
       "require": {
-        "types": "./dist/cjs/server.d.ts",
-        "default": "./dist/cjs/server.js"
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
       }
     }
   },
