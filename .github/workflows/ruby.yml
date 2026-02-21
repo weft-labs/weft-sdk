@@ -24,6 +24,7 @@ jobs:
         with:
           ruby-version: "3.2"
           bundler-cache: true
+          working-directory: ruby
       - name: Generate SDK
         run: ../scripts/generate-ruby.sh
       - name: Verify generated output
@@ -48,6 +49,7 @@ jobs:
         with:
           ruby-version: "3.2"
           bundler-cache: true
+          working-directory: ruby
       - name: Generate SDK
         run: ../scripts/generate-ruby.sh
       - name: Build gem

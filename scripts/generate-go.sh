@@ -29,4 +29,5 @@ fi
 
 # Fix placeholder import path in generated docs and source
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -type f \( -name '*.go' -o -name '*.md' \) \
-  -exec sed -i '' 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +
+  -exec sed -i.bak 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +
+find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -name '*.bak' -delete

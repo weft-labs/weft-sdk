@@ -66,6 +66,7 @@ warn_unused_configs = true
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = ["src/weft_sdk/generated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
