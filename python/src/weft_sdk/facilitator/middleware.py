@@ -5,7 +5,6 @@ Middleware wrappers for Weft Facilitator.
 from typing import Any, Callable, Optional, Union
 
 from .client import (
-    X402_FACILITATOR_URL,
     WeftFacilitatorConfig,
     resolve_url,
     validate_url,
@@ -28,8 +27,8 @@ def weft_require_payment(
     custom_paywall_html: Optional[str] = None,
     facilitator_url: Optional[str] = None,
 ) -> Callable:
-    from x402.fastapi.middleware import require_payment
     from x402.facilitator import FacilitatorConfig
+    from x402.fastapi.middleware import require_payment
 
     config: WeftFacilitatorConfig = {}
     if facilitator_url:

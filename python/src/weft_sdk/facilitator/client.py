@@ -4,10 +4,9 @@ Weft Facilitator client factory.
 
 import os
 from typing import Callable, Optional
-from typing_extensions import TypedDict
 
 import httpx
-
+from typing_extensions import TypedDict
 
 X402_FACILITATOR_URL = "https://x402.weft.network"
 X402_FACILITATOR_URL_ENV = "X402_FACILITATOR_URL"

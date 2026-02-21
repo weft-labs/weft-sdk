@@ -1,13 +1,12 @@
 """Tests for fee info helpers."""
 
-import time
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 from weft_sdk.facilitator.fee import (
     get_fee_info,
     invalidate_fee_cache,
-    DEFAULT_CACHE_TTL,
 )
 
 

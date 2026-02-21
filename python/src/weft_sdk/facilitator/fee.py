@@ -4,11 +4,11 @@ Fee information helpers for Weft Facilitator.
 
 import time
 from typing import Optional
-from typing_extensions import TypedDict
 
 import httpx
+from typing_extensions import TypedDict
 
-from .client import resolve_url, validate_url, WeftFacilitatorConfig
+from .client import WeftFacilitatorConfig, resolve_url, validate_url
 
 
 class FeeInfo(TypedDict):

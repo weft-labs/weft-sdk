@@ -1,16 +1,16 @@
 """Tests for facilitator client."""
 
-import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 from weft_sdk.facilitator.client import (
-    validate_url,
-    resolve_url,
-    create_facilitator_client,
-    FacilitatorClient,
     X402_FACILITATOR_URL,
     X402_FACILITATOR_URL_ENV,
+    FacilitatorClient,
+    create_facilitator_client,
+    resolve_url,
+    validate_url,
 )
 
 

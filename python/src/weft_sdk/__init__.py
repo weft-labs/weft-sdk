@@ -11,15 +11,15 @@ from .facilitator.client import (
     validate_url,
 )
 from .facilitator.fee import (
-    FeeInfo,
     FeeCacheConfig,
+    FeeInfo,
     get_fee_info,
     invalidate_fee_cache,
 )
 from .facilitator.middleware import (
-    weft_require_payment,
-    weft_flask_require_payment,
     WeftPaymentMiddleware,
+    weft_flask_require_payment,
+    weft_require_payment,
 )
 
 __all__ = [
