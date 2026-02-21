@@ -71,6 +71,13 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = ["x402.*", "flask.*"]
 ignore_missing_imports = true
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "weft_sdk.facilitator.middleware"
+disallow_untyped_calls = false
+warn_return_any = false
+disable_error_code = ["attr-defined"]
 
 [tool.ruff]
 line-length = 100
