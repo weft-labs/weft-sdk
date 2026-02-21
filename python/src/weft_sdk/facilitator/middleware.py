@@ -26,7 +26,7 @@ def weft_require_payment(
     paywall_config: Optional[Any] = None,
     custom_paywall_html: Optional[str] = None,
     facilitator_url: Optional[str] = None,
-) -> Callable:
+) -> Callable[..., Any]:
     from x402.facilitator import FacilitatorConfig
     from x402.fastapi.middleware import require_payment
 

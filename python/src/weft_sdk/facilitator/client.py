@@ -3,7 +3,7 @@ Weft Facilitator client factory.
 """
 
 import os
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import httpx
 from typing_extensions import TypedDict
@@ -43,7 +43,7 @@ class FacilitatorClient:
         self._url = url
         self._create_headers = create_headers
 
-    async def verify(self, payload: dict, requirements: dict) -> dict:
+    async def verify(self, payload: dict[str, Any], requirements: dict[str, Any]) -> dict[str, Any]:
         headers = {"Content-Type": "application/json"}
         if self._create_headers:
             headers.update(self._create_headers().get("verify", {}))
@@ -60,9 +60,10 @@ class FacilitatorClient:
                 follow_redirects=True,
             )
             response.raise_for_status()
-            return response.json()
+            result: dict[str, Any] = response.json()
+            return result
 
-    async def settle(self, payload: dict, requirements: dict) -> dict:
+    async def settle(self, payload: dict[str, Any], requirements: dict[str, Any]) -> dict[str, Any]:
         headers = {"Content-Type": "application/json"}
         if self._create_headers:
             headers.update(self._create_headers().get("settle", {}))
@@ -79,9 +80,10 @@ class FacilitatorClient:
                 follow_redirects=True,
             )
             response.raise_for_status()
-            return response.json()
+            result: dict[str, Any] = response.json()
+            return result
 
-    async def get_supported(self) -> dict:
+    async def get_supported(self) -> dict[str, Any]:
         headers = {"Content-Type": "application/json"}
         if self._create_headers:
             headers.update(self._create_headers().get("supported", {}))
@@ -93,7 +95,8 @@ class FacilitatorClient:
                 follow_redirects=True,
             )
             response.raise_for_status()
-            return response.json()
+            result: dict[str, Any] = response.json()
+            return result
 
 
 def create_facilitator_client(
