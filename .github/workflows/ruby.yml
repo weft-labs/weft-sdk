@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     defaults:
       run:
         working-directory: ruby
@@ -54,12 +55,7 @@ jobs:
         run: ../scripts/generate-ruby.sh
       - name: Build gem
         run: gem build weft-sdk.gemspec
+      - name: Configure RubyGems trusted publishing
+        uses: rubygems/configure-rubygems-credentials@v1.0.0
       - name: Publish to RubyGems
-        run: |
-          mkdir -p ~/.gem
-          echo "---" > ~/.gem/credentials
-          echo ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" >> ~/.gem/credentials
-          chmod 0600 ~/.gem/credentials
-          gem push weft-sdk-*.gem
-        env:
-          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: gem push weft-sdk-*.gem
