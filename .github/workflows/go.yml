@@ -50,6 +50,6 @@ jobs:
           go mod verify
       - name: Trigger pkg.go.dev indexing
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          MODULE="github.com/weft-labs/weft-sdk/go@${TAG#go/}"
-          curl -s "https://proxy.golang.org/${MODULE}/@v/${TAG#go/}.info" || true
+          VERSION="${GITHUB_REF#refs/tags/go/}"
+          echo "Requesting https://proxy.golang.org/github.com/weft-labs/weft-sdk/go/@v/${VERSION}.info"
+          curl -s "https://proxy.golang.org/github.com/weft-labs/weft-sdk/go/@v/${VERSION}.info" || true
