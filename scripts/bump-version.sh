@@ -39,7 +39,13 @@ bump_file() {
       echo "Warning: No change made to $file — pattern may not have matched"
       errors=$((errors + 1))
     else
-      echo "Updated $label: $(grep -m1 "$VERSION" "$file" | sed 's/^[[:space:]]*//')"
+      local updated_line
+      updated_line=$(grep -m1 "$VERSION" "$file" || true)
+      if [ -n "$updated_line" ]; then
+        echo "Updated $label: $(echo "$updated_line" | sed 's/^[[:space:]]*//')"
+      else
+        echo "Updated $label"
+      fi
     fi
     rm -f "$file.bak"
   else
@@ -80,6 +86,12 @@ bump_file \
   "$ROOT_DIR/ruby/lib/weft/generated/version.rb" \
   "s/VERSION = '.*'/VERSION = '$VERSION'/" \
   "ruby/lib/weft/generated/version.rb"
+
+# 6. Ruby — SDK VERSION constant (hand-written, not generated)
+bump_file \
+  "$ROOT_DIR/ruby/lib/weft/sdk.rb" \
+  "s/VERSION = '.*'/VERSION = '$VERSION'/" \
+  "ruby/lib/weft/sdk.rb"
 
 echo "---"
 
