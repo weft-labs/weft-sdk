@@ -19,7 +19,7 @@ jobs:
 
       - name: Extract version from dispatch
         run: |
-          VERSION="${{ github.event.client_payload.version }}"
+          VERSION=$(jq -r '.client_payload.version // empty' "$GITHUB_EVENT_PATH")
           if [ -z "$VERSION" ]; then
             echo "::error::No version in dispatch payload"
             exit 1
