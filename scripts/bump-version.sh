@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bumps all SDK version files to the specified version.
+# Usage: ./scripts/bump-version.sh 0.3.0
+
+VERSION="${1:-}"
+
+if [ -z "$VERSION" ]; then
+  echo "Usage: $0 <version>"
+  echo "Example: $0 0.3.0"
+  exit 1
+fi
+
+# Validate semver format
+if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "Error: Version must be in semver format (e.g., 0.3.0)"
+  exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+errors=0
+
+bump_file() {
+  local file="$1"
+  local pattern="$2"
+  local replacement="$3"
+  local label="$4"
+
+  if [ ! -f "$file" ]; then
+    echo "Error: $file not found"
+    errors=$((errors + 1))
+    return
+  fi
+
+  if sed -i.bak "$pattern" "$file" && [ -f "$file.bak" ]; then
+    if diff -q "$file" "$file.bak" > /dev/null 2>&1; then
+      echo "Warning: No change made to $file — pattern may not have matched"
+      errors=$((errors + 1))
+    else
+      echo "Updated $label: $(grep -m1 "$VERSION" "$file" | sed 's/^[[:space:]]*//')"
+    fi
+    rm -f "$file.bak"
+  else
+    echo "Error: Failed to update $file"
+    errors=$((errors + 1))
+  fi
+}
+
+echo "Bumping all SDK versions to $VERSION"
+echo "---"
+
+# 1. OpenAPI spec — info.version
+bump_file \
+  "$ROOT_DIR/spec/openapi.yaml" \
+  "s/^  version: .*/  version: $VERSION/" \
+  "$VERSION" \
+  "spec/openapi.yaml"
+
+# 2. TypeScript — package.json "version"
+bump_file \
+  "$ROOT_DIR/typescript/package.json" \
+  "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" \
+  "$VERSION" \
+  "typescript/package.json"
+
+# 3. Python — pyproject.toml version
+bump_file \
+  "$ROOT_DIR/python/pyproject.toml" \
+  "s/^version = \".*\"/version = \"$VERSION\"/" \
+  "$VERSION" \
+  "python/pyproject.toml"
+
+# 4. Ruby — gemspec spec.version
+bump_file \
+  "$ROOT_DIR/ruby/weft-sdk.gemspec" \
+  "s/spec\.version       = '.*'/spec.version       = '$VERSION'/" \
+  "$VERSION" \
+  "ruby/weft-sdk.gemspec"
+
+# 5. Ruby — version.rb VERSION constant
+bump_file \
+  "$ROOT_DIR/ruby/lib/weft/generated/version.rb" \
+  "s/VERSION = '.*'/VERSION = '$VERSION'/" \
+  "$VERSION" \
+  "ruby/lib/weft/generated/version.rb"
+
+echo "---"
+
+if [ "$errors" -gt 0 ]; then
+  echo "Completed with $errors error(s)"
+  exit 1
+fi
+
+echo "All versions bumped to $VERSION"

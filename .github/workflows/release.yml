@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  repository_dispatch:
+    types: [release]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract version from dispatch
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version in dispatch payload"
+            exit 1
+          fi
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format: $VERSION (expected semver e.g. 0.3.0)"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Release version: $VERSION"
+
+      - name: Bump version files
+        run: |
+          chmod +x scripts/bump-version.sh
+          ./scripts/bump-version.sh "$VERSION"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies
+        run: |
+          cd typescript && npm install && cd ..
+          cd python && pip install -e . && pip install pytest pytest-asyncio && cd ..
+          cd ruby && bundle install && cd ..
+
+      - name: Generate all SDKs
+        run: |
+          chmod +x scripts/generate-all.sh scripts/generate-*.sh scripts/test-sdk.sh
+          ./scripts/generate-all.sh
+
+      - name: Run TypeScript tests
+        run: cd typescript && npm test
+        continue-on-error: false
+
+      - name: Run Python tests
+        run: cd python && pytest
+        continue-on-error: false
+
+      - name: Run Ruby tests
+        run: cd ruby && bundle exec rake test
+        continue-on-error: false
+
+      - name: Run Go tests
+        run: cd go && go test ./...
+        continue-on-error: false
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "release: v$VERSION"
+            git push origin main
+          fi
+
+      - name: Create and push tags
+        run: |
+          # Create the main version tag (triggers typescript, python, ruby workflows)
+          git tag "v$VERSION"
+          # Create the Go module tag (triggers go workflow + proxy indexing)
+          git tag "go/v$VERSION"
+          # Push both tags
+          git push origin "v$VERSION" "go/v$VERSION"
+          echo "Pushed tags: v$VERSION, go/v$VERSION"
