@@ -26,8 +26,7 @@ errors=0
 bump_file() {
   local file="$1"
   local pattern="$2"
-  local replacement="$3"
-  local label="$4"
+  local label="$3"
 
   if [ ! -f "$file" ]; then
     echo "Error: $file not found"
@@ -56,35 +55,30 @@ echo "---"
 bump_file \
   "$ROOT_DIR/spec/openapi.yaml" \
   "s/^  version: .*/  version: $VERSION/" \
-  "$VERSION" \
   "spec/openapi.yaml"
 
 # 2. TypeScript — package.json "version"
 bump_file \
   "$ROOT_DIR/typescript/package.json" \
   "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" \
-  "$VERSION" \
   "typescript/package.json"
 
 # 3. Python — pyproject.toml version
 bump_file \
   "$ROOT_DIR/python/pyproject.toml" \
   "s/^version = \".*\"/version = \"$VERSION\"/" \
-  "$VERSION" \
   "python/pyproject.toml"
 
 # 4. Ruby — gemspec spec.version
 bump_file \
   "$ROOT_DIR/ruby/weft-sdk.gemspec" \
   "s/spec\.version       = '.*'/spec.version       = '$VERSION'/" \
-  "$VERSION" \
   "ruby/weft-sdk.gemspec"
 
 # 5. Ruby — version.rb VERSION constant
 bump_file \
   "$ROOT_DIR/ruby/lib/weft/generated/version.rb" \
   "s/VERSION = '.*'/VERSION = '$VERSION'/" \
-  "$VERSION" \
   "ruby/lib/weft/generated/version.rb"
 
 echo "---"

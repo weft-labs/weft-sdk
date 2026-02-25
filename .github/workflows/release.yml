@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -37,22 +37,22 @@ jobs:
           ./scripts/bump-version.sh "$VERSION"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
         with:
           ruby-version: "3.2"
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: "1.21"
 
@@ -87,6 +87,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Fail early if tags already exist to prevent partial release state
+          if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION$"; then
+            echo "::error::Tag v$VERSION already exists on remote"
+            exit 1
+          fi
+          if git ls-remote --tags origin | grep -q "refs/tags/go/v$VERSION$"; then
+            echo "::error::Tag go/v$VERSION already exists on remote"
+            exit 1
+          fi
+
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit"
