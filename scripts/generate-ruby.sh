@@ -8,6 +8,10 @@ TMP_DIR="${OUT_DIR}/.generated"
 
 # Read version from OpenAPI spec (already bumped by bump-version.sh in release flow)
 SPEC_VERSION=$(grep '  version:' "${ROOT_DIR}/spec/openapi.yaml" | head -1 | awk '{print $2}')
+if [ -z "$SPEC_VERSION" ]; then
+  echo "Error: Could not extract version from spec/openapi.yaml" >&2
+  exit 1
+fi
 
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}"

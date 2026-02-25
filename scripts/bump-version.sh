@@ -36,8 +36,13 @@ bump_file() {
 
   if sed -i.bak "$pattern" "$file" && [ -f "$file.bak" ]; then
     if diff -q "$file" "$file.bak" > /dev/null 2>&1; then
-      echo "Warning: No change made to $file — pattern may not have matched"
-      errors=$((errors + 1))
+      # No change — check if file already contains the target version (idempotent retry)
+      if grep -q "$VERSION" "$file"; then
+        echo "Already at $VERSION: $label"
+      else
+        echo "Warning: No change made to $file — pattern may not have matched"
+        errors=$((errors + 1))
+      fi
     else
       local updated_line
       updated_line=$(grep -m1 "$VERSION" "$file" || true)
