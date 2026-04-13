@@ -1,0 +1,16 @@
+{
+  "$schema": "https://registry.kdco.dev/schemas/worktree.json",
+
+  // weft-sdk: Polyglot SDKs (TS, Python, Ruby, Go). No root node_modules or .env.
+  // Each language SDK has its own dependency setup.
+  "sync": {
+    "copyFiles": [],
+    "symlinkDirs": [],
+    "exclude": ["*.log", ".git"]
+  },
+
+  "hooks": {
+    "postCreate": [],
+    "preDelete": []
+  }
+}
