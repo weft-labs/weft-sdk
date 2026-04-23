@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   description: API for agent-first payments and discovery.
   title: Weft API
-  version: 0.2.0
+  version: 0.3.0
 servers:
 - description: Production
   url: https://api.weftlabs.com
