@@ -21,11 +21,10 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   e2e:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.pull_request.head.ref, 'sdk-candidate/')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'sdk-candidate/'))
     runs-on: ubuntu-latest
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
@@ -58,11 +57,29 @@ jobs:
             OPENAPI_SHA256="$INPUT_OPENAPI_SHA256"
             OPENAPI_VERSION="$INPUT_OPENAPI_VERSION"
           else
-            if [[ "$PR_HEAD_REF" =~ weft-app-([0-9a-f]{12}) ]]; then
-              CANDIDATE_FILE="$(ls ".release-candidates/weft-app-${BASH_REMATCH[1]}"*.json | head -n 1)"
-            else
-              CANDIDATE_FILE="$(ls .release-candidates/weft-app-*.json | head -n 1)"
+            if [[ ! "$PR_HEAD_REF" =~ weft-app-([0-9a-f]{12}) ]]; then
+              echo "Expected PR branch name to include an unambiguous weft-app-<12 hex chars> prefix." >&2
+              echo "Use workflow_dispatch inputs or rename the branch to include the candidate SHA prefix." >&2
+              exit 1
             fi
+
+            CANDIDATE_PREFIX="${BASH_REMATCH[1]}"
+            shopt -s nullglob
+            CANDIDATE_FILES=(.release-candidates/weft-app-"$CANDIDATE_PREFIX"*.json)
+            shopt -u nullglob
+
+            if [ "${#CANDIDATE_FILES[@]}" -eq 0 ]; then
+              echo "No release candidate marker found for prefix $CANDIDATE_PREFIX." >&2
+              exit 1
+            fi
+
+            if [ "${#CANDIDATE_FILES[@]}" -ne 1 ]; then
+              echo "Expected exactly one release candidate marker for prefix $CANDIDATE_PREFIX, found ${#CANDIDATE_FILES[@]}:" >&2
+              printf ' - %s\n' "${CANDIDATE_FILES[@]}" >&2
+              exit 1
+            fi
+
+            CANDIDATE_FILE="${CANDIDATE_FILES[0]}"
             APP_SHA="$(jq -r '.app_sha' "$CANDIDATE_FILE")"
             OPENAPI_SHA256="$(jq -r '.openapi_sha256' "$CANDIDATE_FILE")"
             OPENAPI_VERSION="$(jq -r '.openapi_version' "$CANDIDATE_FILE")"

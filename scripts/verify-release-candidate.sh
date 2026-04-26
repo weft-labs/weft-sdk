@@ -11,6 +11,21 @@ if [ -z "$APP_SHA" ]; then
   exit 1
 fi
 
+sha256_file() {
+  local file="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$file" | cut -d ' ' -f 1
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$file" | cut -d ' ' -f 1
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 "$file" | awk '{print $NF}'
+  else
+    echo "::error::No supported SHA-256 tool found; install sha256sum, shasum, or openssl" >&2
+    exit 1
+  fi
+}
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CANDIDATE_FILE="$ROOT_DIR/.release-candidates/weft-app-$APP_SHA.json"
 
@@ -49,7 +64,7 @@ if [ -z "$SDK_REF" ]; then
   exit 1
 fi
 
-ACTUAL_OPENAPI_SHA256="$(sha256sum "$ROOT_DIR/spec/openapi.yaml" | cut -d ' ' -f 1)"
+ACTUAL_OPENAPI_SHA256="$(sha256_file "$ROOT_DIR/spec/openapi.yaml")"
 if [ "$ACTUAL_OPENAPI_SHA256" != "$MARKER_OPENAPI_SHA256" ]; then
   echo "::error::Checked-out spec SHA-256 mismatch: $ACTUAL_OPENAPI_SHA256 != $MARKER_OPENAPI_SHA256" >&2
   exit 1
