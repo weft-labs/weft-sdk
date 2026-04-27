@@ -46,7 +46,6 @@ jq -n \
   --arg sdk_ref "$SDK_REF" \
   --arg status "$STATUS" \
   --arg e2e_run_url "$E2E_RUN_URL" \
-  --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{
     app: "weft-app",
     app_sha: $app_sha,
@@ -55,8 +54,7 @@ jq -n \
     openapi_version: $openapi_version,
     sdk_ref: $sdk_ref,
     status: $status,
-    e2e_run_url: $e2e_run_url,
-    generated_at: $generated_at
+    e2e_run_url: $e2e_run_url
   }' > "$CANDIDATE_FILE"
 
 echo "Wrote $CANDIDATE_FILE"

@@ -37,25 +37,24 @@ jobs:
         if: github.event_name == 'repository_dispatch'
         env:
           OPENAPI_URL: ${{ github.event.client_payload.openapi_url }}
-          OPENAPI_YAML: ${{ github.event.client_payload.openapi_yaml }}
           OPENAPI_TOKEN: ${{ steps.app-token.outputs.token }}
           APP_SHA: ${{ github.event.client_payload.app_sha }}
         run: |
-          if [ -n "$OPENAPI_URL" ]; then
-            EXPECTED_OPENAPI_URL="https://api.github.com/repos/weft-labs/weft-app/contents/docs/openapi.yaml?ref=$APP_SHA"
-            if [ "$OPENAPI_URL" != "$EXPECTED_OPENAPI_URL" ]; then
-              echo "::error::Unexpected OpenAPI URL: $OPENAPI_URL"
-              echo "::error::Expected: $EXPECTED_OPENAPI_URL"
-              exit 1
-            fi
-            curl -fsSL \
-              -H "Authorization: Bearer $OPENAPI_TOKEN" \
-              -H "Accept: application/vnd.github.v3.raw" \
-              "$OPENAPI_URL" \
-              -o spec/openapi.yaml
-          else
-            echo "$OPENAPI_YAML" > spec/openapi.yaml
+          if [ -z "$OPENAPI_URL" ]; then
+            echo "::error::client_payload.openapi_url is required for repository_dispatch"
+            exit 1
           fi
+          EXPECTED_OPENAPI_URL="https://api.github.com/repos/weft-labs/weft-app/contents/docs/openapi.yaml?ref=$APP_SHA"
+          if [ "$OPENAPI_URL" != "$EXPECTED_OPENAPI_URL" ]; then
+            echo "::error::Unexpected OpenAPI URL: $OPENAPI_URL"
+            echo "::error::Expected: $EXPECTED_OPENAPI_URL"
+            exit 1
+          fi
+          curl -fsSL \
+            -H "Authorization: Bearer $OPENAPI_TOKEN" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            "$OPENAPI_URL" \
+            -o spec/openapi.yaml
 
       - name: Validate dispatch provenance
         if: github.event_name == 'repository_dispatch'
@@ -134,6 +133,9 @@ jobs:
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add -A
           git commit -m "$COMMIT_MESSAGE"
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+            git fetch --no-tags origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
           git push --force-with-lease origin "$BRANCH"
 
           if gh pr view "$BRANCH" --json number > /dev/null 2>&1; then

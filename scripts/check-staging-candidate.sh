@@ -18,7 +18,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-curl -fsSL "$VERSION_URL" -o "$RESPONSE_FILE"
+curl -fsSL \
+  --connect-timeout 5 \
+  --max-time 20 \
+  --retry 2 \
+  --retry-delay 1 \
+  --retry-connrefused \
+  "$VERSION_URL" \
+  -o "$RESPONSE_FILE"
 
 ACTUAL_APP="$(jq -r '.app // empty' "$RESPONSE_FILE")"
 ACTUAL_SHA="$(jq -r '.sha // empty' "$RESPONSE_FILE")"
