@@ -22,4 +22,16 @@ Format: `{spec_major}.{spec_minor}.{patch}`.
 
 The `sync-spec.yml` workflow listens for `repository_dispatch` events from
 `weft-app`, updates `spec/openapi.yaml`, regenerates clients, and opens a PR if
-changes are detected.
+changes are detected. Candidate branches are pushed with the shared GitHub App
+token, not the default `GITHUB_TOKEN`, so normal PR CI can run on bot-authored
+branches.
+
+## Release Candidates
+
+SDK releases are gated by `.release-candidates/weft-app-<sha>.json` markers. A
+candidate is generated from one immutable `weft-app` SHA and OpenAPI SHA-256,
+then marked `green` only after staging reports the same app SHA, the generated
+TypeScript client can fetch the matching OpenAPI document from staging, and an
+authenticated generated endpoint reaches staging with the expected 401 response.
+The release workflow refuses to publish unless the `weft-app` release dispatch
+points at a matching green candidate.
