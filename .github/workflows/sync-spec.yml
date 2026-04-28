@@ -14,39 +14,132 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install GitHub CLI
-        run: sudo apt-get update && sudo apt-get install -y gh
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.WEFT_BOT_APP_ID }}
+          private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: |
+            weft-app
+            weft-sdk
+
       - name: Fetch spec from dispatch payload
         if: github.event_name == 'repository_dispatch'
         env:
           OPENAPI_URL: ${{ github.event.client_payload.openapi_url }}
-          OPENAPI_YAML: ${{ github.event.client_payload.openapi_yaml }}
+          OPENAPI_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SHA: ${{ github.event.client_payload.app_sha }}
         run: |
-          if [ -n "$OPENAPI_URL" ]; then
-            curl -sSL "$OPENAPI_URL" -o spec/openapi.yaml
-          else
-            echo "$OPENAPI_YAML" > spec/openapi.yaml
+          if [ -z "$OPENAPI_URL" ]; then
+            echo "::error::client_payload.openapi_url is required for repository_dispatch"
+            exit 1
           fi
+          EXPECTED_OPENAPI_URL="https://api.github.com/repos/weft-labs/weft-app/contents/docs/openapi.yaml?ref=$APP_SHA"
+          if [ "$OPENAPI_URL" != "$EXPECTED_OPENAPI_URL" ]; then
+            echo "::error::Unexpected OpenAPI URL: $OPENAPI_URL"
+            echo "::error::Expected: $EXPECTED_OPENAPI_URL"
+            exit 1
+          fi
+          curl -fsSL \
+            -H "Authorization: Bearer $OPENAPI_TOKEN" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            "$OPENAPI_URL" \
+            -o spec/openapi.yaml
+
+      - name: Validate dispatch provenance
+        if: github.event_name == 'repository_dispatch'
+        env:
+          APP_SHA: ${{ github.event.client_payload.app_sha }}
+          OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
+          OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
+        run: |
+          if ! echo "$APP_SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "::error::client_payload.app_sha must be a 40-character git SHA"
+            exit 1
+          fi
+          if ! echo "$OPENAPI_SHA256" | grep -qE '^[0-9a-f]{64}$'; then
+            echo "::error::client_payload.openapi_sha256 must be a 64-character lowercase hex SHA-256"
+            exit 1
+          fi
+          if ! echo "$OPENAPI_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::client_payload.openapi_version must be semver"
+            exit 1
+          fi
+          ACTUAL_SHA256="$(sha256sum spec/openapi.yaml | cut -d ' ' -f 1)"
+          if [ "$ACTUAL_SHA256" != "$OPENAPI_SHA256" ]; then
+            echo "::error::Fetched OpenAPI SHA-256 $ACTUAL_SHA256 does not match payload $OPENAPI_SHA256"
+            exit 1
+          fi
+
+      - name: Align package versions to OpenAPI version
+        if: github.event_name == 'repository_dispatch'
+        env:
+          OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
+        run: ./scripts/bump-version.sh "$OPENAPI_VERSION"
+
       - name: Generate SDKs
         run: ./scripts/generate-all.sh
+
       - name: Verify generated output
         run: ./scripts/test-sdk.sh
-      - name: Create PR if changes
+
+      - name: Write candidate marker
+        if: github.event_name == 'repository_dispatch'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_SHA: ${{ github.event.client_payload.app_sha }}
+          OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
+          OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
         run: |
-          if git diff --quiet; then
+          BRANCH="sdk-candidate/weft-app-${APP_SHA:0:12}"
+          ./scripts/write-release-candidate.sh "$APP_SHA" "$OPENAPI_SHA256" "$OPENAPI_VERSION" "$BRANCH" pending
+
+      - name: Create candidate PR if changes
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SHA: ${{ github.event.client_payload.app_sha }}
+          OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
+          OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
             echo "No changes detected"
             exit 0
           fi
 
-          BRANCH="sync-spec-$(date +%Y%m%d%H%M%S)"
-          git checkout -b "$BRANCH"
+          if [ -n "$APP_SHA" ]; then
+            BRANCH="sdk-candidate/weft-app-${APP_SHA:0:12}"
+            TITLE="chore(sync): OpenAPI from weft-app@${APP_SHA:0:12}"
+            BODY="Generated from weft-app@$APP_SHA.\n\nOpenAPI SHA-256: $OPENAPI_SHA256\nOpenAPI version: $OPENAPI_VERSION\n\nThis PR is a release candidate. It becomes publishable only after the staging e2e workflow marks its candidate file green."
+            COMMIT_MESSAGE="chore(sync): openapi from weft-app@${APP_SHA:0:12}"
+          else
+            BRANCH="sync-spec-$(date +%Y%m%d%H%M%S)"
+            TITLE="chore(sync): OpenAPI spec"
+            BODY="Manual OpenAPI sync."
+            COMMIT_MESSAGE="chore(sync): openapi spec"
+          fi
+
+          git checkout -B "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add -A
-          git commit -m "chore: sync openapi spec"
-          git push origin "$BRANCH"
-          gh pr create --title "chore: sync openapi spec" --body "Auto-generated from weft-app openapi.yaml" --base main
+          git commit -m "$COMMIT_MESSAGE"
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+            git fetch --no-tags origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+          git push --force-with-lease origin "$BRANCH"
+
+          if gh pr view "$BRANCH" --json number > /dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "$TITLE" --body "$BODY"
+          else
+            gh pr create --title "$TITLE" --body "$BODY" --base main --head "$BRANCH"
+          fi

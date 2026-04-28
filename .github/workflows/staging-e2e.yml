@@ -1,0 +1,134 @@
+name: Staging E2E
+
+on:
+  pull_request:
+    paths:
+      - ".release-candidates/**"
+      - "spec/**"
+      - "typescript/**"
+      - "scripts/**"
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: "weft-app SHA to validate"
+        required: true
+      openapi_sha256:
+        description: "Expected OpenAPI SHA-256"
+        required: true
+      openapi_version:
+        description: "Expected OpenAPI version"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  e2e:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'sdk-candidate/'))
+    runs-on: ubuntu-latest
+    env:
+      WEFT_STAGING_BASE_URL: https://staging.weft.network
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.WEFT_BOT_APP_ID }}
+          private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-sdk
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Resolve candidate
+        env:
+          INPUT_APP_SHA: ${{ github.event.inputs.app_sha }}
+          INPUT_OPENAPI_SHA256: ${{ github.event.inputs.openapi_sha256 }}
+          INPUT_OPENAPI_VERSION: ${{ github.event.inputs.openapi_version }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [ -n "$INPUT_APP_SHA" ]; then
+            APP_SHA="$INPUT_APP_SHA"
+            OPENAPI_SHA256="$INPUT_OPENAPI_SHA256"
+            OPENAPI_VERSION="$INPUT_OPENAPI_VERSION"
+          else
+            if [[ ! "$PR_HEAD_REF" =~ weft-app-([0-9a-f]{12}) ]]; then
+              echo "Expected PR branch name to include an unambiguous weft-app-<12 hex chars> prefix." >&2
+              echo "Use workflow_dispatch inputs or rename the branch to include the candidate SHA prefix." >&2
+              exit 1
+            fi
+
+            CANDIDATE_PREFIX="${BASH_REMATCH[1]}"
+            shopt -s nullglob
+            CANDIDATE_FILES=(.release-candidates/weft-app-"$CANDIDATE_PREFIX"*.json)
+            shopt -u nullglob
+
+            if [ "${#CANDIDATE_FILES[@]}" -eq 0 ]; then
+              echo "No release candidate marker found for prefix $CANDIDATE_PREFIX." >&2
+              exit 1
+            fi
+
+            if [ "${#CANDIDATE_FILES[@]}" -ne 1 ]; then
+              echo "Expected exactly one release candidate marker for prefix $CANDIDATE_PREFIX, found ${#CANDIDATE_FILES[@]}:" >&2
+              printf ' - %s\n' "${CANDIDATE_FILES[@]}" >&2
+              exit 1
+            fi
+
+            CANDIDATE_FILE="${CANDIDATE_FILES[0]}"
+            APP_SHA="$(jq -r '.app_sha' "$CANDIDATE_FILE")"
+            OPENAPI_SHA256="$(jq -r '.openapi_sha256' "$CANDIDATE_FILE")"
+            OPENAPI_VERSION="$(jq -r '.openapi_version' "$CANDIDATE_FILE")"
+          fi
+          echo "APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
+          echo "OPENAPI_SHA256=$OPENAPI_SHA256" >> "$GITHUB_ENV"
+          echo "OPENAPI_VERSION=$OPENAPI_VERSION" >> "$GITHUB_ENV"
+
+      - name: Check staging provenance
+        run: ./scripts/check-staging-candidate.sh "$WEFT_STAGING_BASE_URL" "$APP_SHA"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install TypeScript dependencies
+        run: cd typescript && npm install
+
+      - name: Build TypeScript SDK
+        run: cd typescript && npm run build
+
+      - name: Run TypeScript staging e2e
+        env:
+          EXPECTED_OPENAPI_SHA256: ${{ env.OPENAPI_SHA256 }}
+        run: node scripts/e2e-typescript-staging.mjs
+
+      - name: Mark candidate green
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SDK_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          CANDIDATE_FILE=".release-candidates/weft-app-$APP_SHA.json"
+          if [ "$(jq -r '.status // empty' "$CANDIDATE_FILE")" = "green" ]; then
+            echo "Candidate marker already green"
+            exit 0
+          fi
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          ./scripts/write-release-candidate.sh "$APP_SHA" "$OPENAPI_SHA256" "$OPENAPI_VERSION" "$SDK_REF" green "$RUN_URL"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .release-candidates
+          if git diff --cached --quiet; then
+            echo "Candidate marker already green"
+            exit 0
+          fi
+          git commit -m "chore(candidate): mark weft-app@${APP_SHA:0:12} green"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          else
+            git push
+          fi
