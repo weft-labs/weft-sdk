@@ -8,14 +8,19 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # All write operations (candidate branch push, PR create) use WEFT_BOT_TOKEN
+    # explicitly via `git remote set-url` and `gh` CLI, so the default
+    # GITHUB_TOKEN only needs read access for the checkout itself.
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # GITHUB_TOKEN credentials are not needed for any subsequent step:
+          # writes go through an explicit PAT-authed remote.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
