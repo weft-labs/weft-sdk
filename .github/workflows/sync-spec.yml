@@ -22,22 +22,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.WEFT_BOT_APP_ID }}
-          private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
-          owner: weft-labs
-          repositories: |
-            weft-app
-            weft-sdk
-
       - name: Fetch spec from dispatch payload
         if: github.event_name == 'repository_dispatch'
         env:
           OPENAPI_URL: ${{ github.event.client_payload.openapi_url }}
-          OPENAPI_TOKEN: ${{ steps.app-token.outputs.token }}
+          OPENAPI_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
           APP_SHA: ${{ github.event.client_payload.app_sha }}
         run: |
           if [ -z "$OPENAPI_URL" ]; then
@@ -105,7 +94,7 @@ jobs:
 
       - name: Create candidate PR if changes
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
           APP_SHA: ${{ github.event.client_payload.app_sha }}
           OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
           OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}

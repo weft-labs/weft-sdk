@@ -29,21 +29,12 @@ jobs:
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.WEFT_BOT_APP_ID }}
-          private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
-          owner: weft-labs
-          repositories: weft-sdk
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.WEFT_BOT_TOKEN }}
 
       - name: Resolve candidate
         env:
@@ -109,7 +100,7 @@ jobs:
 
       - name: Mark candidate green
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
           SDK_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           CANDIDATE_FILE=".release-candidates/weft-app-$APP_SHA.json"
