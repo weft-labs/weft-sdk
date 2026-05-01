@@ -98,6 +98,15 @@ bump_file \
   "s/VERSION = '.*'/VERSION = '$VERSION'/" \
   "ruby/lib/weft/sdk.rb"
 
+# 7. Ruby — Gemfile.lock pins the `weft-sdk` path-gem version twice (PATH/specs
+# and CHECKSUMS). Without this, `bundle install --deployment` (used by the
+# per-language Ruby SDK workflow and the Release workflow) fails frozen-mode
+# with "The gemspecs for path gems changed, but the lockfile can't be updated".
+bump_file \
+  "$ROOT_DIR/ruby/Gemfile.lock" \
+  "s/weft-sdk (.*)/weft-sdk ($VERSION)/g" \
+  "ruby/Gemfile.lock"
+
 echo "---"
 
 if [ "$errors" -gt 0 ]; then
