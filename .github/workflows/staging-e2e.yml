@@ -20,7 +20,7 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   e2e:
@@ -29,21 +29,15 @@ jobs:
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.WEFT_BOT_APP_ID }}
-          private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
-          owner: weft-labs
-          repositories: weft-sdk
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          # Do not persist GITHUB_TOKEN creds — `npm install` in later steps
+          # could otherwise see them via lifecycle scripts. The marker push
+          # below uses an explicit PAT-authed remote URL.
+          persist-credentials: false
 
       - name: Resolve candidate
         env:
@@ -109,7 +103,7 @@ jobs:
 
       - name: Mark candidate green
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
           SDK_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           CANDIDATE_FILE=".release-candidates/weft-app-$APP_SHA.json"
@@ -127,8 +121,13 @@ jobs:
             exit 0
           fi
           git commit -m "chore(candidate): mark weft-app@${APP_SHA:0:12} green"
+          # Push the marker through an explicit PAT-authed remote URL.
+          # Checkout did not persist credentials, so the default remote has
+          # no usable token attached. This keeps the PAT scoped to this
+          # single step instead of leaking through persisted git config.
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
           else
-            git push
+            git push origin "HEAD:${SDK_REF#refs/heads/}"
           fi
