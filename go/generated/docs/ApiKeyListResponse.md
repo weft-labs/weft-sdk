@@ -5,12 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Data** | [**[]ApiKey**](ApiKey.md) |  | 
+**Pagination** | [**Pagination**](Pagination.md) |  | 
 
 ## Methods
 
 ### NewApiKeyListResponse
 
-`func NewApiKeyListResponse(data []ApiKey, ) *ApiKeyListResponse`
+`func NewApiKeyListResponse(data []ApiKey, pagination Pagination, ) *ApiKeyListResponse`
 
 NewApiKeyListResponse instantiates a new ApiKeyListResponse object
 This constructor will assign default values to properties that have it defined,
@@ -43,6 +44,26 @@ and a boolean to check if the value has been set.
 `func (o *ApiKeyListResponse) SetData(v []ApiKey)`
 
 SetData sets Data field to given value.
+
+
+### GetPagination
+
+`func (o *ApiKeyListResponse) GetPagination() Pagination`
+
+GetPagination returns the Pagination field if non-nil, zero value otherwise.
+
+### GetPaginationOk
+
+`func (o *ApiKeyListResponse) GetPaginationOk() (*Pagination, bool)`
+
+GetPaginationOk returns a tuple with the Pagination field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPagination
+
+`func (o *ApiKeyListResponse) SetPagination(v Pagination)`
+
+SetPagination sets Pagination field to given value.
 
 
 

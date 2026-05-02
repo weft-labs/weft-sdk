@@ -1,5 +1,6 @@
 # ErrorResponse
 
+Standard error envelope returned by all `/api/v1` endpoints when a request fails. The `error.code` value is stable across releases and safe to branch on; `error.message` is human-readable and may change. 
 
 ## Properties
 
