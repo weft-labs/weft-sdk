@@ -1,6 +1,7 @@
 
 # ModelError
 
+A single error inside an `ErrorResponse` envelope. `code` is the stable machine-readable identifier (snake_case), `message` is human-readable, `details` carries optional structured context (e.g. validation field breakdown), and `request_id` correlates with server logs for debugging. 
 
 ## Properties
 
@@ -18,10 +19,10 @@ import type { ModelError } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {
-  "code": null,
-  "message": null,
+  "code": validation_failed,
+  "message": Email has already been taken,
   "details": null,
-  "requestId": null,
+  "requestId": req_01HX9F3K7B2N4P8Q1R6T8Y2Z5,
 } satisfies ModelError
 
 console.log(example)

@@ -22,6 +22,18 @@ func Test_generated_AgentsAPIService(t *testing.T) {
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
 
+	t.Run("Test AgentsAPIService CreateAgent", func(t *testing.T) {
+
+		t.Skip("skip test")  // remove to run test
+
+		resp, httpRes, err := apiClient.AgentsAPI.CreateAgent(context.Background()).Execute()
+
+		require.Nil(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, 200, httpRes.StatusCode)
+
+	})
+
 	t.Run("Test AgentsAPIService GetAgent", func(t *testing.T) {
 
 		t.Skip("skip test")  // remove to run test
@@ -41,6 +53,20 @@ func Test_generated_AgentsAPIService(t *testing.T) {
 		t.Skip("skip test")  // remove to run test
 
 		resp, httpRes, err := apiClient.AgentsAPI.ListAgents(context.Background()).Execute()
+
+		require.Nil(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, 200, httpRes.StatusCode)
+
+	})
+
+	t.Run("Test AgentsAPIService UpdateAgent", func(t *testing.T) {
+
+		t.Skip("skip test")  // remove to run test
+
+		var id string
+
+		resp, httpRes, err := apiClient.AgentsAPI.UpdateAgent(context.Background(), id).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)

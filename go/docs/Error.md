@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | **string** |  | 
-**Message** | **string** |  | 
-**Details** | Pointer to **map[string]interface{}** |  | [optional] 
-**RequestId** | Pointer to **string** |  | [optional] 
+**Code** | **string** | Stable machine-readable error code (snake_case). | 
+**Message** | **string** | Human-readable error description. | 
+**Details** | Pointer to **map[string]interface{}** | Optional structured context about the failure. | [optional] 
+**RequestId** | Pointer to **string** | Correlates with server logs; include when reporting bugs. | [optional] 
 
 ## Methods
 
