@@ -1,12 +1,11 @@
 name: Staging E2E
 
 on:
-  pull_request:
-    paths:
-      - ".release-candidates/**"
-      - "spec/**"
-      - "typescript/**"
-      - "scripts/**"
+  # Primary trigger: weft-app cd_staging-deploy.yml emits this once staging
+  # actually serves the dispatched SHA — avoids the race where staging-e2e
+  # ran on PR-open while staging was still rolling out.
+  repository_dispatch:
+    types: ["weft-app-staging-deployed"]
   workflow_dispatch:
     inputs:
       app_sha:
@@ -24,63 +23,63 @@ permissions:
 
 jobs:
   e2e:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'sdk-candidate/'))
     runs-on: ubuntu-latest
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
-          fetch-depth: 0
-          # Do not persist GITHUB_TOKEN creds — `npm install` in later steps
-          # could otherwise see them via lifecycle scripts. The marker push
-          # below uses an explicit PAT-authed remote URL.
-          persist-credentials: false
-
       - name: Resolve candidate
+        # Both supported triggers carry app_sha + openapi_sha256 + openapi_version
+        # explicitly. The candidate branch name is deterministic from app_sha,
+        # so checkout below uses ${SDK_REF} and never needs a PR head_ref.
         env:
           INPUT_APP_SHA: ${{ github.event.inputs.app_sha }}
           INPUT_OPENAPI_SHA256: ${{ github.event.inputs.openapi_sha256 }}
           INPUT_OPENAPI_VERSION: ${{ github.event.inputs.openapi_version }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          DISPATCH_APP_SHA: ${{ github.event.client_payload.app_sha }}
+          DISPATCH_OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
+          DISPATCH_OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
         run: |
           if [ -n "$INPUT_APP_SHA" ]; then
             APP_SHA="$INPUT_APP_SHA"
             OPENAPI_SHA256="$INPUT_OPENAPI_SHA256"
             OPENAPI_VERSION="$INPUT_OPENAPI_VERSION"
+          elif [ -n "$DISPATCH_APP_SHA" ]; then
+            APP_SHA="$DISPATCH_APP_SHA"
+            OPENAPI_SHA256="$DISPATCH_OPENAPI_SHA256"
+            OPENAPI_VERSION="$DISPATCH_OPENAPI_VERSION"
           else
-            if [[ ! "$PR_HEAD_REF" =~ weft-app-([0-9a-f]{12}) ]]; then
-              echo "Expected PR branch name to include an unambiguous weft-app-<12 hex chars> prefix." >&2
-              echo "Use workflow_dispatch inputs or rename the branch to include the candidate SHA prefix." >&2
-              exit 1
-            fi
-
-            CANDIDATE_PREFIX="${BASH_REMATCH[1]}"
-            shopt -s nullglob
-            CANDIDATE_FILES=(.release-candidates/weft-app-"$CANDIDATE_PREFIX"*.json)
-            shopt -u nullglob
-
-            if [ "${#CANDIDATE_FILES[@]}" -eq 0 ]; then
-              echo "No release candidate marker found for prefix $CANDIDATE_PREFIX." >&2
-              exit 1
-            fi
-
-            if [ "${#CANDIDATE_FILES[@]}" -ne 1 ]; then
-              echo "Expected exactly one release candidate marker for prefix $CANDIDATE_PREFIX, found ${#CANDIDATE_FILES[@]}:" >&2
-              printf ' - %s\n' "${CANDIDATE_FILES[@]}" >&2
-              exit 1
-            fi
-
-            CANDIDATE_FILE="${CANDIDATE_FILES[0]}"
-            APP_SHA="$(jq -r '.app_sha' "$CANDIDATE_FILE")"
-            OPENAPI_SHA256="$(jq -r '.openapi_sha256' "$CANDIDATE_FILE")"
-            OPENAPI_VERSION="$(jq -r '.openapi_version' "$CANDIDATE_FILE")"
+            echo "::error::No app_sha provided via workflow_dispatch inputs or repository_dispatch payload"
+            exit 1
           fi
+
+          if ! echo "$APP_SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "::error::app_sha must be a 40-character git SHA"
+            exit 1
+          fi
+          if ! echo "$OPENAPI_SHA256" | grep -qE '^[0-9a-f]{64}$'; then
+            echo "::error::openapi_sha256 must be a 64-character lowercase hex SHA-256"
+            exit 1
+          fi
+          if ! echo "$OPENAPI_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::openapi_version must be semver"
+            exit 1
+          fi
+
+          SDK_REF="sdk-candidate/weft-app-${APP_SHA:0:12}"
           echo "APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
           echo "OPENAPI_SHA256=$OPENAPI_SHA256" >> "$GITHUB_ENV"
           echo "OPENAPI_VERSION=$OPENAPI_VERSION" >> "$GITHUB_ENV"
+          echo "SDK_REF=$SDK_REF" >> "$GITHUB_ENV"
+
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SDK_REF }}
+          fetch-depth: 0
+          # Do not persist GITHUB_TOKEN creds — `npm install` in later steps
+          # could otherwise see them via lifecycle scripts. The marker push
+          # below uses an explicit PAT-authed remote URL.
+          persist-credentials: false
 
       - name: Check staging provenance
         run: ./scripts/check-staging-candidate.sh "$WEFT_STAGING_BASE_URL" "$APP_SHA"
@@ -104,7 +103,6 @@ jobs:
       - name: Mark candidate green
         env:
           GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
-          SDK_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           CANDIDATE_FILE=".release-candidates/weft-app-$APP_SHA.json"
           if [ "$(jq -r '.status // empty' "$CANDIDATE_FILE")" = "green" ]; then
@@ -126,8 +124,4 @@ jobs:
           # no usable token attached. This keeps the PAT scoped to this
           # single step instead of leaking through persisted git config.
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
-          else
-            git push origin "HEAD:${SDK_REF#refs/heads/}"
-          fi
+          git push origin "HEAD:${SDK_REF}"
