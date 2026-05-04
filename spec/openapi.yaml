@@ -1,8 +1,15 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.3.0
-  description: API for agent-first payments and discovery.
+  version: 0.3.1
+  description: |
+    Weft is an agent-first payments and discovery platform built on open
+    protocols (x402 for stablecoin payments, EIP-3009 for transfer-with-authorization,
+    ERC-8004 for agent identity). This API powers agent self-enrollment, payment
+    flows, and the dashboard control plane.
+
+    All endpoints under `/api/v1` are organization-scoped and require a bearer
+    API key. Errors share the envelope defined by `ErrorResponse`.
 tags:
   - name: Auth
     description: Account creation and authentication flows
@@ -13,7 +20,11 @@ tags:
   - name: API Keys
     description: Manage API keys for authentication
   - name: Agents
-    description: Agent directory and profiles
+    description: Agent management — create, update, and list your agents
+  - name: Analytics
+    description: Payment analytics and volume statistics
+  - name: Webhooks
+    description: Configure outbound webhook endpoints to receive payment events
 servers:
   - url: https://api.weftlabs.com
     description: Production
@@ -364,6 +375,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create an agent
+      operationId: createAgent
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRequest"
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/agents/{id}:
     get:
       summary: Get agent details
@@ -397,6 +439,239 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update an agent
+      operationId: updateAgent
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Agent ID or slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentRequest"
+      responses:
+        "200":
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/analytics:
+    get:
+      summary: Get payment analytics
+      operationId: getAnalytics
+      tags: [Analytics]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/webhook_endpoints:
+    get:
+      summary: List webhook endpoints
+      operationId: listWebhookEndpoints
+      tags: [Webhooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated list of webhook endpoints
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create a webhook endpoint
+      operationId: createWebhookEndpoint
+      tags: [Webhooks]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWebhookEndpointRequest"
+      responses:
+        "201":
+          description: Webhook endpoint created. The signing secret is only returned once.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointCreatedResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/webhook_endpoints/{id}:
+    get:
+      summary: Get a webhook endpoint
+      operationId: getWebhookEndpoint
+      tags: [Webhooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Webhook endpoint details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Webhook endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update a webhook endpoint
+      operationId: updateWebhookEndpoint
+      tags: [Webhooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWebhookEndpointRequest"
+      responses:
+        "200":
+          description: Webhook endpoint updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Webhook endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete a webhook endpoint
+      operationId: deleteWebhookEndpoint
+      tags: [Webhooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Webhook endpoint deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Webhook endpoint not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -406,10 +681,19 @@ components:
   schemas:
     ErrorResponse:
       type: object
+      description: |
+        Standard error envelope returned by all `/api/v1` endpoints when a
+        request fails. The `error.code` value is stable across releases and
+        safe to branch on; `error.message` is human-readable and may change.
       properties:
         error:
           $ref: "#/components/schemas/Error"
       required: [error]
+      example:
+        error:
+          code: "unauthorized"
+          message: "Invalid or expired API key"
+          request_id: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
     MessageResponse:
       type: object
       properties:
@@ -577,7 +861,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ApiKey"
-      required: [data]
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required: [data, pagination]
     ApiKeyCreatedResponse:
       type: object
       properties:
@@ -722,14 +1008,254 @@ components:
       required: [reset_password_token, password, password_confirmation]
     Error:
       type: object
+      description: |
+        A single error inside an `ErrorResponse` envelope. `code` is the stable
+        machine-readable identifier (snake_case), `message` is human-readable,
+        `details` carries optional structured context (e.g. validation field
+        breakdown), and `request_id` correlates with server logs for debugging.
       properties:
         code:
           type: string
+          description: Stable machine-readable error code (snake_case).
+          example: "validation_failed"
         message:
           type: string
+          description: Human-readable error description.
+          example: "Email has already been taken"
         details:
           type: object
           nullable: true
+          description: Optional structured context about the failure.
         request_id:
           type: string
+          description: Correlates with server logs; include when reporting bugs.
+          example: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
       required: [code, message]
+    CreateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Agent display name
+        wallet_address:
+          type: string
+          description: Ethereum wallet address for this agent
+        description:
+          type: string
+          description: Short description (max 500 chars)
+        category:
+          type: string
+          enum: [agent, data_seller, service_provider, facilitator]
+        visibility:
+          type: string
+          enum: [public_profile, private_profile, unlisted]
+      required: [name, wallet_address]
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [agent, data_seller, service_provider, facilitator]
+        visibility:
+          type: string
+          enum: [public_profile, private_profile, unlisted]
+    DailyVolumePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        volume:
+          type: number
+          format: float
+          description: Volume in USDC
+        label:
+          type: string
+      required: [date, volume, label]
+    DailyCountPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        count:
+          type: integer
+        label:
+          type: string
+      required: [date, count, label]
+    PeriodStats:
+      type: object
+      properties:
+        this_week_volume:
+          type: string
+        last_week_volume:
+          type: string
+        volume_change:
+          type: number
+          nullable: true
+        this_week_count:
+          type: integer
+        last_week_count:
+          type: integer
+        count_change:
+          type: number
+          nullable: true
+      required: [this_week_volume, last_week_volume, this_week_count, last_week_count]
+    TopPayer:
+      type: object
+      properties:
+        address:
+          type: string
+        truncated:
+          type: string
+        volume:
+          type: string
+        volume_raw:
+          type: number
+        count:
+          type: integer
+      required: [address, truncated, volume, volume_raw, count]
+    EndpointRevenue:
+      type: object
+      properties:
+        host:
+          type: string
+        volume:
+          type: string
+        volume_raw:
+          type: number
+        count:
+          type: integer
+      required: [host, volume, volume_raw, count]
+    NetworkBreakdown:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+      required: [name, value]
+    AnalyticsData:
+      type: object
+      properties:
+        daily_volume:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyVolumePoint"
+        daily_count:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyCountPoint"
+        period_stats:
+          $ref: "#/components/schemas/PeriodStats"
+        top_payers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopPayer"
+        revenue_by_endpoint:
+          type: array
+          items:
+            $ref: "#/components/schemas/EndpointRevenue"
+        network_breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/NetworkBreakdown"
+      required: [daily_volume, daily_count, period_stats, top_payers, revenue_by_endpoint, network_breakdown]
+    AnalyticsResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AnalyticsData"
+      required: [data]
+    WebhookEndpoint:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [payment.received, payment.sent, agent.created, agent.updated]
+        active:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, url, events, active, created_at, updated_at]
+    WebhookEndpointWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/WebhookEndpoint"
+        - type: object
+          properties:
+            secret:
+              type: string
+              description: "Signing secret (whsec_*). Only returned once on creation."
+          required: [secret]
+    WebhookEndpointListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookEndpoint"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required: [data, pagination]
+    WebhookEndpointResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/WebhookEndpoint"
+      required: [data]
+    WebhookEndpointCreatedResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/WebhookEndpointWithSecret"
+      required: [data]
+    CreateWebhookEndpointRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS URL to send webhook events to
+        events:
+          type: array
+          items:
+            type: string
+            enum: [payment.received, payment.sent, agent.created, agent.updated]
+          description: List of event types to subscribe to
+        description:
+          type: string
+          description: Optional label for this endpoint
+      required: [url, events]
+    UpdateWebhookEndpointRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [payment.received, payment.sent, agent.created, agent.updated]
+        active:
+          type: boolean
+        description:
+          type: string

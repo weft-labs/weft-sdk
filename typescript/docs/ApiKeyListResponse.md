@@ -7,6 +7,7 @@
 Name | Type
 ------------ | -------------
 `data` | [Array&lt;ApiKey&gt;](ApiKey.md)
+`pagination` | [Pagination](Pagination.md)
 
 ## Example
 
@@ -16,6 +17,7 @@ import type { ApiKeyListResponse } from '@weft-labs/sdk'
 // TODO: Update the object below with actual values
 const example = {
   "data": null,
+  "pagination": null,
 } satisfies ApiKeyListResponse
 
 console.log(example)
