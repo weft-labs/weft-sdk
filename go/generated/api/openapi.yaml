@@ -1,8 +1,15 @@
 openapi: 3.1.0
 info:
-  description: API for agent-first payments and discovery.
+  description: |
+    Weft is an agent-first payments and discovery platform built on open
+    protocols (x402 for stablecoin payments, EIP-3009 for transfer-with-authorization,
+    ERC-8004 for agent identity). This API powers agent self-enrollment, payment
+    flows, and the dashboard control plane.
+
+    All endpoints under `/api/v1` are organization-scoped and require a bearer
+    API key. Errors share the envelope defined by `ErrorResponse`.
   title: Weft API
-  version: 0.3.0
+  version: 0.3.2
 servers:
 - description: Production
   url: https://api.weftlabs.com
@@ -19,8 +26,26 @@ tags:
   name: Payments
 - description: Manage API keys for authentication
   name: API Keys
-- description: Agent directory and profiles
+- description: "Agent management — create, update, and list your agents"
   name: Agents
+- description: Payment analytics and volume statistics
+  name: Analytics
+- description: Configure outbound webhook endpoints to receive payment events
+  name: Webhooks
+- description: |
+    Self-enrollment for agents and resources. The agent-first onboarding
+    path: an unauthenticated agent registers itself as a "ghost" Resource
+    and receives a single-use claim token. The agent's human controller
+    then claims the Resource via the dashboard, attaching it to their
+    organization.
+  name: Resources
+- description: |
+    Public storefront for `data_api` Resources. `/apis/{slug}` returns the
+    OpenAPI 3.1 document published by a claimed, public-or-unlisted
+    Resource. Pricing is intentionally not surfaced — under x402, price
+    is negotiated per-request via the `402 Payment Required` challenge
+    from the resource server.
+  name: Public APIs
 paths:
   /api/v1/docs:
     get:
@@ -393,6 +418,38 @@ paths:
       summary: List agents
       tags:
       - Agents
+    post:
+      operationId: createAgent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+          description: Agent created
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      security:
+      - bearerAuth: []
+      summary: Create an agent
+      tags:
+      - Agents
   /api/v1/agents/{id}:
     get:
       operationId: getAgent
@@ -429,15 +486,396 @@ paths:
       summary: Get agent details
       tags:
       - Agents
+    patch:
+      operationId: updateAgent
+      parameters:
+      - description: Agent ID or slug
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+          description: Agent updated
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Agent not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      security:
+      - bearerAuth: []
+      summary: Update an agent
+      tags:
+      - Agents
+  /api/v1/analytics:
+    get:
+      operationId: getAnalytics
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
+          description: Analytics data
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: Get payment analytics
+      tags:
+      - Analytics
+  /api/v1/webhook_endpoints:
+    get:
+      operationId: listWebhookEndpoints
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 25
+          maximum: 100
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointListResponse"
+          description: Paginated list of webhook endpoints
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: List webhook endpoints
+      tags:
+      - Webhooks
+    post:
+      operationId: createWebhookEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWebhookEndpointRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointCreatedResponse"
+          description: Webhook endpoint created. The signing secret is only returned
+            once.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      security:
+      - bearerAuth: []
+      summary: Create a webhook endpoint
+      tags:
+      - Webhooks
+  /api/v1/webhook_endpoints/{id}:
+    delete:
+      operationId: deleteWebhookEndpoint
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Webhook endpoint deleted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Webhook endpoint not found
+      security:
+      - bearerAuth: []
+      summary: Delete a webhook endpoint
+      tags:
+      - Webhooks
+    get:
+      operationId: getWebhookEndpoint
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointResponse"
+          description: Webhook endpoint details
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Webhook endpoint not found
+      security:
+      - bearerAuth: []
+      summary: Get a webhook endpoint
+      tags:
+      - Webhooks
+    patch:
+      operationId: updateWebhookEndpoint
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWebhookEndpointRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpointResponse"
+          description: Webhook endpoint updated
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Webhook endpoint not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+      security:
+      - bearerAuth: []
+      summary: Update a webhook endpoint
+      tags:
+      - Webhooks
+  /api/v1/resources/enroll:
+    post:
+      description: |
+        Public, unauthenticated endpoint. An agent (or its operator) creates
+        a ghost Resource — a Resource with no Provider attached. The server
+        generates the slug and a single-use `claim_token`. The enrolling
+        client passes the `claim_url` back to its human controller, who
+        signs up and visits the URL to claim the Resource into their
+        organization.
+
+        **Rate limit:** 10 enrollments / hour / IP. Exceeding the limit
+        returns `429 Too Many Requests`.
+
+        **Server-controlled fields:** `slug` is generated from `name` and
+        cannot be supplied. `category` is intentionally rejected — domain
+        category is set after claim, by the human, from a constrained list.
+      operationId: enrollResource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollResourceRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrolledResourceResponse"
+          description: Resource enrolled. Response includes the single-use claim token
+            and URL.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Validation error (invalid `kind`, missing required field,\
+            \ slug collision after retry, etc.)"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Rate limit exceeded (>10 enrollments/hour from this IP)
+      summary: Self-enroll a Resource (ghost)
+      tags:
+      - Resources
+  /apis/{slug}:
+    get:
+      description: |
+        Returns the OpenAPI 3.1 document published by a claimed,
+        public-or-unlisted `data_api` Resource. Pricing is intentionally
+        absent — under x402 the price is negotiated per-request via the
+        `402 Payment Required` challenge from the resource server itself.
+
+        Browsers (`Accept: text/html`) get an Inertia-rendered HTML landing
+        page instead; SDKs and tooling should prefer
+        `GET /apis/{slug}/openapi` to avoid content-type negotiation.
+
+        Ghost Resources (no Provider attached) and `private_profile`
+        Resources return `404`.
+      operationId: getApiBySlug
+      parameters:
+      - description: Resource slug
+        explode: false
+        in: path
+        name: slug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenApiDocument"
+          description: OpenAPI 3.1 document
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Resource not found, ghost (unclaimed), or private"
+      summary: Get a public OpenAPI document for a data_api Resource
+      tags:
+      - Public APIs
+  /apis/{slug}/openapi:
+    get:
+      description: |
+        Always returns the OpenAPI 3.1 JSON document, regardless of `Accept`
+        header. SDKs and code-generators should use this path; it is not
+        subject to the HTML/JSON content-type negotiation that `GET /apis/{slug}`
+        performs.
+
+        Same visibility rules as `GET /apis/{slug}` (Ghost Resources and
+        `private_profile` Resources return `404`).
+      operationId: getApiOpenApiBySlug
+      parameters:
+      - description: Resource slug
+        explode: false
+        in: path
+        name: slug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenApiDocument"
+          description: OpenAPI 3.1 document
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Resource not found, ghost (unclaimed), or private"
+      summary: Get the OpenAPI document for a data_api Resource (deterministic JSON)
+      tags:
+      - Public APIs
 components:
   schemas:
     ErrorResponse:
+      description: |
+        Standard error envelope returned by all `/api/v1` endpoints when a
+        request fails. The `error.code` value is stable across releases and
+        safe to branch on; `error.message` is human-readable and may change.
       example:
         error:
-          code: code
-          details: "{}"
-          message: message
-          request_id: request_id
+          code: unauthorized
+          message: Invalid or expired API key
+          request_id: req_01HX9F3K7B2N4P8Q1R6T8Y2Z5
       properties:
         error:
           $ref: "#/components/schemas/Error"
@@ -725,6 +1163,11 @@ components:
       - raw_key
     ApiKeyListResponse:
       example:
+        pagination:
+          per_page: 2
+          total: 7
+          page: 5
+          total_pages: 9
         data:
         - last_used_at: 2000-01-23T04:56:07.000+00:00
           revoked_at: 2000-01-23T04:56:07.000+00:00
@@ -743,8 +1186,11 @@ components:
           items:
             $ref: "#/components/schemas/ApiKey"
           type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
       required:
       - data
+      - pagination
     ApiKeyCreatedResponse:
       example:
         data:
@@ -1031,24 +1477,710 @@ components:
       - password_confirmation
       - reset_password_token
     Error:
-      example:
-        code: code
-        details: "{}"
-        message: message
-        request_id: request_id
+      description: |
+        A single error inside an `ErrorResponse` envelope. `code` is the stable
+        machine-readable identifier (snake_case), `message` is human-readable,
+        `details` carries optional structured context (e.g. validation field
+        breakdown), and `request_id` correlates with server logs for debugging.
       properties:
         code:
+          description: Stable machine-readable error code (snake_case).
+          example: validation_failed
           type: string
         message:
+          description: Human-readable error description.
+          example: Email has already been taken
           type: string
         details:
+          description: Optional structured context about the failure.
           type: object
           nullable: true
         request_id:
+          description: Correlates with server logs; include when reporting bugs.
+          example: req_01HX9F3K7B2N4P8Q1R6T8Y2Z5
           type: string
       required:
       - code
       - message
+    CreateAgentRequest:
+      example:
+        wallet_address: wallet_address
+        visibility: public_profile
+        name: name
+        description: description
+        category: agent
+      properties:
+        name:
+          description: Agent display name
+          type: string
+        wallet_address:
+          description: Ethereum wallet address for this agent
+          type: string
+        description:
+          description: Short description (max 500 chars)
+          type: string
+        category:
+          enum:
+          - agent
+          - data_seller
+          - service_provider
+          - facilitator
+          type: string
+        visibility:
+          enum:
+          - public_profile
+          - private_profile
+          - unlisted
+          type: string
+      required:
+      - name
+      - wallet_address
+    UpdateAgentRequest:
+      example:
+        visibility: public_profile
+        name: name
+        description: description
+        category: agent
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          enum:
+          - agent
+          - data_seller
+          - service_provider
+          - facilitator
+          type: string
+        visibility:
+          enum:
+          - public_profile
+          - private_profile
+          - unlisted
+          type: string
+    DailyVolumePoint:
+      example:
+        date: 2000-01-23
+        volume: 0.8008282
+        label: label
+      properties:
+        date:
+          format: date
+          type: string
+        volume:
+          description: Volume in USDC
+          format: float
+          type: number
+        label:
+          type: string
+      required:
+      - date
+      - label
+      - volume
+    DailyCountPoint:
+      example:
+        date: 2000-01-23
+        count: 6
+        label: label
+      properties:
+        date:
+          format: date
+          type: string
+        count:
+          type: integer
+        label:
+          type: string
+      required:
+      - count
+      - date
+      - label
+    PeriodStats:
+      example:
+        this_week_count: 5
+        count_change: 2.3021358869347655
+        last_week_volume: last_week_volume
+        last_week_count: 5
+        this_week_volume: this_week_volume
+        volume_change: 1.4658129805029452
+      properties:
+        this_week_volume:
+          type: string
+        last_week_volume:
+          type: string
+        volume_change:
+          type: number
+          nullable: true
+        this_week_count:
+          type: integer
+        last_week_count:
+          type: integer
+        count_change:
+          type: number
+          nullable: true
+      required:
+      - last_week_count
+      - last_week_volume
+      - this_week_count
+      - this_week_volume
+    TopPayer:
+      example:
+        volume: volume
+        address: address
+        count: 9
+        truncated: truncated
+        volume_raw: 7.061401241503109
+      properties:
+        address:
+          type: string
+        truncated:
+          type: string
+        volume:
+          type: string
+        volume_raw:
+          type: number
+        count:
+          type: integer
+      required:
+      - address
+      - count
+      - truncated
+      - volume
+      - volume_raw
+    EndpointRevenue:
+      example:
+        volume: volume
+        host: host
+        count: 2
+        volume_raw: 3.616076749251911
+      properties:
+        host:
+          type: string
+        volume:
+          type: string
+        volume_raw:
+          type: number
+        count:
+          type: integer
+      required:
+      - count
+      - host
+      - volume
+      - volume_raw
+    NetworkBreakdown:
+      example:
+        name: name
+        value: 4.145608029883936
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+      required:
+      - name
+      - value
+    AnalyticsData:
+      example:
+        period_stats:
+          this_week_count: 5
+          count_change: 2.3021358869347655
+          last_week_volume: last_week_volume
+          last_week_count: 5
+          this_week_volume: this_week_volume
+          volume_change: 1.4658129805029452
+        revenue_by_endpoint:
+        - volume: volume
+          host: host
+          count: 2
+          volume_raw: 3.616076749251911
+        - volume: volume
+          host: host
+          count: 2
+          volume_raw: 3.616076749251911
+        daily_volume:
+        - date: 2000-01-23
+          volume: 0.8008282
+          label: label
+        - date: 2000-01-23
+          volume: 0.8008282
+          label: label
+        daily_count:
+        - date: 2000-01-23
+          count: 6
+          label: label
+        - date: 2000-01-23
+          count: 6
+          label: label
+        network_breakdown:
+        - name: name
+          value: 4.145608029883936
+        - name: name
+          value: 4.145608029883936
+        top_payers:
+        - volume: volume
+          address: address
+          count: 9
+          truncated: truncated
+          volume_raw: 7.061401241503109
+        - volume: volume
+          address: address
+          count: 9
+          truncated: truncated
+          volume_raw: 7.061401241503109
+      properties:
+        daily_volume:
+          items:
+            $ref: "#/components/schemas/DailyVolumePoint"
+          type: array
+        daily_count:
+          items:
+            $ref: "#/components/schemas/DailyCountPoint"
+          type: array
+        period_stats:
+          $ref: "#/components/schemas/PeriodStats"
+        top_payers:
+          items:
+            $ref: "#/components/schemas/TopPayer"
+          type: array
+        revenue_by_endpoint:
+          items:
+            $ref: "#/components/schemas/EndpointRevenue"
+          type: array
+        network_breakdown:
+          items:
+            $ref: "#/components/schemas/NetworkBreakdown"
+          type: array
+      required:
+      - daily_count
+      - daily_volume
+      - network_breakdown
+      - period_stats
+      - revenue_by_endpoint
+      - top_payers
+    AnalyticsResponse:
+      example:
+        data:
+          period_stats:
+            this_week_count: 5
+            count_change: 2.3021358869347655
+            last_week_volume: last_week_volume
+            last_week_count: 5
+            this_week_volume: this_week_volume
+            volume_change: 1.4658129805029452
+          revenue_by_endpoint:
+          - volume: volume
+            host: host
+            count: 2
+            volume_raw: 3.616076749251911
+          - volume: volume
+            host: host
+            count: 2
+            volume_raw: 3.616076749251911
+          daily_volume:
+          - date: 2000-01-23
+            volume: 0.8008282
+            label: label
+          - date: 2000-01-23
+            volume: 0.8008282
+            label: label
+          daily_count:
+          - date: 2000-01-23
+            count: 6
+            label: label
+          - date: 2000-01-23
+            count: 6
+            label: label
+          network_breakdown:
+          - name: name
+            value: 4.145608029883936
+          - name: name
+            value: 4.145608029883936
+          top_payers:
+          - volume: volume
+            address: address
+            count: 9
+            truncated: truncated
+            volume_raw: 7.061401241503109
+          - volume: volume
+            address: address
+            count: 9
+            truncated: truncated
+            volume_raw: 7.061401241503109
+      properties:
+        data:
+          $ref: "#/components/schemas/AnalyticsData"
+      required:
+      - data
+    WebhookEndpoint:
+      example:
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        active: true
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        url: https://openapi-generator.tech
+        events:
+        - payment.received
+        - payment.received
+      properties:
+        id:
+          type: integer
+        url:
+          format: uri
+          type: string
+        events:
+          items:
+            enum:
+            - payment.received
+            - payment.sent
+            - agent.created
+            - agent.updated
+            type: string
+          type: array
+        active:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      required:
+      - active
+      - created_at
+      - events
+      - id
+      - updated_at
+      - url
+    WebhookEndpointWithSecret:
+      allOf:
+      - $ref: "#/components/schemas/WebhookEndpoint"
+      - properties:
+          secret:
+            description: Signing secret (whsec_*). Only returned once on creation.
+            type: string
+        required:
+        - secret
+      example:
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        active: true
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        secret: secret
+        url: https://openapi-generator.tech
+        events:
+        - payment.received
+        - payment.received
+    WebhookEndpointListResponse:
+      example:
+        pagination:
+          per_page: 2
+          total: 7
+          page: 5
+          total_pages: 9
+        data:
+        - updated_at: 2000-01-23T04:56:07.000+00:00
+          active: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          url: https://openapi-generator.tech
+          events:
+          - payment.received
+          - payment.received
+        - updated_at: 2000-01-23T04:56:07.000+00:00
+          active: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          url: https://openapi-generator.tech
+          events:
+          - payment.received
+          - payment.received
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/WebhookEndpoint"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    WebhookEndpointResponse:
+      example:
+        data:
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          active: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          url: https://openapi-generator.tech
+          events:
+          - payment.received
+          - payment.received
+      properties:
+        data:
+          $ref: "#/components/schemas/WebhookEndpoint"
+      required:
+      - data
+    WebhookEndpointCreatedResponse:
+      example:
+        data:
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          active: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          secret: secret
+          url: https://openapi-generator.tech
+          events:
+          - payment.received
+          - payment.received
+      properties:
+        data:
+          $ref: "#/components/schemas/WebhookEndpointWithSecret"
+      required:
+      - data
+    CreateWebhookEndpointRequest:
+      example:
+        description: description
+        url: https://openapi-generator.tech
+        events:
+        - payment.received
+        - payment.received
+      properties:
+        url:
+          description: HTTPS URL to send webhook events to
+          format: uri
+          type: string
+        events:
+          description: List of event types to subscribe to
+          items:
+            enum:
+            - payment.received
+            - payment.sent
+            - agent.created
+            - agent.updated
+            type: string
+          type: array
+        description:
+          description: Optional label for this endpoint
+          type: string
+      required:
+      - events
+      - url
+    UpdateWebhookEndpointRequest:
+      example:
+        active: true
+        description: description
+        url: https://openapi-generator.tech
+        events:
+        - payment.received
+        - payment.received
+      properties:
+        url:
+          format: uri
+          type: string
+        events:
+          items:
+            enum:
+            - payment.received
+            - payment.sent
+            - agent.created
+            - agent.updated
+            type: string
+          type: array
+        active:
+          type: boolean
+        description:
+          type: string
+    EnrollResourceRequest:
+      description: |
+        Public self-enrollment payload. `slug` and `category` are intentionally
+        not accepted — the server generates the slug from `name`, and category
+        is set after the human claims the Resource.
+      example:
+        kind: agent
+        name: Mem0 retrieval agent
+        description: Long-term memory retrieval as a service
+        wallet_address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0
+      properties:
+        kind:
+          description: |
+            Resource type. Determines which storefront and dashboard surfaces
+            apply after claim.
+          enum:
+          - agent
+          - data_api
+          - mcp_server
+          type: string
+        name:
+          description: Display name. Becomes the basis for the server-generated `slug`.
+          type: string
+        description:
+          description: Optional human-readable description.
+          type: string
+        wallet_address:
+          description: |
+            Optional Ethereum address declared at enrollment time. Stored as
+            `declared_wallet_address` on the ghost Resource for later
+            reconciliation; never used as the canonical Provider wallet.
+          type: string
+      required:
+      - kind
+      - name
+    EnrolledResource:
+      allOf:
+      - $ref: "#/components/schemas/Resource"
+      - properties:
+          claim_token:
+            description: |
+              Single-use token. ~256 bits of entropy. Surfaced exactly once,
+              in this response. Used to claim the Resource at
+              `/dashboard/claims/{claim_token}`.
+            type: string
+          claim_url:
+            description: Absolute path the agent's human controller visits to claim
+              the Resource.
+            type: string
+        required:
+        - claim_token
+        - claim_url
+      description: |
+        A Resource as returned by `POST /api/v1/resources/enroll`. Extends the
+        public Resource shape with the single-use `claim_token` and `claim_url`.
+        These two fields appear ONLY on the enrollment response — never on
+        list/show endpoints — and let the enrolling client hand the magic URL
+        to its human controller.
+      example:
+        wallet_address: wallet_address
+        claim_url: claim_url
+        visibility: public_profile
+        kind: agent
+        claim_token: claim_token
+        claimed: true
+        verified: true
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        name: name
+        id: 0
+        category: category
+        slug: slug
+    EnrolledResourceResponse:
+      example:
+        data:
+          wallet_address: wallet_address
+          claim_url: claim_url
+          visibility: public_profile
+          kind: agent
+          claim_token: claim_token
+          claimed: true
+          verified: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          name: name
+          id: 0
+          category: category
+          slug: slug
+      properties:
+        data:
+          $ref: "#/components/schemas/EnrolledResource"
+      required:
+      - data
+    Resource:
+      description: |
+        A Resource is the unit of agent-economy supply: an agent, a paid data
+        API, or an MCP server. Resources without a Provider (`claimed: false`)
+        are "ghost" Resources — discoverable on their public profile until
+        claimed by a human controller, after which they belong to a
+        Provider/Organization.
+      properties:
+        id:
+          type: integer
+        kind:
+          enum:
+          - agent
+          - data_api
+          - mcp_server
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        wallet_address:
+          description: Provider's wallet address; null while ghost (no Provider attached).
+          type: string
+          nullable: true
+        category:
+          description: |
+            Domain category. Only populated for `kind: agent` Resources during
+            the v3 → provider/resource transition; null for newer kinds.
+          type: string
+          nullable: true
+        visibility:
+          enum:
+          - public_profile
+          - private_profile
+          - unlisted
+          type: string
+        verified:
+          type: boolean
+        claimed:
+          description: |
+            True when the Resource has a Provider attached. Ghost Resources
+            (claimed=false) are publicly discoverable but cannot be edited
+            until a human claims them.
+          type: boolean
+        created_at:
+          format: date-time
+          type: string
+      required:
+      - claimed
+      - created_at
+      - id
+      - kind
+      - name
+      - slug
+      - verified
+      - visibility
+    OpenApiDocument:
+      additionalProperties: true
+      description: |
+        An OpenAPI 3.1 document published by a `data_api` Resource. The
+        published spec describes the Resource's own endpoints (paths,
+        request/response shapes, tags). Pricing is intentionally absent —
+        x402 negotiates price per-request via the `402 Payment Required`
+        challenge from the resource server.
+
+        The document also carries a `x-weft.profileUrl` extension that
+        deep-links back to the Resource's public storefront on weft.
+      example:
+        components: "{}"
+        openapi: 3.1.0
+        paths: "{}"
+        info: "{}"
+      properties:
+        openapi:
+          example: 3.1.0
+          type: string
+        info:
+          type: object
+        paths:
+          type: object
+        components:
+          type: object
+      required:
+      - info
+      - openapi
+      - paths
     MessageResponse_data:
       example:
         message: message
