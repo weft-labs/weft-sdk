@@ -4,9 +4,75 @@ All URIs are relative to *https://api.weftlabs.com*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**CreateAgent**](AgentsAPI.md#CreateAgent) | **Post** /api/v1/agents | Create an agent
 [**GetAgent**](AgentsAPI.md#GetAgent) | **Get** /api/v1/agents/{id} | Get agent details
 [**ListAgents**](AgentsAPI.md#ListAgents) | **Get** /api/v1/agents | List agents
+[**UpdateAgent**](AgentsAPI.md#UpdateAgent) | **Patch** /api/v1/agents/{id} | Update an agent
 
+
+
+## CreateAgent
+
+> AgentResponse CreateAgent(ctx).CreateAgentRequest(createAgentRequest).Execute()
+
+Create an agent
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/weft-labs/weft-sdk/go/generated"
+)
+
+func main() {
+	createAgentRequest := *openapiclient.NewCreateAgentRequest("Name_example", "WalletAddress_example") // CreateAgentRequest | 
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.AgentsAPI.CreateAgent(context.Background()).CreateAgentRequest(createAgentRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `AgentsAPI.CreateAgent``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `CreateAgent`: AgentResponse
+	fmt.Fprintf(os.Stdout, "Response from `AgentsAPI.CreateAgent`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCreateAgentRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **createAgentRequest** | [**CreateAgentRequest**](CreateAgentRequest.md) |  | 
+
+### Return type
+
+[**AgentResponse**](AgentResponse.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
 
 ## GetAgent
@@ -136,6 +202,76 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
 - **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## UpdateAgent
+
+> AgentResponse UpdateAgent(ctx, id).UpdateAgentRequest(updateAgentRequest).Execute()
+
+Update an agent
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/weft-labs/weft-sdk/go/generated"
+)
+
+func main() {
+	id := "id_example" // string | Agent ID or slug
+	updateAgentRequest := *openapiclient.NewUpdateAgentRequest() // UpdateAgentRequest | 
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.AgentsAPI.UpdateAgent(context.Background(), id).UpdateAgentRequest(updateAgentRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `AgentsAPI.UpdateAgent``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `UpdateAgent`: AgentResponse
+	fmt.Fprintf(os.Stdout, "Response from `AgentsAPI.UpdateAgent`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**id** | **string** | Agent ID or slug | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiUpdateAgentRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **updateAgentRequest** | [**UpdateAgentRequest**](UpdateAgentRequest.md) |  | 
+
+### Return type
+
+[**AgentResponse**](AgentResponse.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)

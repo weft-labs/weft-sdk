@@ -5,6 +5,7 @@
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
 | **data** | [**Array&lt;ApiKey&gt;**](ApiKey.md) |  |  |
+| **pagination** | [**Pagination**](Pagination.md) |  |  |
 
 ## Example
 
@@ -12,7 +13,8 @@
 require 'weft-sdk'
 
 instance = Weft::ApiKeyListResponse.new(
-  data: null
+  data: null,
+  pagination: null
 )
 ```
 
