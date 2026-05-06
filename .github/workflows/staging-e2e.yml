@@ -131,20 +131,31 @@ jobs:
         # pass. We do NOT pass --delete-branch: release.yml checks out the
         # candidate branch by name at release time (see release.yml step
         # "Checkout release candidate") and needs the ref to still exist.
+        #
+        # Filter by --base main and refuse to act if more than one match
+        # comes back: auto-merging the wrong PR would land unverified code
+        # on main, so we fail loud rather than picking one arbitrarily.
         env:
           GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
         run: |
-          PR_NUMBER=$(gh pr list \
+          PR_LIST=$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --head "$SDK_REF" \
+            --base main \
             --state open \
-            --json number \
-            --jq '.[0].number // empty')
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No open candidate PR for $SDK_REF — nothing to enable auto-merge on"
+            --json number)
+          COUNT=$(echo "$PR_LIST" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No open candidate PR for $SDK_REF → main — nothing to enable auto-merge on"
             exit 0
           fi
-          echo "Enabling auto-merge on PR #$PR_NUMBER ($SDK_REF)"
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::error::Found $COUNT open PRs for $SDK_REF → main — refusing to enable auto-merge on an ambiguous target"
+            echo "$PR_LIST" | jq .
+            exit 1
+          fi
+          PR_NUMBER=$(echo "$PR_LIST" | jq -r '.[0].number')
+          echo "Enabling auto-merge on PR #$PR_NUMBER ($SDK_REF → main)"
           gh pr merge "$PR_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
             --auto \
