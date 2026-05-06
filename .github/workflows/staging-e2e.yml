@@ -125,3 +125,27 @@ jobs:
           # single step instead of leaking through persisted git config.
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "HEAD:${SDK_REF}"
+
+      - name: Enable auto-merge on candidate PR
+        # Drains the candidate-PR queue automatically once required checks
+        # pass. We do NOT pass --delete-branch: release.yml checks out the
+        # candidate branch by name at release time (see release.yml step
+        # "Checkout release candidate") and needs the ref to still exist.
+        env:
+          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$SDK_REF" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open candidate PR for $SDK_REF — nothing to enable auto-merge on"
+            exit 0
+          fi
+          echo "Enabling auto-merge on PR #$PR_NUMBER ($SDK_REF)"
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --auto \
+            --squash
