@@ -18,7 +18,7 @@ jobs:
         working-directory: ruby
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -44,7 +44,7 @@ jobs:
         working-directory: ruby
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -56,6 +56,6 @@ jobs:
       - name: Build gem
         run: gem build weft-sdk.gemspec
       - name: Configure RubyGems trusted publishing
-        uses: rubygems/configure-rubygems-credentials@v1.0.0
+        uses: rubygems/configure-rubygems-credentials@v2.0.0
       - name: Publish to RubyGems
         run: gem push weft-sdk-*.gem
