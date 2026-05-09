@@ -72,7 +72,7 @@ jobs:
           echo "SDK_REF=$SDK_REF" >> "$GITHUB_ENV"
 
       - name: Checkout candidate branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.SDK_REF }}
           fetch-depth: 0
@@ -85,7 +85,7 @@ jobs:
         run: ./scripts/check-staging-candidate.sh "$WEFT_STAGING_BASE_URL" "$APP_SHA"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
