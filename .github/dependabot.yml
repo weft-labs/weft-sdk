@@ -1,0 +1,75 @@
+version: 2
+updates:
+  # TypeScript SDK
+  - package-ecosystem: npm
+    directory: "/typescript"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        dependency-type: production
+      development-dependencies:
+        dependency-type: development
+    labels: ["dependencies", "typescript"]
+    commit-message:
+      prefix: "chore(deps/ts)"
+
+  # Python SDK
+  - package-ecosystem: pip
+    directory: "/python"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        dependency-type: production
+      development-dependencies:
+        dependency-type: development
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "chore(deps/py)"
+
+  # Ruby SDK
+  - package-ecosystem: bundler
+    directory: "/ruby"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        dependency-type: production
+      development-dependencies:
+        dependency-type: development
+    labels: ["dependencies", "ruby"]
+    commit-message:
+      prefix: "chore(deps/rb)"
+
+  # Go SDK (gomod has no prod/dev distinction — single group)
+  - package-ecosystem: gomod
+    directories:
+      - "/go"
+      - "/go/generated"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+    labels: ["dependencies", "go"]
+    commit-message:
+      prefix: "chore(deps/go)"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+    groups:
+      actions:
+        patterns:
+          - "*"
+    labels: ["dependencies", "github-actions"]
+    commit-message:
+      prefix: "ci(deps)"
