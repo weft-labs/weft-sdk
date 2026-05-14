@@ -33,6 +33,15 @@ export interface McpServerConfig {
    * (weft-app hosts its own OAuth endpoints per spec 09).
    */
   authServerUrl?: string;
+  /**
+   * Allowed `Host` header values for DNS-rebinding protection. When set, both
+   * transports reject requests whose Host header is not on the list. When
+   * unset, host validation is disabled (dev-only — the prod gate lives in
+   * `cli.ts`).
+   *
+   * Example: `["mcp.weft.network", "localhost:9876"]`.
+   */
+  allowedHosts?: string[];
   /** Override fetch (tests). */
   fetchImpl?: typeof fetch;
 }
@@ -83,8 +92,12 @@ export { toMcpErrorResult } from "./tools/error-mapping.js";
  */
 export function createHttpHandler(config: McpServerConfig): RequestListener {
   const factory = () => createServer(config);
-  const sse = new SseTransportRouter(factory);
-  const stream = new StreamableHttpRouter(factory);
+  const sse = new SseTransportRouter(factory, "/messages", {
+    allowedHosts: config.allowedHosts,
+  });
+  const stream = new StreamableHttpRouter(factory, {
+    allowedHosts: config.allowedHosts,
+  });
   const oauthMetadata = buildProtectedResourceMetadata({
     resourceUrl: config.publicUrl,
     authServerUrl: config.authServerUrl ?? config.weftAppUrl,

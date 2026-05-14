@@ -22,7 +22,8 @@ Setup sketch:
 1. Add the package to `vercel.json` with a custom build that emits a single
    handler entry: `dist/cli.js` wrapped in an HTTP function adapter.
 2. Set env vars: `WEFT_APP_URL`, `MCP_PUBLIC_URL=https://mcp.weft.network`,
-   optionally `MCP_AUTH_SERVER_URL`.
+   `MCP_ALLOWED_HOSTS=mcp.weft.network` (DNS-rebinding allowlist; required in
+   production), optionally `MCP_AUTH_SERVER_URL`.
 3. Point `mcp.weft.network` (DNS via Cloudflare → Vercel) at the project.
 
 ## Option B — Fly.io (recommended if we want long-lived SSE)
@@ -40,7 +41,8 @@ Setup sketch:
    --filter @weft-labs/mcp-server` → `node dist/cli.js`.
 2. `fly.toml`: `internal_port = 9876`, `[[services.http_checks]] path = "/healthz"`,
    `auto_stop_machines = false` (we want SSE to stay up).
-3. Set secrets via `fly secrets set WEFT_APP_URL=…`.
+3. Set secrets via `fly secrets set WEFT_APP_URL=… MCP_PUBLIC_URL=https://mcp.weft.network MCP_ALLOWED_HOSTS=mcp.weft.network`.
+   In production all three must be set or the server refuses to start.
 
 ## Open question for Patrick
 
@@ -58,6 +60,29 @@ to Vercel later if Streamable HTTP wins out and SSE is no longer needed.
    existing `publishConfig.access = public`).
 3. On `main` deploy step: either `vercel --prod` or `flyctl deploy`, gated
    on the build + tests passing.
+
+## CORS
+
+**v1 has no CORS middleware. This is deliberate.**
+
+Callers in v1:
+
+- **Claude Code** — native MCP host (Node process), not a browser. No CORS
+  involved.
+- **Claude.ai remote MCP** — Anthropic-side server-to-server fetch against
+  `mcp.weft.network`. No browser origin, no preflight.
+
+Neither caller produces a cross-origin browser request, so an `Access-Control-Allow-Origin`
+header is unnecessary. Adding `*` would be actively wrong: it would expose the
+MCP server to drive-by browser JS exfiltrating tokens, and would also defeat
+the DNS-rebinding `Host` allowlist we configure via `MCP_ALLOWED_HOSTS`.
+
+**v1.5 plan.** When Claude.ai (or a future Weft browser surface) starts
+calling the MCP server directly from the browser, we will add an
+`MCP_ALLOWED_ORIGINS` env var, a small CORS middleware that echoes the
+allowed origin and only emits `Access-Control-Allow-Credentials: false` on
+the preflight, and a test that a disallowed origin is rejected. Until that
+day arrives, the absence of CORS is the correct configuration.
 
 ## Smoke after deploy
 
