@@ -1,0 +1,10 @@
+{
+  "app": "weft-app",
+  "app_sha": "6a6bdd2873f0670c53922a3d42aab7cfe8b29c75",
+  "app_short_sha": "6a6bdd2873f0",
+  "openapi_sha256": "c623492fa38618380e021a3a73519de2a35ccb39117a6a03c75705f60f75ea3a",
+  "openapi_version": "0.3.2",
+  "sdk_ref": "sdk-candidate/weft-app-6a6bdd2873f0",
+  "status": "pending",
+  "e2e_run_url": ""
+}
