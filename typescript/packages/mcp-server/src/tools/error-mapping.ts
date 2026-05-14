@@ -68,6 +68,31 @@ function humanHeadline(err: WeftAppError): string {
       return "Insufficient balance on your Weft account.";
     case "UNAUTHORIZED":
       return "Authentication failed. The MCP host's token may be expired — try re-authorizing.";
+    case "DENYLISTED_RECIPIENT": {
+      const recipient = pickString(err.details, "recipient");
+      return `Request blocked: the merchant/recipient${
+        recipient ? ` (${recipient})` : ""
+      } is on the Weft denylist.`;
+    }
+    case "MERCHANT_RETURNED_NON_402": {
+      const status = pickString(err.details, "status");
+      return `Merchant did not honor the x402 payment flow${
+        status ? ` (returned HTTP ${status})` : ""
+      }. No payment was charged.`;
+    }
+    case "ARTIFACT_TOO_LARGE": {
+      const size = pickString(err.details, "size_bytes");
+      const limit = pickString(err.details, "limit_bytes");
+      return `Merchant response exceeds the maximum artifact size${
+        size && limit ? ` (${size} bytes > limit ${limit} bytes)` : ""
+      }.`;
+    }
+    case "SETTLEMENT_FAILED": {
+      const facilitator = pickString(err.details, "facilitator");
+      return `Payment settlement failed${
+        facilitator ? ` at facilitator ${facilitator}` : ""
+      }. No charge was applied; please retry.`;
+    }
     default:
       return `weft-app error: ${err.code}${err.message && err.message !== err.code ? ` — ${err.message}` : ""}`;
   }
