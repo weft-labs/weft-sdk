@@ -7,10 +7,15 @@ client (hand-crafted wrappers).
 ## Layout
 
 - `spec/openapi.yaml` — synced from `weft-app/docs/openapi.yaml`
-- `typescript/` — npm package `@weft-labs/sdk`
+- `typescript/` — pnpm workspace
+  - `typescript/` (root package) — npm package `@weft-labs/sdk`
+  - `typescript/packages/mcp-server/` — npm package `@weft-labs/mcp-server`,
+    the hosted Model Context Protocol server (Weft Account v1, spec 12).
+    See [`typescript/packages/mcp-server/README.md`](typescript/packages/mcp-server/README.md).
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
 - `go/` — Go module `github.com/weft-labs/weft-sdk/go`
+- `ops/` — deployment notes for hosted services (`mcp-server.deploy.md`)
 - `.github/workflows/` — per-language CI + spec sync workflow
 
 ## Versioning
