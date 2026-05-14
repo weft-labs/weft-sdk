@@ -222,4 +222,98 @@ describe("createServer wiring", () => {
     expect(search?.description).not.toMatch(/promo|\$0\.01/);
     await Promise.all([client.close(), server.close()]);
   });
+
+  it("end-to-end callTool: client → server → mocked weft-app forwards Authorization header", async () => {
+    // Hand-curated transport-level test: a real MCP Client talks JSON-RPC to a
+    // real MCP Server over InMemoryTransport. We monkey-patch the server-side
+    // transport's `onmessage` so it injects `requestInfo.headers.authorization`
+    // into the per-message `extra` payload the way a real HTTP transport
+    // (StreamableHTTPServerTransport / SSEServerTransport) does. This proves
+    // the wiring end-to-end: tool handler reads the header, calls weft-app,
+    // and the mocked fetch sees the same Authorization header on the wire.
+    const { createServer } = await import("../src/index.js");
+    const { InMemoryTransport } = await import(
+      "@modelcontextprotocol/sdk/inMemory.js"
+    );
+    const { Client } = await import(
+      "@modelcontextprotocol/sdk/client/index.js"
+    );
+    type TransportLike = {
+      onmessage?: (
+        message: unknown,
+        extra?: { requestInfo?: { headers: Record<string, string> } },
+      ) => void;
+    };
+
+    const mock = mockFetch(() =>
+      jsonResponse(200, {
+        balance_usd: "5.00",
+        promo_credit_usd: "0.10",
+        spent_today_usd: "0.00",
+        spent_week_usd: "0.00",
+        policy: {
+          max_tx_usd: "0.50",
+          daily_cap_usd: "2.00",
+          weekly_cap_usd: "10.00",
+        },
+      }),
+    );
+
+    const server = createServer({
+      weftAppUrl: "http://weft-app",
+      publicUrl: "http://localhost:9876",
+      fetchImpl: mock.fetch as unknown as typeof fetch,
+    });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    const client = new Client({ name: "test", version: "0.0.0" });
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+
+    // After `server.connect` the SDK's Protocol layer has installed its own
+    // `onmessage` on the server transport. Wrap it so we synthesize the
+    // `requestInfo` field that an HTTP transport would populate from the
+    // Authorization header.
+    const sTransport = serverTransport as unknown as TransportLike;
+    const upstream = sTransport.onmessage;
+    sTransport.onmessage = (message, extra) => {
+      upstream?.(message, {
+        ...(extra ?? {}),
+        requestInfo: {
+          headers: { authorization: "Bearer test-token" },
+        },
+      });
+    };
+
+    const result = await client.callTool({
+      name: "weft.balance",
+      arguments: {},
+    });
+
+    // (a) Response shape — text+structured content, no isError flag.
+    expect(result.isError).not.toBe(true);
+    const contentArr = result.content as Array<{ type: string; text?: string }>;
+    expect(Array.isArray(contentArr)).toBe(true);
+    expect(contentArr[0]!.type).toBe("text");
+    const parsed = JSON.parse(contentArr[0]!.text ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    expect(parsed.balance_usd).toBe("5.00");
+    expect(parsed).toHaveProperty("policy");
+
+    // (b) The mocked weft-app fetch saw the same Authorization header.
+    expect(mock.calls).toHaveLength(1);
+    expect(mock.calls[0]!.url).toBe("http://weft-app/api/v1/balance");
+    const sentHeaders = (mock.calls[0]!.init.headers ?? {}) as Record<
+      string,
+      string
+    >;
+    expect(sentHeaders.authorization).toBe("Bearer test-token");
+
+    await Promise.all([client.close(), server.close()]);
+  });
 });

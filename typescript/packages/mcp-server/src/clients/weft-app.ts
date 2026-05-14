@@ -73,7 +73,11 @@ export interface SearchHit {
 
 export interface SearchResponse {
   query: string;
-  hits: SearchHit[];
+  /**
+   * Match the wire shape: weft-app may omit `hits` entirely on a 2xx response
+   * with no matches. Consumers must defensively read with `data.hits?.length`.
+   */
+  hits?: SearchHit[];
 }
 
 export interface FetchParams {
