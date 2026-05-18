@@ -5,11 +5,11 @@ description: Use the Weft Account wallet to search the agent web and pay any x40
 
 # Weft
 
-Weft Account is a self-custodial wallet for paying x402-protected endpoints from inside an agent host. The three tools — `weft.balance`, `weft.search`, `weft.fetch` — let you check funds, find paid resources, and buy from them within the user's spending policy.
+Weft Account is a self-custodial wallet for paying x402-protected endpoints from inside an agent host. The three tools — `weft_balance`, `weft_search`, `weft_fetch` — let you check funds, find paid resources, and buy from them within the user's spending policy.
 
 ## Setup
 
-If `weft.*` tools are not available, run:
+If `weft_*` tools are not available, run:
 
 ```sh
 bash <(curl -sSL https://weftlabs.com/skill/install.sh)
@@ -25,9 +25,9 @@ claude mcp add weft --remote https://weft.network/mcp
 
 ## Usage
 
-- Use `weft.balance` before suggesting any paid action; abort if `balance.wallet_usdc < expected_cost`.
-- Use `weft.search` to discover paid resources. Free for authenticated buyers in v1.
-- Use `weft.fetch(url, max_cost_usd)` to retrieve a paid resource. Always set `max_cost_usd` to a tight ceiling — never omit it. If the returned cost is suspicious (very new merchant, no settlement history), flag to the user before re-using.
+- Use `weft_balance` before suggesting any paid action; abort if `balance.wallet_usdc < expected_cost`.
+- Use `weft_search` to discover paid resources. Free for authenticated buyers in v1.
+- Use `weft_fetch(url, max_cost_usd)` to retrieve a paid resource. Always set `max_cost_usd` to a tight ceiling — never omit it. If the returned cost is suspicious (very new merchant, no settlement history), flag to the user before re-using.
 
 ## Errors
 
