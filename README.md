@@ -11,6 +11,7 @@ client (hand-crafted wrappers).
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
 - `go/` — Go module `github.com/weft-labs/weft-sdk/go`
+- `skills/weft/` — Weft Skill (`SKILL.md` + install script) for Claude Code; installs the hosted Weft MCP server at `https://weft.network/mcp`. See `skills/weft/SKILL.md`.
 - `.github/workflows/` — per-language CI + spec sync workflow
 
 ## Versioning
