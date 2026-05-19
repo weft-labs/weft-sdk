@@ -15,7 +15,7 @@ if (!expectedOpenapiSha256) {
 }
 
 const api = new DefaultApi(new Configuration({ basePath }));
-const openapi = await api.getApiDocs();
+const openapi = await api.getOpenApiDocument();
 const actualOpenapiSha256 = createHash("sha256").update(openapi).digest("hex");
 
 if (actualOpenapiSha256 !== expectedOpenapiSha256) {
