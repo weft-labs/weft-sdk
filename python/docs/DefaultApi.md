@@ -4,13 +4,13 @@ All URIs are relative to *https://api.weftlabs.com*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**get_api_docs**](DefaultApi.md#get_api_docs) | **GET** /api/v1/docs | Fetch OpenAPI spec
+[**get_api_docs**](DefaultApi.md#get_api_docs) | **GET** /api/v1/docs | Fetch this OpenAPI document
 
 
 # **get_api_docs**
 > str get_api_docs()
 
-Fetch OpenAPI spec
+Fetch this OpenAPI document
 
 ### Example
 
@@ -33,7 +33,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
     api_instance = weft_sdk.generated.DefaultApi(api_client)
 
     try:
-        # Fetch OpenAPI spec
+        # Fetch this OpenAPI document
         api_response = api_instance.get_api_docs()
         print("The response of DefaultApi->get_api_docs:\n")
         pprint(api_response)
@@ -64,7 +64,7 @@ No authorization required
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | OpenAPI document |  -  |
+**200** | OpenAPI 3.1 document (YAML) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
