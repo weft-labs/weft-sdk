@@ -63,10 +63,10 @@ servers:
   - url: http://localhost:3000
     description: Development
 paths:
-  /api/v1/docs:
+  /docs/openapi.yaml:
     get:
       summary: Fetch this OpenAPI document
-      operationId: getApiDocs
+      operationId: getOpenApiDocument
       responses:
         "200":
           description: OpenAPI 3.1 document (YAML)
