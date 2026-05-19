@@ -4,7 +4,7 @@ All URIs are relative to *https://api.weftlabs.com*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetApiDocs**](DefaultAPI.md#GetApiDocs) | **Get** /api/v1/docs | Fetch OpenAPI spec
+[**GetApiDocs**](DefaultAPI.md#GetApiDocs) | **Get** /api/v1/docs | Fetch this OpenAPI document
 
 
 
@@ -12,7 +12,7 @@ Method | HTTP request | Description
 
 > string GetApiDocs(ctx).Execute()
 
-Fetch OpenAPI spec
+Fetch this OpenAPI document
 
 ### Example
 

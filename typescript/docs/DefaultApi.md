@@ -4,7 +4,7 @@ All URIs are relative to *https://api.weftlabs.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getApiDocs**](DefaultApi.md#getapidocs) | **GET** /api/v1/docs | Fetch OpenAPI spec |
+| [**getApiDocs**](DefaultApi.md#getapidocs) | **GET** /api/v1/docs | Fetch this OpenAPI document |
 
 
 
@@ -12,7 +12,7 @@ All URIs are relative to *https://api.weftlabs.com*
 
 > string getApiDocs()
 
-Fetch OpenAPI spec
+Fetch this OpenAPI document
 
 ### Example
 
@@ -60,7 +60,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | OpenAPI document |  -  |
+| **200** | OpenAPI 3.1 document (YAML) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

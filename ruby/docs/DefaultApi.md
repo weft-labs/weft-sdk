@@ -4,14 +4,14 @@ All URIs are relative to *https://api.weftlabs.com*
 
 | Method | HTTP request | Description |
 | ------ | ------------ | ----------- |
-| [**get_api_docs**](DefaultApi.md#get_api_docs) | **GET** /api/v1/docs | Fetch OpenAPI spec |
+| [**get_api_docs**](DefaultApi.md#get_api_docs) | **GET** /api/v1/docs | Fetch this OpenAPI document |
 
 
 ## get_api_docs
 
 > String get_api_docs
 
-Fetch OpenAPI spec
+Fetch this OpenAPI document
 
 ### Examples
 
@@ -22,7 +22,7 @@ require 'weft-sdk'
 api_instance = Weft::DefaultApi.new
 
 begin
-  # Fetch OpenAPI spec
+  # Fetch this OpenAPI document
   result = api_instance.get_api_docs
   p result
 rescue Weft::ApiError => e
@@ -38,7 +38,7 @@ This returns an Array which contains the response data, status code and headers.
 
 ```ruby
 begin
-  # Fetch OpenAPI spec
+  # Fetch this OpenAPI document
   data, status_code, headers = api_instance.get_api_docs_with_http_info
   p status_code # => 2xx
   p headers # => { ... }
