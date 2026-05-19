@@ -147,6 +147,11 @@ jobs:
           git tag "v$VERSION"
           # Create the Go module tag (triggers go workflow + proxy indexing)
           git tag "go/v$VERSION"
+          # Drop the GITHUB_TOKEN auth header persisted by actions/checkout.
+          # Without this, git attaches it to the push below and it overrides
+          # the URL-embedded bot token — the push authenticates as
+          # GITHUB_TOKEN again and the publish workflows never trigger.
+          git config --unset-all 'http.https://github.com/.extraheader' || true
           # Push both tags via the bot token so the publish workflows fire
           git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             "v$VERSION" "go/v$VERSION"
