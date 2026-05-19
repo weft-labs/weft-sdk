@@ -2,11 +2,9 @@
 /* eslint-disable */
 export * from './APIKeysApi';
 export * from './AccountApi';
-export * from './AgentsApi';
-export * from './AnalyticsApi';
 export * from './AuthApi';
+export * from './BalanceApi';
 export * from './DefaultApi';
+export * from './FetchApi';
 export * from './PaymentsApi';
-export * from './PublicAPIsApi';
-export * from './ResourcesApi';
-export * from './WebhooksApi';
+export * from './SearchApi';

@@ -1,44 +1,60 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.4.0
+  version: 0.5.0
   description: |
-    Weft is an agent-first payments and discovery platform built on open
-    protocols (x402 for stablecoin payments, EIP-3009 for transfer-with-authorization,
-    ERC-8004 for agent identity). This API powers agent self-enrollment, payment
-    flows, and the dashboard control plane.
+    The Weft API is the buyer-runtime surface that powers the `weft` CLI,
+    the hosted MCP server (`weft.network/mcp`), and any third-party agent
+    that wants to discover and pay for paid resources on Weft. v1 covers
+    five buyer concerns:
 
-    All endpoints under `/api/v1` are organization-scoped and require a bearer
-    API key. Errors share the envelope defined by `ErrorResponse`.
+      1. Account onboarding (`/api/v1/auth/*`, `/api/v1/me`)
+      2. CLI authentication (`/api/v1/api_keys`)
+      3. Wallet visibility (`/api/v1/balance`)
+      4. Discovery (`/api/v1/search`)
+      5. Paid execution (`/api/v1/fetch`)
+      6. Purchase history (`/api/v1/payments`)
+
+    Seller-side concerns (agent management, payout analytics, webhook
+    delivery, the public storefront for `data_api` resources) live in the
+    dashboard and are intentionally not documented here. They will be
+    split out into a separate, dashboard-scoped spec when they need to be
+    SDK-consumable.
+
+    All errors share the envelope defined by `ErrorResponse`, except the
+    buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke
+    envelopes carrying additional context — see `SearchErrorResponse` and
+    `FetchErrorResponse`.
 tags:
   - name: Auth
-    description: Account creation and authentication flows
+    description: Account creation and authentication flows.
   - name: Account
-    description: Current user account information
-  - name: Payments
-    description: Payment history and transaction details
+    description: Current user account information.
   - name: API Keys
-    description: Manage API keys for authentication
-  - name: Agents
-    description: Agent management — create, update, and list your agents
-  - name: Analytics
-    description: Payment analytics and volume statistics
-  - name: Webhooks
-    description: Configure outbound webhook endpoints to receive payment events
-  - name: Resources
+    description: Manage API keys used by the CLI and any direct HTTP caller.
+  - name: Balance
     description: |
-      Self-enrollment for agents and resources. The agent-first onboarding
-      path: an unauthenticated agent registers itself as a "ghost" Resource
-      and receives a single-use claim token. The agent's human controller
-      then claims the Resource via the dashboard, attaching it to their
-      organization.
-  - name: Public APIs
+      Read-only snapshot of the buyer's wallet, spending policy, and
+      current-window spend (today / this week).
+  - name: Search
     description: |
-      Public storefront for `data_api` Resources. `/apis/{slug}` returns the
-      OpenAPI 3.1 document published by a claimed, public-or-unlisted
-      Resource. Pricing is intentionally not surfaced — under x402, price
-      is negotiated per-request via the `402 Payment Required` challenge
-      from the resource server.
+      Semantic search across the Weft index of paid agent resources.
+      Returns A2A-shaped AgentCards with pricing, skills, ranking, and
+      endpoints. The mock backend (default while the search-platform is
+      unshipped) reads YAML fixtures from `db/seeds/mock-search/`; the
+      platform backend proxies to the upstream search service. Both share
+      the same response envelope.
+  - name: Fetch
+    description: |
+      The universal x402 fetch proxy. POST any URL the agent wants to
+      reach, with a `max_cost_usd` ceiling; Weft handles the `402 Payment
+      Required` challenge, signs the EIP-3009 payment from the buyer's
+      wallet, replays the request, and streams the upstream artifact
+      back base64-encoded. Errors always carry the buyer's current
+      policy + balance + dashboard URL so the caller can surface "what
+      changed?" without a second round-trip.
+  - name: Payments
+    description: Payment history and individual purchase details.
 servers:
   - url: https://api.weftlabs.com
     description: Production
@@ -49,11 +65,11 @@ servers:
 paths:
   /api/v1/docs:
     get:
-      summary: Fetch OpenAPI spec
+      summary: Fetch this OpenAPI document
       operationId: getApiDocs
       responses:
         "200":
-          description: OpenAPI document
+          description: OpenAPI 3.1 document (YAML)
           content:
             application/yaml:
               schema:
@@ -204,73 +220,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/payments:
-    get:
-      summary: List payments
-      operationId: listPayments
-      tags: [Payments]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-          description: Page number
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-            default: 25
-            maximum: 100
-          description: Items per page
-      responses:
-        "200":
-          description: List of payments
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentListResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/payments/{id}:
-    get:
-      summary: Get payment details
-      operationId: getPayment
-      tags: [Payments]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: Payment ID
-      responses:
-        "200":
-          description: Payment details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Payment not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/api_keys:
     get:
       summary: List API keys
@@ -355,11 +304,192 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/agents:
+  /api/v1/balance:
     get:
-      summary: List agents
-      operationId: listAgents
-      tags: [Agents]
+      summary: Get wallet, spending policy, and current-window spend
+      description: |
+        Read-only snapshot for the buyer behind the bearer token. The
+        response always includes a `promo` block — values are zero in v1
+        and fill in once the freemium promo ledger ships, without a
+        shape change. `wallet.balance_usdc` is fetched live from Privy;
+        if Privy is unreachable the field returns `"0.00"` rather than
+        erroring the whole call.
+
+        Account-scoped: the bearer must be a buyer-scoped API key.
+      operationId: getBalance
+      tags: [Balance]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Wallet + policy + spend snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceResponse"
+        "401":
+          description: Unauthorized — missing or non-buyer-scoped API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/search:
+    post:
+      summary: Search the Weft index
+      description: |
+        Semantic search over the Weft index of paid agent resources. The
+        request body carries a free-text `query`, an optional `limit`, and
+        an optional `filters` object that narrows by price band, payment
+        protocol, agent protocol, or domain tag. Filters are applied as a
+        post-filter after the embedding score is computed.
+
+        Backend selection is server-side via the `SEARCH_BACKEND` env var:
+        `mock` (default, reads YAML fixtures and sets `_mock: true` in the
+        response) or `platform` (proxies to the upstream search service).
+        Both backends return the same envelope.
+
+        Account-scoped: the bearer token must be a buyer-scoped API key.
+        Free for authenticated buyers in v1; billing is planned for a later
+        release.
+
+        Response negotiation: `Accept: application/json` (default) returns
+        the structured envelope; `Accept: text/markdown` returns a rendered
+        Markdown digest of the same results — useful for piping into a chat
+        UI or LLM prompt.
+      operationId: search
+      tags: [Search]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+            text/markdown:
+              schema:
+                type: string
+                description: Rendered Markdown digest of the same results.
+        "401":
+          description: Unauthorized — missing or non-buyer-scoped API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid query (empty/missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchErrorResponse"
+        "502":
+          description: Upstream search backend error (platform backend only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchErrorResponse"
+        "500":
+          description: Backend misconfigured (`SEARCH_BACKEND` unset or unknown)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchErrorResponse"
+  /api/v1/fetch:
+    post:
+      summary: Pay-and-fetch any URL (x402 proxy)
+      description: |
+        Universal x402 fetch proxy. The caller provides a target `url`,
+        a hard `max_cost_usd` ceiling, and optional `method` / `body` /
+        `headers`. Weft:
+
+          1. Issues the request.
+          2. On `402 Payment Required`, parses the merchant's challenge.
+          3. Compares the asking price to `max_cost_usd` and the
+             buyer's policy (`max_tx_usd`, daily/weekly limits).
+          4. Signs an EIP-3009 transfer from the buyer's wallet.
+          5. Replays the request with the `X-Payment` header.
+          6. Streams the upstream artifact back, base64-encoded under
+             `body_base64`, with `paid_usd`, `tx_hash`, and the
+             merchant's reputation snapshot.
+
+        Errors are structured with a stable `error` code, and each error
+        response carries the buyer's `policy`, `balance`, and a
+        `dashboard_url` so a CLI can render an actionable message without
+        a second round-trip.
+
+        Account-scoped: the bearer must be a buyer-scoped API key.
+
+        **Forwarded headers:** the caller's `headers` are passed through
+        to the upstream, except a denylist of hop-by-hop and
+        Weft-internal headers (`host`, `authorization`, `cookie`,
+        `proxy-authorization`, `x-forwarded-*`, `x-real-ip`,
+        `x-payment`, `connection`, `upgrade`). Up to 32 headers, 4 KB of
+        combined value bytes.
+      operationId: fetch
+      tags: [Fetch]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FetchRequest"
+      responses:
+        "200":
+          description: Fetch succeeded (or upstream was free); artifact streamed back base64-encoded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchResponse"
+        "401":
+          description: Unauthorized — missing or non-buyer-scoped API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Payment refused — `EXCEEDED_MAX_COST` or `INSUFFICIENT_BALANCE`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+        "403":
+          description: Policy violation or denylisted recipient.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+        "413":
+          description: Upstream artifact exceeded the proxy's size cap.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+        "422":
+          description: Invalid request URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+        "502":
+          description: Upstream did not return a valid 402 challenge, or settlement signing failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+  /api/v1/payments:
+    get:
+      summary: List payments
+      operationId: listPayments
+      tags: [Payments]
       security:
         - bearerAuth: []
       parameters:
@@ -378,213 +508,22 @@ paths:
           description: Items per page
       responses:
         "200":
-          description: List of agents
+          description: List of payments
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentListResponse"
+                $ref: "#/components/schemas/PaymentListResponse"
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    post:
-      summary: Create an agent
-      operationId: createAgent
-      tags: [Agents]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateAgentRequest"
-      responses:
-        "201":
-          description: Agent created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AgentResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/agents/{id}:
+  /api/v1/payments/{id}:
     get:
-      summary: Get agent details
-      operationId: getAgent
-      tags: [Agents]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Agent ID or slug
-      responses:
-        "200":
-          description: Agent details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AgentResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      summary: Update an agent
-      operationId: updateAgent
-      tags: [Agents]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Agent ID or slug
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateAgentRequest"
-      responses:
-        "200":
-          description: Agent updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AgentResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/analytics:
-    get:
-      summary: Get payment analytics
-      operationId: getAnalytics
-      tags: [Analytics]
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Analytics data
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AnalyticsResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/webhook_endpoints:
-    get:
-      summary: List webhook endpoints
-      operationId: listWebhookEndpoints
-      tags: [Webhooks]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-            default: 25
-            maximum: 100
-      responses:
-        "200":
-          description: Paginated list of webhook endpoints
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookEndpointListResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    post:
-      summary: Create a webhook endpoint
-      operationId: createWebhookEndpoint
-      tags: [Webhooks]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateWebhookEndpointRequest"
-      responses:
-        "201":
-          description: Webhook endpoint created. The signing secret is only returned once.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookEndpointCreatedResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/webhook_endpoints/{id}:
-    get:
-      summary: Get a webhook endpoint
-      operationId: getWebhookEndpoint
-      tags: [Webhooks]
+      summary: Get payment details
+      operationId: getPayment
+      tags: [Payments]
       security:
         - bearerAuth: []
       parameters:
@@ -593,13 +532,14 @@ paths:
           required: true
           schema:
             type: integer
+          description: Payment ID
       responses:
         "200":
-          description: Webhook endpoint details
+          description: Payment details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookEndpointResponse"
+                $ref: "#/components/schemas/PaymentResponse"
         "401":
           description: Unauthorized
           content:
@@ -607,195 +547,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Webhook endpoint not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      summary: Update a webhook endpoint
-      operationId: updateWebhookEndpoint
-      tags: [Webhooks]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateWebhookEndpointRequest"
-      responses:
-        "200":
-          description: Webhook endpoint updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookEndpointResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Webhook endpoint not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    delete:
-      summary: Delete a webhook endpoint
-      operationId: deleteWebhookEndpoint
-      tags: [Webhooks]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Webhook endpoint deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MessageResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Webhook endpoint not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/v1/resources/enroll:
-    post:
-      summary: Self-enroll a Resource (ghost)
-      description: |
-        Public, unauthenticated endpoint. An agent (or its operator) creates
-        a ghost Resource — a Resource with no Provider attached. The server
-        generates the slug and a single-use `claim_token`. The enrolling
-        client passes the `claim_url` back to its human controller, who
-        signs up and visits the URL to claim the Resource into their
-        organization.
-
-        **Rate limit:** 10 enrollments / hour / IP. Exceeding the limit
-        returns `429 Too Many Requests`.
-
-        **Server-controlled fields:** `slug` is generated from `name` and
-        cannot be supplied. `category` is intentionally rejected — domain
-        category is set after claim, by the human, from a constrained list.
-      operationId: enrollResource
-      tags: [Resources]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EnrollResourceRequest"
-      responses:
-        "201":
-          description: Resource enrolled. Response includes the single-use claim token and URL.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EnrolledResourceResponse"
-        "422":
-          description: Validation error (invalid `kind`, missing required field, slug collision after retry, etc.)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Rate limit exceeded (>10 enrollments/hour from this IP)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /apis/{slug}:
-    get:
-      summary: Get a public OpenAPI document for a data_api Resource
-      description: |
-        Returns the OpenAPI 3.1 document published by a claimed,
-        public-or-unlisted `data_api` Resource. Pricing is intentionally
-        absent — under x402 the price is negotiated per-request via the
-        `402 Payment Required` challenge from the resource server itself.
-
-        Browsers (`Accept: text/html`) get an Inertia-rendered HTML landing
-        page instead; SDKs and tooling should prefer
-        `GET /apis/{slug}/openapi` to avoid content-type negotiation.
-
-        Ghost Resources (no Provider attached) and `private_profile`
-        Resources return `404`.
-      operationId: getApiBySlug
-      tags: [Public APIs]
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Resource slug
-      responses:
-        "200":
-          description: OpenAPI 3.1 document
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OpenApiDocument"
-        "404":
-          description: Resource not found, ghost (unclaimed), or private
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /apis/{slug}/openapi:
-    get:
-      summary: Get the OpenAPI document for a data_api Resource (deterministic JSON)
-      description: |
-        Always returns the OpenAPI 3.1 JSON document, regardless of `Accept`
-        header. SDKs and code-generators should use this path; it is not
-        subject to the HTML/JSON content-type negotiation that `GET /apis/{slug}`
-        performs.
-
-        Same visibility rules as `GET /apis/{slug}` (Ghost Resources and
-        `private_profile` Resources return `404`).
-      operationId: getApiOpenApiBySlug
-      tags: [Public APIs]
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Resource slug
-      responses:
-        "200":
-          description: OpenAPI 3.1 document
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OpenApiDocument"
-        "404":
-          description: Resource not found, ghost (unclaimed), or private
+          description: Payment not found
           content:
             application/json:
               schema:
@@ -810,8 +562,9 @@ components:
     ErrorResponse:
       type: object
       description: |
-        Standard error envelope returned by all `/api/v1` endpoints when a
-        request fails. The `error.code` value is stable across releases and
+        Standard error envelope returned by all `/api/v1` endpoints except
+        `/search` and `/fetch` (which use bespoke envelopes carrying
+        additional context). `error.code` is stable across releases and
         safe to branch on; `error.message` is human-readable and may change.
       properties:
         error:
@@ -822,6 +575,32 @@ components:
           code: "unauthorized"
           message: "Invalid or expired API key"
           request_id: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
+    Error:
+      type: object
+      description: |
+        A single error inside an `ErrorResponse` envelope. `code` is the
+        stable machine-readable identifier (snake_case), `message` is
+        human-readable, `details` carries optional structured context
+        (e.g. validation field breakdown), and `request_id` correlates
+        with server logs for debugging.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code (snake_case).
+          example: "validation_failed"
+        message:
+          type: string
+          description: Human-readable error description.
+          example: "Email has already been taken"
+        details:
+          type: object
+          nullable: true
+          description: Optional structured context about the failure.
+        request_id:
+          type: string
+          description: Correlates with server logs; include when reporting bugs.
+          example: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
+      required: [code, message]
     MessageResponse:
       type: object
       properties:
@@ -831,246 +610,6 @@ components:
             message:
               type: string
           required: [message]
-      required: [data]
-    AuthResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            user:
-              $ref: "#/components/schemas/User"
-            token:
-              type: string
-              nullable: true
-            confirmation_required:
-              type: boolean
-          required: [user, confirmation_required]
-      required: [data]
-    User:
-      type: object
-      properties:
-        id:
-          type: integer
-        email:
-          type: string
-          format: email
-        status:
-          type: string
-      required: [id, email]
-    MeResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/AccountDetails"
-      required: [data]
-    AccountDetails:
-      type: object
-      properties:
-        id:
-          type: integer
-        email:
-          type: string
-          format: email
-        status:
-          type: string
-          enum: [active, blocked]
-        display_name:
-          type: string
-          nullable: true
-        public_profile:
-          type: boolean
-        public_slug:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-      required: [id, email, status, public_profile, created_at]
-    Payment:
-      type: object
-      properties:
-        id:
-          type: integer
-        tx_hash:
-          type: string
-        payer_address:
-          type: string
-        recipient_address:
-          type: string
-        amount:
-          type: integer
-          description: Amount in atomic units (1 USDC = 1,000,000)
-        amount_formatted:
-          type: string
-          description: Human-readable amount (e.g. "1.00 USDC")
-        currency:
-          type: string
-        network:
-          type: string
-          description: CAIP-2 chain identifier
-        resource_url:
-          type: string
-          nullable: true
-        resource_host:
-          type: string
-          nullable: true
-        fee_amount:
-          type: integer
-        settlement_latency_ms:
-          type: integer
-          nullable: true
-        settled_at:
-          type: string
-          format: date-time
-        api_key_name:
-          type: string
-      required: [id, tx_hash, payer_address, recipient_address, amount, amount_formatted, currency, network, settled_at, api_key_name]
-    PaymentListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Payment"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-      required: [data, pagination]
-    PaymentResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/Payment"
-      required: [data]
-    ApiKey:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-          nullable: true
-        key_prefix:
-          type: string
-          description: First 16 characters of the key for identification
-        last_used_at:
-          type: string
-          format: date-time
-          nullable: true
-        revoked_at:
-          type: string
-          format: date-time
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-      required: [id, key_prefix, created_at]
-    ApiKeyCreated:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-          nullable: true
-        key_prefix:
-          type: string
-        raw_key:
-          type: string
-          description: Full API key (shown only once at creation)
-        created_at:
-          type: string
-          format: date-time
-      required: [id, key_prefix, raw_key, created_at]
-    ApiKeyListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/ApiKey"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-      required: [data, pagination]
-    ApiKeyCreatedResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/ApiKeyCreated"
-      required: [data]
-    CreateApiKeyRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: A friendly name for the API key
-    Agent:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        slug:
-          type: string
-        wallet_address:
-          type: string
-        description:
-          type: string
-          nullable: true
-        category:
-          type: string
-          enum: [agent, data_seller, service_provider, facilitator]
-        visibility:
-          type: string
-          enum: [public_profile, private_profile, unlisted]
-        verified:
-          type: boolean
-        claimed:
-          type: boolean
-          description: Whether the agent is claimed by a user
-        stats:
-          $ref: "#/components/schemas/AgentStats"
-        created_at:
-          type: string
-          format: date-time
-      required: [id, name, slug, wallet_address, category, visibility, verified, claimed, created_at]
-    AgentStats:
-      type: object
-      properties:
-        total_paid:
-          type: integer
-        total_received:
-          type: integer
-        payments_made:
-          type: integer
-        payments_received:
-          type: integer
-        unique_counterparties:
-          type: integer
-        first_seen:
-          type: string
-          format: date-time
-          nullable: true
-        last_active:
-          type: string
-          format: date-time
-          nullable: true
-    AgentListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Agent"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-      required: [data, pagination]
-    AgentResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/Agent"
       required: [data]
     Pagination:
       type: object
@@ -1134,383 +673,684 @@ components:
         password_confirmation:
           type: string
       required: [reset_password_token, password, password_confirmation]
-    Error:
-      type: object
-      description: |
-        A single error inside an `ErrorResponse` envelope. `code` is the stable
-        machine-readable identifier (snake_case), `message` is human-readable,
-        `details` carries optional structured context (e.g. validation field
-        breakdown), and `request_id` correlates with server logs for debugging.
-      properties:
-        code:
-          type: string
-          description: Stable machine-readable error code (snake_case).
-          example: "validation_failed"
-        message:
-          type: string
-          description: Human-readable error description.
-          example: "Email has already been taken"
-        details:
-          type: object
-          nullable: true
-          description: Optional structured context about the failure.
-        request_id:
-          type: string
-          description: Correlates with server logs; include when reporting bugs.
-          example: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
-      required: [code, message]
-    CreateAgentRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Agent display name
-        wallet_address:
-          type: string
-          description: Ethereum wallet address for this agent
-        description:
-          type: string
-          description: Short description (max 500 chars)
-        category:
-          type: string
-          enum: [agent, data_seller, service_provider, facilitator]
-        visibility:
-          type: string
-          enum: [public_profile, private_profile, unlisted]
-      required: [name, wallet_address]
-    UpdateAgentRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-          enum: [agent, data_seller, service_provider, facilitator]
-        visibility:
-          type: string
-          enum: [public_profile, private_profile, unlisted]
-    DailyVolumePoint:
-      type: object
-      properties:
-        date:
-          type: string
-          format: date
-        volume:
-          type: number
-          format: float
-          description: Volume in USDC
-        label:
-          type: string
-      required: [date, volume, label]
-    DailyCountPoint:
-      type: object
-      properties:
-        date:
-          type: string
-          format: date
-        count:
-          type: integer
-        label:
-          type: string
-      required: [date, count, label]
-    PeriodStats:
-      type: object
-      properties:
-        this_week_volume:
-          type: string
-        last_week_volume:
-          type: string
-        volume_change:
-          type: number
-          nullable: true
-        this_week_count:
-          type: integer
-        last_week_count:
-          type: integer
-        count_change:
-          type: number
-          nullable: true
-      required: [this_week_volume, last_week_volume, this_week_count, last_week_count]
-    TopPayer:
-      type: object
-      properties:
-        address:
-          type: string
-        truncated:
-          type: string
-        volume:
-          type: string
-        volume_raw:
-          type: number
-        count:
-          type: integer
-      required: [address, truncated, volume, volume_raw, count]
-    EndpointRevenue:
-      type: object
-      properties:
-        host:
-          type: string
-        volume:
-          type: string
-        volume_raw:
-          type: number
-        count:
-          type: integer
-      required: [host, volume, volume_raw, count]
-    NetworkBreakdown:
-      type: object
-      properties:
-        name:
-          type: string
-        value:
-          type: number
-      required: [name, value]
-    AnalyticsData:
-      type: object
-      properties:
-        daily_volume:
-          type: array
-          items:
-            $ref: "#/components/schemas/DailyVolumePoint"
-        daily_count:
-          type: array
-          items:
-            $ref: "#/components/schemas/DailyCountPoint"
-        period_stats:
-          $ref: "#/components/schemas/PeriodStats"
-        top_payers:
-          type: array
-          items:
-            $ref: "#/components/schemas/TopPayer"
-        revenue_by_endpoint:
-          type: array
-          items:
-            $ref: "#/components/schemas/EndpointRevenue"
-        network_breakdown:
-          type: array
-          items:
-            $ref: "#/components/schemas/NetworkBreakdown"
-      required: [daily_volume, daily_count, period_stats, top_payers, revenue_by_endpoint, network_breakdown]
-    AnalyticsResponse:
+    AuthResponse:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/AnalyticsData"
+          type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+            token:
+              type: string
+              nullable: true
+            confirmation_required:
+              type: boolean
+          required: [user, confirmation_required]
       required: [data]
-    WebhookEndpoint:
+    User:
       type: object
       properties:
         id:
           type: integer
-        url:
+        email:
           type: string
-          format: uri
-        events:
-          type: array
-          items:
-            type: string
-            enum: [payment.received, payment.sent, agent.created, agent.updated]
-        active:
+          format: email
+        status:
+          type: string
+      required: [id, email]
+    MeResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountDetails"
+      required: [data]
+    AccountDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, blocked]
+        display_name:
+          type: string
+          nullable: true
+        public_profile:
           type: boolean
-        description:
+        public_slug:
           type: string
           nullable: true
         created_at:
           type: string
           format: date-time
-        updated_at:
+      required: [id, email, status, public_profile, created_at]
+    CreateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: A friendly name for the API key
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        key_prefix:
+          type: string
+          description: First 16 characters of the key for identification
+        last_used_at:
           type: string
           format: date-time
-      required: [id, url, events, active, created_at, updated_at]
-    WebhookEndpointWithSecret:
-      allOf:
-        - $ref: "#/components/schemas/WebhookEndpoint"
-        - type: object
-          properties:
-            secret:
-              type: string
-              description: "Signing secret (whsec_*). Only returned once on creation."
-          required: [secret]
-    WebhookEndpointListResponse:
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required: [id, key_prefix, created_at]
+    ApiKeyCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        key_prefix:
+          type: string
+        raw_key:
+          type: string
+          description: Full API key (shown only once at creation)
+        created_at:
+          type: string
+          format: date-time
+      required: [id, key_prefix, raw_key, created_at]
+    ApiKeyListResponse:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/WebhookEndpoint"
+            $ref: "#/components/schemas/ApiKey"
         pagination:
           $ref: "#/components/schemas/Pagination"
       required: [data, pagination]
-    WebhookEndpointResponse:
+    ApiKeyCreatedResponse:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/WebhookEndpoint"
+          $ref: "#/components/schemas/ApiKeyCreated"
       required: [data]
-    WebhookEndpointCreatedResponse:
+    Payment:
       type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/WebhookEndpointWithSecret"
-      required: [data]
-    CreateWebhookEndpointRequest:
-      type: object
-      properties:
-        url:
-          type: string
-          format: uri
-          description: HTTPS URL to send webhook events to
-        events:
-          type: array
-          items:
-            type: string
-            enum: [payment.received, payment.sent, agent.created, agent.updated]
-          description: List of event types to subscribe to
-        description:
-          type: string
-          description: Optional label for this endpoint
-      required: [url, events]
-    UpdateWebhookEndpointRequest:
-      type: object
-      properties:
-        url:
-          type: string
-          format: uri
-        events:
-          type: array
-          items:
-            type: string
-            enum: [payment.received, payment.sent, agent.created, agent.updated]
-        active:
-          type: boolean
-        description:
-          type: string
-    EnrollResourceRequest:
-      type: object
-      description: |
-        Public self-enrollment payload. `slug` and `category` are intentionally
-        not accepted — the server generates the slug from `name`, and category
-        is set after the human claims the Resource.
-      properties:
-        kind:
-          type: string
-          enum: [agent, data_api, mcp_server]
-          description: |
-            Resource type. Determines which storefront and dashboard surfaces
-            apply after claim.
-        name:
-          type: string
-          description: Display name. Becomes the basis for the server-generated `slug`.
-        description:
-          type: string
-          description: Optional human-readable description.
-        wallet_address:
-          type: string
-          description: |
-            Optional Ethereum address declared at enrollment time. Stored as
-            `declared_wallet_address` on the ghost Resource for later
-            reconciliation; never used as the canonical Provider wallet.
-      required: [kind, name]
-      example:
-        kind: "agent"
-        name: "Mem0 retrieval agent"
-        description: "Long-term memory retrieval as a service"
-        wallet_address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0"
-    EnrolledResource:
-      description: |
-        A Resource as returned by `POST /api/v1/resources/enroll`. Extends the
-        public Resource shape with the single-use `claim_token` and `claim_url`.
-        These two fields appear ONLY on the enrollment response — never on
-        list/show endpoints — and let the enrolling client hand the magic URL
-        to its human controller.
-      allOf:
-        - $ref: "#/components/schemas/Resource"
-        - type: object
-          properties:
-            claim_token:
-              type: string
-              description: |
-                Single-use token. ~256 bits of entropy. Surfaced exactly once,
-                in this response. Used to claim the Resource at
-                `/dashboard/claims/{claim_token}`.
-            claim_url:
-              type: string
-              description: Absolute path the agent's human controller visits to claim the Resource.
-          required: [claim_token, claim_url]
-    EnrolledResourceResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/EnrolledResource"
-      required: [data]
-    Resource:
-      type: object
-      description: |
-        A Resource is the unit of agent-economy supply: an agent, a paid data
-        API, or an MCP server. Resources without a Provider (`claimed: false`)
-        are "ghost" Resources — discoverable on their public profile until
-        claimed by a human controller, after which they belong to a
-        Provider/Organization.
       properties:
         id:
           type: integer
-        kind:
+        tx_hash:
           type: string
-          enum: [agent, data_api, mcp_server]
+        payer_address:
+          type: string
+        recipient_address:
+          type: string
+        amount:
+          type: integer
+          description: Amount in atomic units (1 USDC = 1,000,000)
+        amount_formatted:
+          type: string
+          description: Human-readable amount (e.g. "1.00 USDC")
+        currency:
+          type: string
+        network:
+          type: string
+          description: CAIP-2 chain identifier
+        resource_url:
+          type: string
+          nullable: true
+        resource_host:
+          type: string
+          nullable: true
+        fee_amount:
+          type: integer
+        settlement_latency_ms:
+          type: integer
+          nullable: true
+        settled_at:
+          type: string
+          format: date-time
+        api_key_name:
+          type: string
+      required: [id, tx_hash, payer_address, recipient_address, amount, amount_formatted, currency, network, settled_at, api_key_name]
+    PaymentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required: [data, pagination]
+    PaymentResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Payment"
+      required: [data]
+    BalanceResponse:
+      type: object
+      description: |
+        Buyer's wallet snapshot. Note: unlike `/me` / `/payments` / `/api_keys`,
+        this endpoint does NOT use a `data:` envelope — the response object
+        is the snapshot directly.
+      required: [promo, wallet, spent_today_usd, spent_week_usd, policy]
+      properties:
+        promo:
+          $ref: "#/components/schemas/PromoBalance"
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+        spent_today_usd:
+          type: string
+          description: USD spent in the current calendar day (UTC), 2dp.
+          example: "0.42"
+        spent_week_usd:
+          type: string
+          description: USD spent in the current calendar week (UTC, Monday start), 2dp.
+          example: "3.10"
+        policy:
+          $ref: "#/components/schemas/SpendingPolicy"
+    PromoBalance:
+      type: object
+      description: |
+        Freemium promo credit. v1 returns zero values; once the promo
+        ledger ships (deferred from spec 10), real balances appear here
+        without a shape change.
+      required: [balance_usd, scope, expires_at]
+      properties:
+        balance_usd:
+          type: string
+          example: "0.00"
+        scope:
+          type: string
+          description: Where the promo can be spent.
+          example: "weft-search"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    Wallet:
+      type: object
+      required: [address, balance_usdc, network]
+      properties:
+        address:
+          type: string
+          nullable: true
+          description: EVM address of the buyer's Privy-managed wallet. Null if no wallet provisioned.
+        balance_usdc:
+          type: string
+          description: Live USDC balance, 2dp. Returns "0.00" if the upstream wallet provider is unreachable.
+          example: "12.34"
+        network:
+          type: string
+          nullable: true
+          description: Wallet network (e.g. `base-sepolia`).
+    SpendingPolicy:
+      type: object
+      required: [max_tx_usd, daily_limit_usd, weekly_limit_usd]
+      properties:
+        max_tx_usd:
+          type: string
+          description: Maximum USD per single transaction.
+          example: "1.00"
+        daily_limit_usd:
+          type: string
+          description: Maximum USD spent in a 24-hour window.
+          example: "10.00"
+        weekly_limit_usd:
+          type: string
+          description: Maximum USD spent in a 7-day window.
+          example: "50.00"
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: Free-text query. Required and non-empty.
+          example: "send email from an agent"
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+          description: Max number of hits to return. Clamped to [1, 50].
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+    SearchFilters:
+      type: object
+      description: |
+        Optional narrowing applied after the embedding score is computed.
+        Unknown keys are rejected. Price filters use the agent's cheapest
+        skill for `max_price_usd` and the most-expensive skill for
+        `min_price_usd`, so an agent stays in results as long as any one
+        of its skills satisfies the band.
+      additionalProperties: false
+      properties:
+        min_price_usd:
+          type: string
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Decimal USD floor; agent must have at least one skill priced at or above this.
+          example: "0.01"
+        max_price_usd:
+          type: string
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Decimal USD ceiling; agent must have at least one skill priced at or below this.
+          example: "0.10"
+        payment_protocol:
+          type: string
+          enum: [x402, mpp, free]
+          description: Payment protocol the agent settles on.
+        agent_protocol:
+          type: string
+          enum: [a2a, mcp, openapi]
+          description: Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).
+        domain:
+          type: string
+          description: |
+            Substring match against any of the agent's declared domain tags
+            (e.g. `email`, `sales`, `enrichment`).
+    SearchResponse:
+      type: object
+      required: [results]
+      description: |
+        Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id`
+        are reserved for a later release that adds per-call billing and
+        artifact persistence; they are always `null` in v1. `_mock: true`
+        is set only by the mock backend.
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        paid_usd:
+          type: string
+          nullable: true
+          description: Always `null` in v1.
+        tx_hash:
+          type: string
+          nullable: true
+          description: Always `null` in v1.
+        artifact_id:
+          type: string
+          nullable: true
+          description: Always `null` in v1.
+        _mock:
+          type: boolean
+          description: Present and `true` only when served by the mock backend.
+    SearchResult:
+      type: object
+      required: [id, score, protocol, domain, agent_card, pricing, ranking, endpoints]
+      properties:
+        id:
+          type: string
+          description: Stable agent identifier (e.g. `weft:agent:agentmail`).
+        score:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Cosine similarity score, clipped to [0, 1].
+        protocol:
+          type: string
+          enum: [a2a, mcp, openapi]
+          description: Agent protocol surface.
+        domain:
+          type: array
+          items:
+            type: string
+          description: Domain tags declared by the agent.
+        reseller:
+          type: string
+          nullable: true
+          description: Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).
+        upstream:
+          type: string
+          nullable: true
+          description: Upstream provider hostname when fronted by a reseller.
+        agent_card:
+          $ref: "#/components/schemas/SearchAgentCard"
+        pricing:
+          $ref: "#/components/schemas/SearchPricing"
+        ranking:
+          $ref: "#/components/schemas/SearchRanking"
+        endpoints:
+          $ref: "#/components/schemas/SearchEndpoints"
+    SearchAgentCard:
+      type: object
+      description: |
+        A2A-spec-shaped AgentCard. Free-form `capabilities` and per-skill
+        metadata follow the upstream A2A schema; documented here only at
+        the surface level Weft's index actually populates.
+      additionalProperties: true
+      properties:
         name:
-          type: string
-        slug:
           type: string
         description:
           type: string
-          nullable: true
-        wallet_address:
+        url:
           type: string
-          nullable: true
-          description: Provider's wallet address; null while ghost (no Provider attached).
-        category:
+          format: uri
+        version:
           type: string
-          nullable: true
-          description: |
-            Domain category. Only populated for `kind: agent` Resources during
-            the v3 → provider/resource transition; null for newer kinds.
-        visibility:
+        protocolVersion:
           type: string
-          enum: [public_profile, private_profile, unlisted]
-        verified:
-          type: boolean
-        claimed:
-          type: boolean
-          description: |
-            True when the Resource has a Provider attached. Ghost Resources
-            (claimed=false) are publicly discoverable but cannot be edited
-            until a human claims them.
-        created_at:
-          type: string
-          format: date-time
-      required: [id, kind, name, slug, visibility, verified, claimed, created_at]
-    OpenApiDocument:
+        capabilities:
+          type: object
+          additionalProperties: true
+        defaultInputModes:
+          type: array
+          items:
+            type: string
+        defaultOutputModes:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchSkill"
+    SearchSkill:
       type: object
-      description: |
-        An OpenAPI 3.1 document published by a `data_api` Resource. The
-        published spec describes the Resource's own endpoints (paths,
-        request/response shapes, tags). Pricing is intentionally absent —
-        x402 negotiates price per-request via the `402 Payment Required`
-        challenge from the resource server.
-
-        The document also carries a `x-weft.profileUrl` extension that
-        deep-links back to the Resource's public storefront on weft.
       additionalProperties: true
       properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        examples:
+          type: array
+          items:
+            type: string
+        inputModes:
+          type: array
+          items:
+            type: string
+        outputModes:
+          type: array
+          items:
+            type: string
+        streaming:
+          type: boolean
+          description: |
+            True for skills that require streaming transport (e.g. websockets).
+            Streaming skills are filtered out of results by default so
+            non-streaming clients only see callable skills.
+        endpoint:
+          type: object
+          additionalProperties: true
+          properties:
+            method:
+              type: string
+              description: HTTP method or `WEBSOCKET` for streaming skills.
+            path:
+              type: string
+        price_usd:
+          type: string
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Per-call price in USD for this individual skill.
+    SearchPricing:
+      type: object
+      description: |
+        Aggregate pricing at the agent level. `recipient_address` is
+        intentionally absent from the index — under x402 it is delivered
+        per-request in the `402 Payment Required` challenge from the agent.
+      additionalProperties: true
+      properties:
+        protocol:
+          type: string
+          enum: [x402, mpp, free]
+        scheme:
+          type: string
+          example: per_call
+        amount_usd:
+          type: string
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Default per-call amount; individual skills may override via `price_usd`.
+        network:
+          type: string
+          description: Settlement network (e.g. `base-sepolia`).
+    SearchRanking:
+      type: object
+      additionalProperties: true
+      properties:
+        popularity_score:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        settlement_count_30d:
+          type: integer
+          minimum: 0
+        success_rate_30d:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        p50_latency_ms:
+          type: integer
+          minimum: 0
+        first_seen_at:
+          type: string
+          format: date-time
+    SearchEndpoints:
+      type: object
+      description: |
+        Per-protocol entry points for the agent. Any field may be `null`
+        if the agent does not expose that protocol surface.
+      additionalProperties: true
+      properties:
+        a2a:
+          type: string
+          format: uri
+          nullable: true
+        mcp:
+          type: string
+          format: uri
+          nullable: true
         openapi:
           type: string
-          example: "3.1.0"
-        info:
+          format: uri
+          nullable: true
+          description: URL to the agent's OpenAPI document.
+        weft_fetch_target:
+          type: string
+          format: uri
+          nullable: true
+          description: Base URL the `weft_fetch` MCP tool should target for this agent.
+    SearchErrorResponse:
+      type: object
+      required: [error]
+      description: |
+        Bespoke error envelope returned by `/api/v1/search` for `422`, `502`,
+        and `500` responses. It differs from the standard `ErrorResponse`
+        envelope (no nested `code`/`message`/`request_id`); SDK clients
+        should handle both shapes for this endpoint until the controller
+        is migrated to the standard envelope.
+      properties:
+        error:
+          type: string
+          description: Stable error code.
+          enum:
+            - INVALID_QUERY
+            - SEARCH_UPSTREAM_ERROR
+            - SEARCH_BACKEND_MISCONFIGURED
+        details:
           type: object
-        paths:
+          additionalProperties: true
+          description: Optional context. Shape varies by error code.
+    FetchRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Target URL. Must pass Weft's URL safety check (no SSRF / private IP ranges).
+          example: "https://x402.api.agentmail.to/v0/inboxes"
+        max_cost_usd:
+          type: string
+          pattern: '^\d+(\.\d{1,6})?$'
+          default: "0.10"
+          description: Hard ceiling on what the buyer is willing to pay. Defaults to `0.10` USD.
+          example: "0.05"
+        method:
+          type: string
+          enum: [GET, POST, PUT, PATCH, DELETE]
+          default: GET
+          description: HTTP method to use against the upstream.
+        body:
+          description: Request body forwarded to the upstream. Pass `null` for GET.
+          oneOf:
+            - type: string
+            - type: object
+            - type: "null"
+        headers:
           type: object
-        components:
+          additionalProperties:
+            type: string
+          description: |
+            Headers forwarded to the upstream. Up to 32 headers, 4 KB
+            total. The following are silently stripped: `host`,
+            `authorization`, `cookie`, `proxy-authorization`,
+            `x-forwarded-*`, `x-real-ip`, `x-payment`, `connection`,
+            `upgrade`.
+          example:
+            Accept: application/json
+            User-Agent: my-agent/1.0
+    FetchResponse:
+      type: object
+      description: |
+        Successful fetch envelope. `body_base64` is the upstream artifact
+        bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are
+        populated only when the upstream charged for the response.
+      required: [status, headers, body_base64, paid_usd, tx_hash, artifact_id, merchant]
+      properties:
+        status:
+          type: integer
+          description: HTTP status returned by the upstream after the paid replay.
+          example: 200
+        headers:
           type: object
-      required: [openapi, info, paths]
+          additionalProperties:
+            type: string
+          description: Response headers from the upstream.
+        body_base64:
+          type: string
+          description: Base64-encoded response body. Empty string for empty bodies.
+        paid_usd:
+          type: string
+          nullable: true
+          description: USD amount actually settled. Null for free upstreams.
+          example: "0.002"
+        tx_hash:
+          type: string
+          nullable: true
+          description: Settlement transaction hash. Null for free upstreams.
+        artifact_id:
+          type: string
+          nullable: true
+          description: Internal artifact identifier if the response was persisted.
+        merchant:
+          allOf:
+            - $ref: "#/components/schemas/Merchant"
+          nullable: true
+          description: Merchant reputation snapshot. Null for free upstreams.
+    Merchant:
+      type: object
+      required: [address, settlement_count, first_seen_at, dispute_count]
+      properties:
+        address:
+          type: string
+          description: EVM address that received the payment.
+        settlement_count:
+          type: integer
+          minimum: 0
+          description: All-time settlement count for this merchant address.
+        first_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: First time Weft observed a payment to this address.
+        dispute_count:
+          type: integer
+          minimum: 0
+          description: All-time dispute count for this merchant address.
+    FetchErrorResponse:
+      type: object
+      required: [error, details, policy, balance, dashboard_url]
+      description: |
+        Bespoke error envelope for `/api/v1/fetch`. Every error carries the
+        buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI
+        can render an actionable message without a second round-trip.
+
+        `error` values include the fixed codes listed below plus the
+        family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`)
+        where `<REASON>` matches the violated policy field.
+      properties:
+        error:
+          type: string
+          description: Stable error code.
+          example: EXCEEDED_MAX_COST
+          enum:
+            - INVALID_URL
+            - EXCEEDED_MAX_COST
+            - INSUFFICIENT_BALANCE
+            - MERCHANT_RETURNED_NON_402
+            - ARTIFACT_TOO_LARGE
+            - DENYLISTED_RECIPIENT
+            - SETTLEMENT_FAILED
+            - POLICY_VIOLATION
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional context. Shape varies by error code.
+        policy:
+          $ref: "#/components/schemas/SpendingPolicy"
+        balance:
+          $ref: "#/components/schemas/FetchBalanceSnapshot"
+        dashboard_url:
+          type: string
+          format: uri
+          description: Deep-link to the dashboard's policy page.
+    FetchBalanceSnapshot:
+      type: object
+      required: [promo_usd, wallet_usdc, spent_today_usd]
+      description: |
+        Compact balance snapshot returned inside `FetchErrorResponse`. Less
+        rich than `BalanceResponse` — just the three fields a CLI needs to
+        explain why a fetch failed.
+      properties:
+        promo_usd:
+          type: string
+          example: "0.00"
+        wallet_usdc:
+          type: string
+          example: "12.34"
+        spent_today_usd:
+          type: string
+          example: "0.42"
