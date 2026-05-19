@@ -22,20 +22,20 @@ module Weft
     # Fetch this OpenAPI document
     # @param [Hash] opts the optional parameters
     # @return [String]
-    def get_api_docs(opts = {})
-      data, _status_code, _headers = get_api_docs_with_http_info(opts)
+    def get_open_api_document(opts = {})
+      data, _status_code, _headers = get_open_api_document_with_http_info(opts)
       data
     end
 
     # Fetch this OpenAPI document
     # @param [Hash] opts the optional parameters
     # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
-    def get_api_docs_with_http_info(opts = {})
+    def get_open_api_document_with_http_info(opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_api_docs ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_open_api_document ...'
       end
       # resource path
-      local_var_path = '/api/v1/docs'
+      local_var_path = '/docs/openapi.yaml'
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -58,7 +58,7 @@ module Weft
       auth_names = opts[:debug_auth_names] || []
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.get_api_docs",
+        :operation => :"DefaultApi.get_open_api_document",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -69,7 +69,7 @@ module Weft
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_api_docs\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#get_open_api_document\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
