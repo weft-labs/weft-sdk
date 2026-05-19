@@ -4,12 +4,14 @@ describe("SDK exports", () => {
   it("exports generated API classes", async () => {
     const sdk = await import("../src/index");
 
-    // Generated API classes
+    // Generated API classes — one per tag in spec/openapi.yaml.
     expect(sdk.AccountApi).toBeDefined();
     expect(sdk.PaymentsApi).toBeDefined();
     expect(sdk.APIKeysApi).toBeDefined();
-    expect(sdk.AgentsApi).toBeDefined();
     expect(sdk.AuthApi).toBeDefined();
+    expect(sdk.BalanceApi).toBeDefined();
+    expect(sdk.SearchApi).toBeDefined();
+    expect(sdk.FetchApi).toBeDefined();
     expect(sdk.DefaultApi).toBeDefined();
   });
 
@@ -24,9 +26,9 @@ describe("SDK exports", () => {
     // Models should be importable (TypeScript types are erased at runtime,
     // but the fromJSON/toJSON helpers should exist for non-enum models)
     expect(sdk.PaymentFromJSON).toBeDefined();
-    expect(sdk.AgentFromJSON).toBeDefined();
     expect(sdk.ApiKeyFromJSON).toBeDefined();
     expect(sdk.UserFromJSON).toBeDefined();
+    expect(sdk.MeResponseFromJSON).toBeDefined();
   });
 
   it("exports facilitator client", async () => {
