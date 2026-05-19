@@ -4,11 +4,11 @@ All URIs are relative to *https://api.weftlabs.com*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**get_api_docs**](DefaultApi.md#get_api_docs) | **GET** /api/v1/docs | Fetch this OpenAPI document
+[**get_open_api_document**](DefaultApi.md#get_open_api_document) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document
 
 
-# **get_api_docs**
-> str get_api_docs()
+# **get_open_api_document**
+> str get_open_api_document()
 
 Fetch this OpenAPI document
 
@@ -34,11 +34,11 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
     try:
         # Fetch this OpenAPI document
-        api_response = api_instance.get_api_docs()
-        print("The response of DefaultApi->get_api_docs:\n")
+        api_response = api_instance.get_open_api_document()
+        print("The response of DefaultApi->get_open_api_document:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->get_api_docs: %s\n" % e)
+        print("Exception when calling DefaultApi->get_open_api_document: %s\n" % e)
 ```
 
 

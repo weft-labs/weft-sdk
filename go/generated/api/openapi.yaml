@@ -63,9 +63,9 @@ tags:
 - description: Payment history and individual purchase details.
   name: Payments
 paths:
-  /api/v1/docs:
+  /docs/openapi.yaml:
     get:
-      operationId: getApiDocs
+      operationId: getOpenApiDocument
       responses:
         "200":
           content:

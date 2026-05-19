@@ -22,23 +22,23 @@ import (
 // DefaultAPIService DefaultAPI service
 type DefaultAPIService service
 
-type ApiGetApiDocsRequest struct {
+type ApiGetOpenApiDocumentRequest struct {
 	ctx context.Context
 	ApiService *DefaultAPIService
 }
 
-func (r ApiGetApiDocsRequest) Execute() (string, *http.Response, error) {
-	return r.ApiService.GetApiDocsExecute(r)
+func (r ApiGetOpenApiDocumentRequest) Execute() (string, *http.Response, error) {
+	return r.ApiService.GetOpenApiDocumentExecute(r)
 }
 
 /*
-GetApiDocs Fetch this OpenAPI document
+GetOpenApiDocument Fetch this OpenAPI document
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetApiDocsRequest
+ @return ApiGetOpenApiDocumentRequest
 */
-func (a *DefaultAPIService) GetApiDocs(ctx context.Context) ApiGetApiDocsRequest {
-	return ApiGetApiDocsRequest{
+func (a *DefaultAPIService) GetOpenApiDocument(ctx context.Context) ApiGetOpenApiDocumentRequest {
+	return ApiGetOpenApiDocumentRequest{
 		ApiService: a,
 		ctx: ctx,
 	}
@@ -46,7 +46,7 @@ func (a *DefaultAPIService) GetApiDocs(ctx context.Context) ApiGetApiDocsRequest
 
 // Execute executes the request
 //  @return string
-func (a *DefaultAPIService) GetApiDocsExecute(r ApiGetApiDocsRequest) (string, *http.Response, error) {
+func (a *DefaultAPIService) GetOpenApiDocumentExecute(r ApiGetOpenApiDocumentRequest) (string, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -54,12 +54,12 @@ func (a *DefaultAPIService) GetApiDocsExecute(r ApiGetApiDocsRequest) (string, *
 		localVarReturnValue  string
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultAPIService.GetApiDocs")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultAPIService.GetOpenApiDocument")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/api/v1/docs"
+	localVarPath := localBasePath + "/docs/openapi.yaml"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
