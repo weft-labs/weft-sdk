@@ -1,6 +1,6 @@
 {
   "name": "@weft-labs/sdk",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Unified Weft SDK for the Weft API and x402 Facilitator",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
