@@ -4,13 +4,13 @@ All URIs are relative to *https://api.weftlabs.com*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetApiDocs**](DefaultAPI.md#GetApiDocs) | **Get** /api/v1/docs | Fetch this OpenAPI document
+[**GetOpenApiDocument**](DefaultAPI.md#GetOpenApiDocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
 
 
 
-## GetApiDocs
+## GetOpenApiDocument
 
-> string GetApiDocs(ctx).Execute()
+> string GetOpenApiDocument(ctx).Execute()
 
 Fetch this OpenAPI document
 
@@ -30,13 +30,13 @@ func main() {
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.DefaultAPI.GetApiDocs(context.Background()).Execute()
+	resp, r, err := apiClient.DefaultAPI.GetOpenApiDocument(context.Background()).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.GetApiDocs``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.GetOpenApiDocument``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `GetApiDocs`: string
-	fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.GetApiDocs`: %v\n", resp)
+	// response from `GetOpenApiDocument`: string
+	fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.GetOpenApiDocument`: %v\n", resp)
 }
 ```
 
@@ -46,7 +46,7 @@ This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiGetApiDocsRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiGetOpenApiDocumentRequest struct via the builder pattern
 
 
 ### Return type
