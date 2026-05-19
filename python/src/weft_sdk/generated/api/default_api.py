@@ -37,7 +37,7 @@ class DefaultApi:
 
 
     @validate_call
-    def get_api_docs(
+    def get_open_api_document(
         self,
         _request_timeout: Union[
             None,
@@ -77,7 +77,7 @@ class DefaultApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_api_docs_serialize(
+        _param = self._get_open_api_document_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -99,7 +99,7 @@ class DefaultApi:
 
 
     @validate_call
-    def get_api_docs_with_http_info(
+    def get_open_api_document_with_http_info(
         self,
         _request_timeout: Union[
             None,
@@ -139,7 +139,7 @@ class DefaultApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_api_docs_serialize(
+        _param = self._get_open_api_document_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -161,7 +161,7 @@ class DefaultApi:
 
 
     @validate_call
-    def get_api_docs_without_preload_content(
+    def get_open_api_document_without_preload_content(
         self,
         _request_timeout: Union[
             None,
@@ -201,7 +201,7 @@ class DefaultApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_api_docs_serialize(
+        _param = self._get_open_api_document_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -218,7 +218,7 @@ class DefaultApi:
         return response_data.response
 
 
-    def _get_api_docs_serialize(
+    def _get_open_api_document_serialize(
         self,
         _request_auth,
         _content_type,
@@ -262,7 +262,7 @@ class DefaultApi:
 
         return self.api_client.param_serialize(
             method='GET',
-            resource_path='/api/v1/docs',
+            resource_path='/docs/openapi.yaml',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,

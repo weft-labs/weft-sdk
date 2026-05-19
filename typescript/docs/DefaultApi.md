@@ -4,13 +4,13 @@ All URIs are relative to *https://api.weftlabs.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getApiDocs**](DefaultApi.md#getapidocs) | **GET** /api/v1/docs | Fetch this OpenAPI document |
+| [**getOpenApiDocument**](DefaultApi.md#getopenapidocument) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document |
 
 
 
-## getApiDocs
+## getOpenApiDocument
 
-> string getApiDocs()
+> string getOpenApiDocument()
 
 Fetch this OpenAPI document
 
@@ -21,14 +21,14 @@ import {
   Configuration,
   DefaultApi,
 } from '@weft-labs/sdk';
-import type { GetApiDocsRequest } from '@weft-labs/sdk';
+import type { GetOpenApiDocumentRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
   const api = new DefaultApi();
 
   try {
-    const data = await api.getApiDocs();
+    const data = await api.getOpenApiDocument();
     console.log(data);
   } catch (error) {
     console.error(error);
