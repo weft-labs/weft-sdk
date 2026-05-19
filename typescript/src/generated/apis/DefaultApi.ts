@@ -23,13 +23,13 @@ export class DefaultApi extends runtime.BaseAPI {
     /**
      * Fetch this OpenAPI document
      */
-    async getApiDocsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+    async getOpenApiDocumentRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
 
-        let urlPath = `/api/v1/docs`;
+        let urlPath = `/docs/openapi.yaml`;
 
         const response = await this.request({
             path: urlPath,
@@ -48,8 +48,8 @@ export class DefaultApi extends runtime.BaseAPI {
     /**
      * Fetch this OpenAPI document
      */
-    async getApiDocs(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
-        const response = await this.getApiDocsRaw(initOverrides);
+    async getOpenApiDocument(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.getOpenApiDocumentRaw(initOverrides);
         return await response.value();
     }
 

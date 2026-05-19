@@ -111,7 +111,7 @@ Class | Method | HTTP request | Description
 *AuthAPI* | [**SignUp**](docs/AuthAPI.md#signup) | **Post** /api/v1/auth/sign_up | Create an account
 *AuthAPI* | [**UpdatePassword**](docs/AuthAPI.md#updatepassword) | **Post** /api/v1/auth/password/update | Update password with reset token
 *BalanceAPI* | [**GetBalance**](docs/BalanceAPI.md#getbalance) | **Get** /api/v1/balance | Get wallet, spending policy, and current-window spend
-*DefaultAPI* | [**GetApiDocs**](docs/DefaultAPI.md#getapidocs) | **Get** /api/v1/docs | Fetch this OpenAPI document
+*DefaultAPI* | [**GetOpenApiDocument**](docs/DefaultAPI.md#getopenapidocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
 *FetchAPI* | [**Fetch**](docs/FetchAPI.md#fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402 proxy)
 *PaymentsAPI* | [**GetPayment**](docs/PaymentsAPI.md#getpayment) | **Get** /api/v1/payments/{id} | Get payment details
 *PaymentsAPI* | [**ListPayments**](docs/PaymentsAPI.md#listpayments) | **Get** /api/v1/payments | List payments
