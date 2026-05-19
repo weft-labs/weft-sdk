@@ -5,6 +5,6 @@
   "openapi_sha256": "94d11d10b037f8ebfb25878475299d177be0cd93f4d497b38cc1c59c85deb74b",
   "openapi_version": "0.5.0",
   "sdk_ref": "sdk-candidate/weft-app-c1f27ec3e729",
-  "status": "pending",
-  "e2e_run_url": ""
+  "status": "green",
+  "e2e_run_url": "https://github.com/weft-labs/weft-sdk/actions/runs/26098193896"
 }
