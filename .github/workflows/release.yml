@@ -135,11 +135,19 @@ jobs:
           fi
 
       - name: Create and push tags
+        env:
+          # Push with WEFT_BOT_TOKEN, not the default GITHUB_TOKEN: GitHub
+          # suppresses workflow runs for events created by GITHUB_TOKEN, so
+          # tags pushed with it never trigger the per-language publish jobs.
+          # Scoped to this step only (not persisted on checkout) so the token
+          # is not exposed to npm install / generation steps.
+          BOT_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
         run: |
           # Create the main version tag (triggers typescript, python, ruby workflows)
           git tag "v$VERSION"
           # Create the Go module tag (triggers go workflow + proxy indexing)
           git tag "go/v$VERSION"
-          # Push both tags
-          git push origin "v$VERSION" "go/v$VERSION"
+          # Push both tags via the bot token so the publish workflows fire
+          git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "v$VERSION" "go/v$VERSION"
           echo "Pushed tags: v$VERSION, go/v$VERSION"
