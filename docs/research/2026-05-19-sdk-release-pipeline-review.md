@@ -321,7 +321,7 @@ whose pushed ref must trigger further CI uses `WEFT_BOT_TOKEN`, never
 
 **R10 — Decide the prod-deploy gate explicitly.** Either add required reviewers
 to the `production` environment (if a human gate is wanted) or correct this doc
-and `reference/architecture/sdk-pipeline-architecture.md` to state prod ships
+and `architecture/sdk-pipeline.md` to state prod ships
 automatically. Right now the docs and the config disagree. Closes G9.
 
 R1–R4, R6, R8–R10 are small, mechanical workflow/script changes. R5 and R7 are
