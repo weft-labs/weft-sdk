@@ -1,6 +1,6 @@
 # weft_sdk.generated.APIKeysApi
 
-All URIs are relative to *https://api.weftlabs.com*
+All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -25,10 +25,10 @@ from weft_sdk.generated.models.create_api_key_request import CreateApiKeyRequest
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 # The client must configure the authentication and authorization parameters
@@ -103,10 +103,10 @@ from weft_sdk.generated.models.api_key_list_response import ApiKeyListResponse
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 # The client must configure the authentication and authorization parameters
@@ -176,10 +176,10 @@ from weft_sdk.generated.models.message_response import MessageResponse
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 # The client must configure the authentication and authorization parameters

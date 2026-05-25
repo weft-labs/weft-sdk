@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.6.0
+  version: 0.6.1
   description: |
     The Weft API is the buyer-runtime surface that powers the `weft` CLI,
     the hosted MCP server (`weft.network/mcp`), and any third-party agent
@@ -56,9 +56,9 @@ tags:
   - name: Payments
     description: Payment history and individual purchase details.
 servers:
-  - url: https://api.weftlabs.com
+  - url: https://weft.network
     description: Production
-  - url: https://staging-api.weftlabs.com
+  - url: https://staging.weft.network
     description: Staging
   - url: http://localhost:3000
     description: Development
