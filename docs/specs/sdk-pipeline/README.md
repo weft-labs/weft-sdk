@@ -1,6 +1,6 @@
 # SDK Pipeline Specs
 
-> **Status note (2026-04-29):** Originally written for [`plans/done/2026-04-sdk-pipeline-complete.md`](../../../../cto-os/plans/done/2026-04-sdk-pipeline-complete.md). The 5-spec scope was partially superseded by the candidate-led release architecture in [`plans/done/2026-04-sdk-pipeline-candidate-release.md`](../../../../cto-os/plans/done/2026-04-sdk-pipeline-candidate-release.md) (merged 2026-04-28 via weft-app PR #275 + weft-sdk PR #2). The architecture diagram now lives at `docs/architecture/sdk-pipeline.md`. Open work tracked in [`cto-os/plans/active/2026-04-sdk-pipeline-production-readiness.md`](../../../../cto-os/plans/active/2026-04-sdk-pipeline-production-readiness.md).
+> **Status note (2026-04-29):** Originally written for [`plans/done/2026-04-sdk-pipeline-complete.md`](../../../../cto-os/plans/done/2026-04-sdk-pipeline-complete.md). The 5-spec scope was partially superseded by the candidate-led release architecture in [`plans/done/2026-04-sdk-pipeline-candidate-release.md`](../../../../cto-os/plans/done/2026-04-sdk-pipeline-candidate-release.md) (merged 2026-04-28 via weft-app PR #275 + weft-sdk PR #2). The architecture diagram now lives at `docs/architecture/sdk-pipeline.md`. Originally tracked in [`cto-os/plans/done/2026-04-sdk-pipeline-production-readiness.md`](../../../../cto-os/plans/done/2026-04-sdk-pipeline-production-readiness.md) (moved to `done/` 2026-05-25).
 
 | # | Spec | Gap it closes | Status |
 |---|------|---------------|--------|
