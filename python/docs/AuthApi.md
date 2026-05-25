@@ -1,6 +1,6 @@
 # weft_sdk.generated.AuthApi
 
-All URIs are relative to *https://api.weftlabs.com*
+All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -27,10 +27,10 @@ from weft_sdk.generated.models.confirm_request import ConfirmRequest
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 
@@ -95,10 +95,10 @@ from weft_sdk.generated.models.password_reset_request import PasswordResetReques
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 
@@ -162,10 +162,10 @@ from weft_sdk.generated.models.resend_confirmation_request import ResendConfirma
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 
@@ -229,10 +229,10 @@ from weft_sdk.generated.models.sign_in_request import SignInRequest
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 
@@ -297,10 +297,10 @@ from weft_sdk.generated.models.sign_up_request import SignUpRequest
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 
@@ -365,10 +365,10 @@ from weft_sdk.generated.models.password_update_request import PasswordUpdateRequ
 from weft_sdk.generated.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.weftlabs.com
+# Defining the host is optional and defaults to https://weft.network
 # See configuration.py for a list of all supported configuration parameters.
 configuration = weft_sdk.generated.Configuration(
-    host = "https://api.weftlabs.com"
+    host = "https://weft.network"
 )
 
 

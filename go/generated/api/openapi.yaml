@@ -24,12 +24,12 @@ info:
     envelopes carrying additional context — see `SearchErrorResponse` and
     `FetchErrorResponse`.
   title: Weft API
-  version: 0.6.0
+  version: 0.6.1
 servers:
 - description: Production
-  url: https://api.weftlabs.com
+  url: https://weft.network
 - description: Staging
-  url: https://staging-api.weftlabs.com
+  url: https://staging.weft.network
 - description: Development
   url: http://localhost:3000
 tags:
