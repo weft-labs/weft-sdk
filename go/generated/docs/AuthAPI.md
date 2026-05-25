@@ -1,6 +1,6 @@
 # \AuthAPI
 
-All URIs are relative to *https://api.weftlabs.com*
+All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
