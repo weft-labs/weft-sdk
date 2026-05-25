@@ -14,6 +14,50 @@ client (hand-crafted wrappers).
 - `skills/weft/` — Weft Skill (`SKILL.md` + install script) for Claude Code; installs the hosted Weft MCP server at `https://weft.network/mcp`. See `skills/weft/SKILL.md`.
 - `.github/workflows/` — per-language CI + spec sync workflow
 
+## Local Harness
+
+When working inside the `weft-dev` workspace, create an isolated worktree from
+the workspace root:
+
+```sh
+worktree_create(repo="weft-sdk", branch="docs/harness-self-sufficient", baseBranch="main")
+```
+
+If the OpenCode worktree tool is unavailable, use the shell fallback from the
+workspace root:
+
+```sh
+bin/worktree-create --repo weft-sdk docs/harness-self-sufficient
+```
+
+Prerequisites for regeneration and CI-parity checks are Docker, Node/npm,
+Python/pip, Ruby/Bundler, and Go. Version constraints live in repo files:
+Node >=18, Python >=3.10, Ruby >=3.2.0, and Go 1.23. CI currently runs Node 20,
+Python 3.11, Ruby 3.2, and Go 1.23.
+
+Regenerate clients from `spec/openapi.yaml` with `scripts/generate-all.sh`, or
+use `scripts/generate-{typescript,python,ruby,go}.sh` for one language. The
+generator runs via Docker image `openapitools/openapi-generator-cli:v7.19.0`.
+Generated code and generated docs are committed; do not hand-edit generated
+paths. Change the OpenAPI spec, wrappers, scripts, or config, regenerate, then
+review the diff.
+
+`scripts/test-sdk.sh` is only a generated-output smoke check. It verifies that
+generated output directories exist; it does not run language test suites.
+
+CI-parity checks:
+
+| Area | Local command |
+|---|---|
+| TypeScript | `cd typescript && npm install && npm run lint:check && npm test && npm run build` |
+| Python | `cd python && pip install -e . pytest pytest-asyncio ruff mypy && ruff check . && mypy src && pytest` |
+| Ruby | `cd ruby && bundle install && bundle exec rake test` |
+| Go | `cd go && go test ./...` |
+
+Go caveat: `go/generated/` currently contains its own `go.mod`, so it is a
+nested generated module. `go test ./...` from `go/` matches current CI behavior
+and does not recurse into the nested module.
+
 ## Versioning
 
 All language SDKs share a version tied to the OpenAPI spec version.
