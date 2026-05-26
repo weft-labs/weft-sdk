@@ -22,13 +22,15 @@ import {
 const basePath = (process.env.WEFT_STAGING_BASE_URL || "https://staging.weft.network").replace(/\/+$/, "");
 const accessToken = process.env.E2E_BUYER_API_KEY;
 
-// StableEnrich / Apollo people-search — Base Sepolia, $0.02, 98.5% success rate
-// (from the live search ranking signal). Override via E2E_FETCH_TARGET_URL +
-// E2E_FETCH_TARGET_BODY when the catalog shifts.
+// Default fetch target: Node4All Fortune — the canonical x402 v2 demo merchant
+// listed in the Coinbase x402 Bazaar. Base Sepolia, $0.002/call, GET, no body.
+// Picked because it's the only verified-testnet merchant in the public catalog
+// — most production agent-economy merchants (StableEnrich, Minerva) accept
+// mainnet-only despite mock-search catalog metadata claiming otherwise.
 const fetchTargetUrl = process.env.E2E_FETCH_TARGET_URL
-  || "https://stableenrich.dev/api/apollo/people-search";
-const fetchTargetBody = process.env.E2E_FETCH_TARGET_BODY
-  || JSON.stringify({ q_organization_titles: ["VP Engineering"], page: 1, per_page: 1 });
+  || "https://sandbox.node4all.com/v1/x402-test";
+const fetchTargetMethod = (process.env.E2E_FETCH_TARGET_METHOD || "GET").toUpperCase();
+const fetchTargetBody = process.env.E2E_FETCH_TARGET_BODY ?? "";
 const maxCostUsd = process.env.E2E_MAX_COST_USD || "0.05";
 
 if (!accessToken) {
@@ -85,15 +87,16 @@ if (!Array.isArray(search.results) || search.results.length === 0) {
 console.log(`[2/4] search: ${search.results.length} results (mock=${search.mock ?? false})`);
 
 // 3. Paid fetch
-const fetched = await step("fetch", () => fetchApi.fetch({
-  fetchRequest: {
-    url: fetchTargetUrl,
-    method: "POST",
-    body: fetchTargetBody,
-    headers: { "content-type": "application/json" },
-    maxCostUsd,
-  },
-}));
+const fetchRequest = {
+  url: fetchTargetUrl,
+  method: fetchTargetMethod,
+  maxCostUsd,
+};
+if (fetchTargetMethod !== "GET" && fetchTargetBody) {
+  fetchRequest.body = fetchTargetBody;
+  fetchRequest.headers = { "content-type": "application/json" };
+}
+const fetched = await step("fetch", () => fetchApi.fetch({ fetchRequest }));
 
 const paid = parseFloat(fetched.paidUsd ?? "0");
 console.log(
