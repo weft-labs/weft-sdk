@@ -1,0 +1,45 @@
+name: "CD: SDK Updated Dispatch"
+
+# Fires `weft-sdk-updated` to weft-labs/weft-app whenever weft-sdk main advances
+# with changes that affect consumed artifacts. weft-app's S4 handler opens an
+# auto-PR that pins the 4 SDKs at this SHA. Re-firing with the same SHA is
+# safe: S4 dedupes via the candidate branch name (`sdk-candidate/<short_sha>`).
+#
+# Mirrors the dispatch idiom in weft-app/.github/workflows/cd_openapi-dispatch.yml
+# (curl + jq + bot PAT, repository_dispatch event_type). See cto-os plan
+# `plans/active/2026-05-27-sdk-release-pipeline-decoupled.md` (event 2, spec S3).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "typescript/**"
+      - "python/**"
+      - "ruby/**"
+      - "go/**"
+      - "spec/**"
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Dispatch weft-sdk-updated to weft-app
+        env:
+          DISPATCH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          SDK_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$DISPATCH_TOKEN" ]; then
+            echo "::error::WEFT_BOT_TOKEN is not set"
+            exit 1
+          fi
+          SDK_SHORT_SHA="${SDK_SHA:0:12}"
+          curl -sS --fail-with-body -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $DISPATCH_TOKEN" \
+            https://api.github.com/repos/weft-labs/weft-app/dispatches \
+            --data "$(jq -n \
+              --arg sdk_sha "$SDK_SHA" \
+              --arg sdk_short_sha "$SDK_SHORT_SHA" \
+              '{event_type:"weft-sdk-updated",client_payload:{sdk_sha:$sdk_sha,sdk_short_sha:$sdk_short_sha}}')"
