@@ -43,9 +43,14 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    # id-token: write is required for both Trusted Publishing AND for the
+    # Sigstore attestations the action emits (default-on under release/v1).
+    # attestations: write makes the attestation visible on the repo's
+    # attestations page in addition to the PyPI release.
     permissions:
       contents: read
       id-token: write
+      attestations: write
     defaults:
       run:
         working-directory: python
@@ -62,7 +67,12 @@ jobs:
         run: ../scripts/generate-python.sh
       - name: Build package
         run: python -m build
-      - name: Publish to PyPI
+      # pypa/gh-action-pypi-publish@release/v1 emits Sigstore attestations
+      # by default when used with Trusted Publishing (see action README).
+      # Setting attestations: true makes the contract explicit so a future
+      # default flip cannot silently drop provenance.
+      - name: Publish to PyPI with Sigstore attestations
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: python/dist/
+          attestations: true
