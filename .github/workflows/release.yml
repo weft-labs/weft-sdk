@@ -1,11 +1,40 @@
 name: Release
 
+# S6 shape (replaces tag-first / publish-on-tag):
+# weft-app dispatches `release` after its product tag has been validated.
+# This workflow:
+#   1. Validates the dispatch payload (version + app SHA + OpenAPI hash).
+#   2. Builds all four SDKs locally from current weft-sdk main HEAD with the
+#      bumped version baked in.
+#   3. Runs e2e against staging.weft.network using the LOCALLY-BUILT
+#      TypeScript SDK — exercising the exact artifact that will ship.
+#   4. Only after e2e is green:
+#        - commits the version bump to main via WEFT_BOT_TOKEN
+#        - tags `v<version>` and `go/v<version>` on that commit
+#        - pushes commit + tags
+#      The tag push is what triggers the existing per-language publishers
+#      (typescript.yml / python.yml / ruby.yml / go.yml). Those workflows
+#      attach provenance attestations on publish (npm auto-provenance with
+#      trusted publishing, PyPI Sigstore default, RubyGems via
+#      actions/attest-build-provenance on the built .gem, Go via the same
+#      action on the source tarball).
+#   5. If e2e is red: no commit, no tag, no publish. Recovery is fix-forward
+#      and bump (v0.X.Y+1).
+#
+# The previous shape tagged first and ran publish-on-tag, leaving no
+# pre-publish e2e gate. The reorder here is the substantive change.
+
 on:
   repository_dispatch:
     types: [release]
 
+# Default token has no write needs in this workflow — the only write
+# operations (commit-push + tag-push) go through WEFT_BOT_TOKEN against a
+# remote URL we set explicitly. Keeping the default token read-only is
+# defence in depth against npm/pip/bundler lifecycle scripts exfiltrating
+# an over-scoped token during install.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
@@ -14,21 +43,21 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
       - name: Checkout main
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Extract version from dispatch
-        # S2: the `.release-candidates/` marker is retired. The auto-PR's
-        # check status (e2e + per-language build/test jobs) is the gate, and
-        # by the time `release.yml` runs the regenerated SDK code is already
-        # on `main`. We extract the dispatch fields for tagging + provenance
-        # but no longer look up a marker file or check out a candidate
-        # branch. S6 will rewrite this workflow end-to-end; for now we only
-        # remove the marker dependency so this PR is mergeable independently.
+      - name: Validate dispatch payload
+        # Mirrors the contract emitted by weft-app/.github/workflows/cd_release.yml:
+        # event_type=release; client_payload={version, app_sha, weft_app_tag,
+        # openapi_sha256, openapi_version}. We refuse any payload missing
+        # one of these or shaped wrong, before we touch the working tree.
         run: |
           VERSION=$(jq -r '.client_payload.version // empty' "$GITHUB_EVENT_PATH")
           APP_SHA=$(jq -r '.client_payload.app_sha // empty' "$GITHUB_EVENT_PATH")
@@ -39,11 +68,11 @@ jobs:
             exit 1
           fi
           if ! echo "$APP_SHA" | grep -qE '^[0-9a-f]{40}$'; then
-            echo "::error::No valid app_sha in dispatch payload"
+            echo "::error::client_payload.app_sha must be a 40-char git SHA"
             exit 1
           fi
           if ! echo "$OPENAPI_SHA256" | grep -qE '^[0-9a-f]{64}$'; then
-            echo "::error::No valid openapi_sha256 in dispatch payload"
+            echo "::error::client_payload.openapi_sha256 must be a 64-char lowercase hex SHA-256"
             exit 1
           fi
           if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -54,21 +83,28 @@ jobs:
             echo "::error::OpenAPI version ($OPENAPI_VERSION) must match release version ($VERSION)"
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "APP_SHA=$APP_SHA" >> "$GITHUB_ENV"
-          echo "OPENAPI_SHA256=$OPENAPI_SHA256" >> "$GITHUB_ENV"
-          echo "OPENAPI_VERSION=$OPENAPI_VERSION" >> "$GITHUB_ENV"
-          echo "Release version: $VERSION"
-
-      - name: Bump version files
-        run: |
-          chmod +x scripts/bump-version.sh
-          ./scripts/bump-version.sh "$VERSION"
+          # Refuse early if the tags already exist remotely — otherwise we
+          # would do all the e2e work and then fail at push time.
+          if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION$"; then
+            echo "::error::Tag v$VERSION already exists on remote"
+            exit 1
+          fi
+          if git ls-remote --tags origin | grep -q "refs/tags/go/v$VERSION$"; then
+            echo "::error::Tag go/v$VERSION already exists on remote"
+            exit 1
+          fi
+          {
+            echo "VERSION=$VERSION"
+            echo "APP_SHA=$APP_SHA"
+            echo "OPENAPI_SHA256=$OPENAPI_SHA256"
+            echo "OPENAPI_VERSION=$OPENAPI_VERSION"
+          } >> "$GITHUB_ENV"
+          echo "Release version: $VERSION (weft-app@$APP_SHA)"
 
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -85,10 +121,18 @@ jobs:
         with:
           go-version: "1.23"
 
-      - name: Install dependencies
+      - name: Bump version files
+        # bump-version.sh edits the working tree (spec + per-language version
+        # pins) but does NOT commit. We hold the commit until after e2e
+        # confirms the locally-built artifact works against staging.
+        run: |
+          chmod +x scripts/bump-version.sh
+          ./scripts/bump-version.sh "$VERSION"
+
+      - name: Install per-language dependencies
         run: |
           cd typescript && npm install && cd ..
-          cd python && pip install -e . && pip install pytest pytest-asyncio && cd ..
+          cd python && pip install -e . && pip install pytest pytest-asyncio build && cd ..
           cd ruby && bundle install && cd ..
 
       - name: Generate all SDKs
@@ -96,63 +140,68 @@ jobs:
           chmod +x scripts/generate-all.sh scripts/generate-*.sh scripts/test-sdk.sh
           ./scripts/generate-all.sh
 
+      - name: Build TypeScript SDK
+        # The e2e step imports the dist/ output of THIS build. That is the
+        # whole point of S6: e2e against the locally-built artifact, before
+        # we push a tag and before npm sees anything.
+        run: cd typescript && npm run build
+
       - name: Run TypeScript tests
         run: cd typescript && npm test
-        continue-on-error: false
 
       - name: Run Python tests
         run: cd python && pytest
-        continue-on-error: false
 
       - name: Run Ruby tests
         run: cd ruby && bundle exec rake test
-        continue-on-error: false
 
       - name: Run Go tests
         run: cd go && go test ./...
-        continue-on-error: false
 
-      - name: Commit release version bump
+      - name: Compute OpenAPI SHA-256 (for staging cross-check)
+        # The locally-bumped spec/openapi.yaml on disk is the version we
+        # built the TS SDK from. The e2e runner asserts staging serves the
+        # same bytes via its /up/openapi endpoint — same shape as e2e.yml.
         run: |
+          ACTUAL_SHA256="$(sha256sum spec/openapi.yaml | cut -d ' ' -f 1)"
+          echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
+
+      - name: Run TypeScript staging e2e
+        # Imports ../typescript/dist/index.mjs — the artifact built above
+        # from the freshly-bumped, freshly-regenerated source tree. This is
+        # the pre-publish gate: if staging is behind, the OpenAPI hash
+        # mismatch fails the workflow and no tag is created. Recovery is
+        # to wait for staging or fix-forward + bump.
+        run: node scripts/e2e-typescript-staging.mjs
+
+      - name: Commit version bump and create tags
+        # Only reached on e2e green. Commit the in-tree bump on main, then
+        # tag the commit. Both pushed via WEFT_BOT_TOKEN — required because
+        # tags pushed with the workflow's GITHUB_TOKEN do not trigger
+        # subsequent workflow runs, which would suppress the per-language
+        # publishers we depend on.
+        env:
+          BOT_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "::error::WEFT_BOT_TOKEN is not set"
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Fail early if tags already exist to prevent partial release state
-          if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION$"; then
-            echo "::error::Tag v$VERSION already exists on remote"
-            exit 1
-          fi
-          if git ls-remote --tags origin | grep -q "refs/tags/go/v$VERSION$"; then
-            echo "::error::Tag go/v$VERSION already exists on remote"
-            exit 1
-          fi
-
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No bump diff to commit — main is already at v$VERSION"
           else
             git commit -m "release: v$VERSION"
           fi
-
-      - name: Create and push tags
-        env:
-          # Push with WEFT_BOT_TOKEN, not the default GITHUB_TOKEN: GitHub
-          # suppresses workflow runs for events created by GITHUB_TOKEN, so
-          # tags pushed with it never trigger the per-language publish jobs.
-          # Scoped to this step only (not persisted on checkout) so the token
-          # is not exposed to npm install / generation steps.
-          BOT_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
-        run: |
-          # Create the main version tag (triggers typescript, python, ruby workflows)
           git tag "v$VERSION"
-          # Create the Go module tag (triggers go workflow + proxy indexing)
           git tag "go/v$VERSION"
-          # Drop the GITHUB_TOKEN auth header persisted by actions/checkout.
-          # Without this, git attaches it to the push below and it overrides
-          # the URL-embedded bot token — the push authenticates as
-          # GITHUB_TOKEN again and the publish workflows never trigger.
-          git config --unset-all 'http.https://github.com/.extraheader' || true
-          # Push both tags via the bot token so the publish workflows fire
-          git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "v$VERSION" "go/v$VERSION"
-          echo "Pushed tags: v$VERSION, go/v$VERSION"
+          REMOTE_URL="https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Push the bump commit first so the tag resolves on the remote.
+          git push "$REMOTE_URL" HEAD:main
+          # Then push tags — these are what triggers the per-language
+          # publish workflows (typescript.yml/python.yml/ruby.yml on `v*`,
+          # go.yml on `go/v*`).
+          git push "$REMOTE_URL" "v$VERSION" "go/v$VERSION"
+          echo "Pushed v$VERSION and go/v$VERSION on commit $(git rev-parse HEAD)"
