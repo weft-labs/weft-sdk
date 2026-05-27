@@ -34,7 +34,7 @@ If pre-commit / pre-push hooks exist, they run automatically; agents should not 
 - All four SDKs share one version tied to the OpenAPI spec version; use `scripts/bump-version.sh` instead of editing package versions by hand.
 - Never hand-edit generated clients under `typescript/src/generated/`, `python/src/weft_sdk/generated/`, `ruby/lib/weft/generated/`, or `go/generated/`; update `spec/openapi.yaml` and rerun generation.
 - `spec/openapi.yaml` is copied from `weft-app`; repo-local API contract changes should be treated as drift unless paired with the app-side canonical spec.
-- The release pipeline is candidate-led: `.release-candidates/weft-app-<sha>.json` markers must go green before release dispatch can publish packages.
+- The release pipeline is auto-PR-led: each `weft-app-openapi-updated` dispatch opens an auto-merge PR on `sdk-candidate/weft-app-<short_sha>`, gated by per-language build/test + staging e2e (`e2e.yml`) checks. No `.release-candidates/` JSON marker exists anymore.
 - Workflow pushes that must trigger follow-on CI need bot-token auth, not the default `GITHUB_TOKEN` recursion guard.
 
 ## PR Rules
@@ -52,5 +52,5 @@ If pre-commit / pre-push hooks exist, they run automatically; agents should not 
 ## Related
 
 - `docs/README.md` — map of this repo's docs folder
-- `README.md` — package layout, versioning, spec sync, and release-candidate overview
+- `README.md` — package layout, versioning, spec sync, and auto-PR release overview
 - `../cto-os/repos/weft-sdk.md` — cross-repo brief when the full workspace is checked out
