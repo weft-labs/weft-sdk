@@ -55,6 +55,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "generate": "../scripts/generate-typescript.sh",
+    "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
