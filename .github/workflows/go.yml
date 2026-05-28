@@ -33,10 +33,21 @@ jobs:
   # Go modules are published via git tags — no separate publish step needed.
   # Tag format: go/v0.2.0 (Go module path is github.com/weft-labs/weft-sdk/go)
   # After pushing a tag, pkg.go.dev will index the module automatically.
+  #
+  # Provenance posture: Go modules have no native registry-side attestation
+  # mechanism. Signed git tags (`git tag -s`) are the only first-party path
+  # and are explicitly out of scope for v1 (see PR for S6 of the SDK
+  # release pipeline plan). We DO emit a GitHub-native build-provenance
+  # attestation against an archive of the `go/` module source so the
+  # tagged tree is independently verifiable with `gh attestation verify`.
   tag-check:
     needs: build
     if: startsWith(github.ref, 'refs/tags/go/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -48,6 +59,19 @@ jobs:
         run: |
           cd go
           go mod verify
+      - name: Archive go module source
+        # Reproducible-ish archive of the tagged go/ tree, so the attestation
+        # has a stable subject digest. proxy.golang.org's own zip is what
+        # consumers actually receive, but we can't sign that asynchronously;
+        # this is a best-effort GitHub-side provenance bridge.
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/go/}"
+          tar --sort=name --owner=0 --group=0 --numeric-owner \
+            -czf "weft-sdk-go-${VERSION}.tar.gz" go/
+      - name: Attest go module provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "weft-sdk-go-*.tar.gz"
       - name: Trigger pkg.go.dev indexing
         run: |
           VERSION="${GITHUB_REF#refs/tags/go/}"
