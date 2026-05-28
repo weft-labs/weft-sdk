@@ -10,22 +10,17 @@ name: Staging E2E
 # This workflow IS the release gate for the spec→PR→main flow. There is no
 # `.release-candidates/` marker JSON anywhere in the pipeline.
 #
-# Path filter is intentionally wide: any change to the generated SDK
-# surface, the spec, or the generation scripts on a candidate PR should
-# re-run e2e. Non-candidate PRs do not run this job — they don't need to
-# spend time against staging.
+# The workflow triggers on every PR to `main` (no `paths:` filter) so the
+# `e2e` job can be registered as a *required* status check in branch
+# protection: a paths-filtered workflow never queues on out-of-scope PRs,
+# leaving a required check pending forever and blocking auto-merge. The
+# job-level `if:` below short-circuits non-candidate PRs — a skipped job
+# reports as success/neutral to branch protection, so those PRs stay green
+# without burning staging time.
 
 on:
   pull_request:
     branches: ["main"]
-    paths:
-      - "spec/**"
-      - "typescript/**"
-      - "python/**"
-      - "ruby/**"
-      - "go/**"
-      - "scripts/**"
-      - ".github/workflows/e2e.yml"
 
 permissions:
   contents: read
