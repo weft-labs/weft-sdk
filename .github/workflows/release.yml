@@ -167,6 +167,21 @@ jobs:
           ACTUAL_SHA256="$(sha256sum spec/openapi.yaml | cut -d ' ' -f 1)"
           echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
 
+      - name: Assert dispatched openapi_sha256 matches built spec
+        # The dispatch payload's client_payload.openapi_sha256 is weft-app's
+        # claim of the spec it has live on staging. EXPECTED_OPENAPI_SHA256 is
+        # the SHA of the spec THIS release was actually built from. If they
+        # disagree, weft-app's claimed spec is not the spec we built — the
+        # "staging has caught up to this exact spec" guarantee is broken, so
+        # we stop here, before the e2e gate and before any publish. Without
+        # this comparison the dispatched field is decorative.
+        run: |
+          if [ "$OPENAPI_SHA256" != "$EXPECTED_OPENAPI_SHA256" ]; then
+            echo "::error::Dispatched openapi_sha256 ($OPENAPI_SHA256) does not match the spec this release was built from ($EXPECTED_OPENAPI_SHA256). weft-app's claimed staging spec differs from weft-sdk's built spec — refusing to release."
+            exit 1
+          fi
+          echo "Dispatched openapi_sha256 matches built spec: $EXPECTED_OPENAPI_SHA256"
+
       - name: Run TypeScript staging e2e
         # Imports ../typescript/dist/index.mjs — the artifact built above
         # from the freshly-bumped, freshly-regenerated source tree. This is
