@@ -6,8 +6,14 @@ name: "CD: SDK Updated Dispatch"
 # safe: S4 dedupes via the candidate branch name (`sdk-candidate/<short_sha>`).
 #
 # Mirrors the dispatch idiom in weft-app/.github/workflows/cd_openapi-dispatch.yml
-# (curl + jq + bot PAT, repository_dispatch event_type). See cto-os plan
-# `plans/active/2026-05-27-sdk-release-pipeline-decoupled.md` (event 2, spec S3).
+# (curl + jq + short-lived GitHub App installation token, repository_dispatch
+# event_type). See cto-os plan
+# `plans/active/2026-05-27-sdk-release-pipeline-decoupled.md` (event 2, spec S3)
+# and `plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md` (S8: retire
+# the long-lived bot PAT). The cross-repo dispatch is authed by a
+# `weft-release-bot` App token minted per-run and scoped to weft-app
+# `contents: write` — the built-in GITHUB_TOKEN cannot reach a different
+# repository.
 
 on:
   push:
@@ -29,13 +35,23 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Mint weft-app App token (cross-repo dispatch)
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-app
+          permission-contents: write
+
       - name: Dispatch weft-sdk-updated to weft-app
         env:
-          DISPATCH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          DISPATCH_TOKEN: ${{ steps.app-token.outputs.token }}
           SDK_SHA: ${{ github.sha }}
         run: |
           if [ -z "$DISPATCH_TOKEN" ]; then
-            echo "::error::WEFT_BOT_TOKEN is not set"
+            echo "::error::App installation token was not minted"
             exit 1
           fi
           SDK_SHORT_SHA="${SDK_SHA:0:12}"

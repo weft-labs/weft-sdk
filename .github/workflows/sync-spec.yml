@@ -22,18 +22,43 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     # All write operations (candidate branch push, PR create/edit, auto-merge
-    # enable) go through WEFT_BOT_TOKEN via an explicit `git remote set-url`
-    # and the `gh` CLI. The default GITHUB_TOKEN only needs read access for
-    # the checkout itself.
+    # enable) go through a short-lived weft-release-bot GitHub App installation
+    # token scoped to weft-sdk (`contents: write`, `pull-requests: write`), via
+    # an explicit `git remote set-url` and the `gh` CLI. The cross-repo read of
+    # weft-app's openapi.yaml uses a separate App token scoped to weft-app
+    # (`contents: read`). The default GITHUB_TOKEN only needs read access for
+    # the checkout itself. The create-github-app-token action uses
+    # app-id + private-key, so no `id-token` permission is required.
     permissions:
       contents: read
     steps:
+      - name: Mint weft-app App token (cross-repo spec read)
+        uses: actions/create-github-app-token@v2
+        id: app-token-read
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-app
+          permission-contents: read
+
+      - name: Mint weft-sdk App token (branch push + PR ops + auto-merge)
+        uses: actions/create-github-app-token@v2
+        id: app-token-write
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-sdk
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           # Default GITHUB_TOKEN credentials are not needed for any
-          # subsequent step: writes go through an explicit PAT-authed
+          # subsequent step: writes go through an explicit App-token-authed
           # remote. Keeping persist-credentials false avoids leaking the
           # token to npm/pip lifecycle scripts during generation.
           persist-credentials: false
@@ -47,7 +72,7 @@ jobs:
         if: github.event_name == 'repository_dispatch'
         env:
           OPENAPI_URL: ${{ github.event.client_payload.openapi_url }}
-          OPENAPI_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          OPENAPI_TOKEN: ${{ steps.app-token-read.outputs.token }}
           APP_SHA: ${{ github.event.client_payload.app_sha }}
         run: |
           if [ -z "$OPENAPI_URL" ]; then
@@ -105,7 +130,7 @@ jobs:
 
       - name: Open or update auto-PR
         env:
-          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token-write.outputs.token }}
           APP_SHA: ${{ github.event.client_payload.app_sha }}
           OPENAPI_SHA256: ${{ github.event.client_payload.openapi_sha256 }}
           OPENAPI_VERSION: ${{ github.event.client_payload.openapi_version }}
@@ -169,7 +194,7 @@ jobs:
         # PR would land unverified code on main.
         if: env.PR_BRANCH != ''
         env:
-          GH_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token-write.outputs.token }}
           PR_BRANCH: ${{ env.PR_BRANCH }}
         run: |
           PR_LIST=$(gh pr list \
