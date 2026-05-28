@@ -19,6 +19,10 @@ on:
       - "go/**"
       - "spec/**"
 
+concurrency:
+  group: dispatch-sdk-updated
+  cancel-in-progress: false
+
 jobs:
   dispatch:
     runs-on: ubuntu-latest
