@@ -199,12 +199,27 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
         run: |
+          # No `set -x` in this step: a shell trace would echo the token if it
+          # ever appeared in a command argument. We also never put the token in
+          # a remote URL — git can echo a credential-bearing URL back on a
+          # verbose remote rejection. Instead the token is base64-encoded into
+          # an HTTP Authorization header configured via `git config`, and the
+          # remote stays token-free.
           if [ -z "$BOT_TOKEN" ]; then
             echo "::error::WEFT_BOT_TOKEN is not set"
             exit 1
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Authenticate via an Authorization header rather than a token-in-URL.
+          # The basic-auth payload is `x-access-token:<token>` base64-encoded
+          # and stored in git config; the token never lands in a remote URL, so
+          # git cannot echo a credential-bearing URL on a verbose remote
+          # rejection. With no `set -x` active, the header value is not traced
+          # either. Mirrors the scheme actions/checkout uses for its own token.
+          AUTH_HEADER="Authorization: Basic $(printf 'x-access-token:%s' "$BOT_TOKEN" | base64 | tr -d '\n')"
+          git config --local http.https://github.com/.extraheader "$AUTH_HEADER"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
           git add -A
           if git diff --cached --quiet; then
             echo "No bump diff to commit — main is already at v$VERSION"
@@ -213,7 +228,6 @@ jobs:
           fi
           git tag "v$VERSION"
           git tag "go/v$VERSION"
-          REMOTE_URL="https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           # Push the bump commit AND both tags in a single invocation so the
           # update is all-or-nothing: either main advances to release:v$VERSION
           # with both tags present (triggering the per-language publishers —
@@ -221,5 +235,5 @@ jobs:
           # nothing moves. A split push could leave main bumped with no tags
           # (no publish fires) and a re-run hitting inconsistent
           # "tag exists / no bump diff" recovery paths.
-          git push "$REMOTE_URL" HEAD:main "v$VERSION" "go/v$VERSION"
+          git push origin HEAD:main "v$VERSION" "go/v$VERSION"
           echo "Pushed v$VERSION and go/v$VERSION on commit $(git rev-parse HEAD)"
