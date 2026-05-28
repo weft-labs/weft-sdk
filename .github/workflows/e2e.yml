@@ -1,0 +1,71 @@
+name: Staging E2E
+
+# Required PR check for auto-generated SDK candidate PRs (opened by
+# sync-spec.yml on `sdk-candidate/**` branches). Builds the TypeScript SDK
+# from the PR head and exercises it against the real staging deployment to
+# confirm the regenerated client can authenticate, hit a real endpoint, and
+# read back an OpenAPI document whose SHA-256 matches what the PR's spec
+# was generated from.
+#
+# This workflow IS the release gate for the spec→PR→main flow. There is no
+# `.release-candidates/` marker JSON anywhere in the pipeline.
+#
+# The workflow triggers on every PR to `main` (no `paths:` filter) so the
+# `e2e` job can be registered as a *required* status check in branch
+# protection: a paths-filtered workflow never queues on out-of-scope PRs,
+# leaving a required check pending forever and blocking auto-merge. The
+# job-level `if:` below short-circuits non-candidate PRs — a skipped job
+# reports as success/neutral to branch protection, so those PRs stay green
+# without burning staging time.
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    # Scope the e2e job to candidate PRs. Other PRs (manual SDK tweaks,
+    # workflow-only changes) don't need to burn staging time; they still
+    # have the per-language build/test jobs as PR checks.
+    if: startsWith(github.head_ref, 'sdk-candidate/')
+    runs-on: ubuntu-latest
+    env:
+      WEFT_STAGING_BASE_URL: https://staging.weft.network
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v6
+        with:
+          # actions/checkout on pull_request already checks out the PR's
+          # merge ref by default; we want the head ref so the test exercises
+          # exactly the regenerated SDK that will land on main.
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Compute expected OpenAPI SHA-256
+        # The PR's `spec/openapi.yaml` is the source of truth for what the
+        # SDK was generated against. We hash the in-tree copy and pass the
+        # value to the e2e runner, which then asserts that staging serves
+        # the same bytes via its `/up/openapi` endpoint. If staging is
+        # behind (e.g. weft-app deploy hasn't shipped yet), the hash will
+        # mismatch and the check will fail loud — a clean signal that
+        # auto-merge is correctly blocked until staging catches up.
+        run: |
+          ACTUAL_SHA256="$(sha256sum spec/openapi.yaml | cut -d ' ' -f 1)"
+          echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
+
+      - name: Install TypeScript dependencies
+        run: cd typescript && npm install
+
+      - name: Build TypeScript SDK
+        run: cd typescript && npm run build
+
+      - name: Run TypeScript staging e2e
+        run: node scripts/e2e-typescript-staging.mjs

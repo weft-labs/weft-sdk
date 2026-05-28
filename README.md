@@ -29,10 +29,16 @@ branches.
 
 ## Release Candidates
 
-SDK releases are gated by `.release-candidates/weft-app-<sha>.json` markers. A
-candidate is generated from one immutable `weft-app` SHA and OpenAPI SHA-256,
-then marked `green` only after staging reports the same app SHA, the generated
-TypeScript client can fetch the matching OpenAPI document from staging, and an
-authenticated generated endpoint reaches staging with the expected 401 response.
-The release workflow refuses to publish unless the `weft-app` release dispatch
-points at a matching green candidate.
+Each `weft-app-openapi-updated` dispatch opens an auto-PR on a deterministic
+`sdk-candidate/weft-app-<short_sha>` branch. The PR's required checks are the
+release gate:
+
+- Per-language build/test jobs (`typescript.yml` / `python.yml` / `ruby.yml` / `go.yml`).
+- The staging e2e job (`e2e.yml`), which builds the regenerated TypeScript SDK
+  from the PR head and exercises it against `https://staging.weft.network`:
+  fetches `/up/openapi` and asserts the SHA-256 matches the PR's spec, then
+  hits an authenticated endpoint and asserts a 401.
+
+The auto-PR is opened with `gh pr merge --auto --squash`, so it lands on `main`
+the moment all required checks pass. No `.release-candidates/` JSON marker is
+written or read anywhere in the pipeline — the PR's check status IS the gate.
