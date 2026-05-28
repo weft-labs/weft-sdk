@@ -1,5 +1,14 @@
 # SDK Pipeline Architecture — Candidate-Led Release
 
+> **STALE (2026-05-27).** This document describes the previous candidate-led
+> design with `.release-candidates/weft-app-<sha>.json` markers. **The marker
+> pattern is retired in spec S2** of the active plan — auto-PRs gated by their
+> own check status (per-language build/test + staging e2e job in `e2e.yml`)
+> replace the marker JSON and the separate `staging-e2e.yml` workflow. See
+> `cto-os/plans/active/2026-05-27-sdk-release-pipeline-decoupled.md` and the
+> current `README.md` "Release Candidates" section. Full architecture rewrite
+> follows under spec S6.
+>
 > Visual reference for the SDK release pipeline.
 >
 > **Implemented by:**
