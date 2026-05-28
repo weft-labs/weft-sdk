@@ -161,7 +161,8 @@ jobs:
       - name: Compute OpenAPI SHA-256 (for staging cross-check)
         # The locally-bumped spec/openapi.yaml on disk is the version we
         # built the TS SDK from. The e2e runner asserts staging serves the
-        # same bytes via its /up/openapi endpoint — same shape as e2e.yml.
+        # same bytes via its GET /docs/openapi.yaml endpoint
+        # (api.getOpenApiDocument()) — same shape as e2e.yml.
         run: |
           ACTUAL_SHA256="$(sha256sum spec/openapi.yaml | cut -d ' ' -f 1)"
           echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
@@ -198,10 +199,12 @@ jobs:
           git tag "v$VERSION"
           git tag "go/v$VERSION"
           REMOTE_URL="https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          # Push the bump commit first so the tag resolves on the remote.
-          git push "$REMOTE_URL" HEAD:main
-          # Then push tags — these are what triggers the per-language
-          # publish workflows (typescript.yml/python.yml/ruby.yml on `v*`,
-          # go.yml on `go/v*`).
-          git push "$REMOTE_URL" "v$VERSION" "go/v$VERSION"
+          # Push the bump commit AND both tags in a single invocation so the
+          # update is all-or-nothing: either main advances to release:v$VERSION
+          # with both tags present (triggering the per-language publishers —
+          # typescript.yml/python.yml/ruby.yml on `v*`, go.yml on `go/v*`), or
+          # nothing moves. A split push could leave main bumped with no tags
+          # (no publish fires) and a re-run hitting inconsistent
+          # "tag exists / no bump diff" recovery paths.
+          git push "$REMOTE_URL" HEAD:main "v$VERSION" "go/v$VERSION"
           echo "Pushed v$VERSION and go/v$VERSION on commit $(git rev-parse HEAD)"
