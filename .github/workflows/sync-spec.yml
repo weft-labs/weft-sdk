@@ -169,7 +169,14 @@ jobs:
           git checkout -B "$BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Authenticate via an Authorization header rather than a token-in-URL,
+          # so the token never lands in a remote URL (git can't echo a
+          # credential-bearing URL on a verbose remote rejection) or persist in
+          # .git/config's remote.origin.url. Mirrors release.yml + the scheme
+          # actions/checkout uses. No `set -x` is active in this step.
+          AUTH_HEADER="Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git config --local http.https://github.com/.extraheader "$AUTH_HEADER"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
           git add -A
           git commit -m "$COMMIT_MESSAGE"
           if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
