@@ -10,6 +10,15 @@ on:
     branches: ["main"]
     tags: ["v*"]
 
+# Default GITHUB_TOKEN is read-only for the whole workflow. The publish job
+# overrides this with its own job-level `permissions:` (id-token: write for
+# npm Trusted Publishing OIDC, attestations: write for Sigstore provenance).
+# Keeping the workflow default minimal closes the default-scope exfiltration
+# window on PR-triggered build jobs that run `npm install` against untrusted
+# spec/** or scripts/** changes.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

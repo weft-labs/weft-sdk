@@ -32,27 +32,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Mint weft-app App token (cross-repo spec read)
-        uses: actions/create-github-app-token@v2
-        id: app-token-read
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: weft-labs
-          repositories: weft-app
-          permission-contents: read
-
-      - name: Mint weft-sdk App token (branch push + PR ops + auto-merge)
-        uses: actions/create-github-app-token@v2
-        id: app-token-write
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: weft-labs
-          repositories: weft-sdk
-          permission-contents: write
-          permission-pull-requests: write
-
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -67,6 +46,21 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 20
+
+      - name: Mint weft-app App token (cross-repo spec read)
+        # Minted immediately before the cross-repo spec fetch — not at job
+        # start — to keep the exposure window tight. The token is scoped to
+        # weft-app `contents: read` and auto-revoked by the action's post step
+        # (~1h TTL). Uses app-id + private-key, so no `id-token` permission is
+        # needed. Mirrors release.yml's just-in-time mint pattern.
+        uses: actions/create-github-app-token@v2
+        id: app-token-read
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-app
+          permission-contents: read
 
       - name: Fetch spec from dispatch payload
         if: github.event_name == 'repository_dispatch'
@@ -127,6 +121,24 @@ jobs:
 
       - name: Verify generated output
         run: ./scripts/test-sdk.sh
+
+      - name: Mint weft-sdk App token (branch push + PR ops + auto-merge)
+        # Minted only after generate + verify succeed, immediately before the
+        # branch push / PR ops. The token is scoped to weft-sdk
+        # `contents: write` + `pull-requests: write` and auto-revoked by the
+        # action's post step (~1h TTL). Uses app-id + private-key, so no
+        # `id-token` permission is needed. Mirrors release.yml's just-in-time
+        # mint pattern — shrinks the exposure window across `npm install` and
+        # the generate-all step.
+        uses: actions/create-github-app-token@v2
+        id: app-token-write
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-sdk
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Open or update auto-PR
         env:

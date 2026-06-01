@@ -10,6 +10,16 @@ on:
     branches: ["main"]
     tags: ["v*"]
 
+# Default GITHUB_TOKEN is read-only for the whole workflow. The publish job
+# overrides this with its own job-level `permissions:` (id-token: write for
+# RubyGems Trusted Publishing OIDC, attestations: write for the
+# actions/attest-build-provenance attestation on the built .gem). Keeping the
+# workflow default minimal closes the default-scope exfiltration window on
+# PR-triggered build jobs that run `bundle install` against untrusted spec/**
+# or scripts/** changes.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
