@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.6.1
+  version: 0.6.2
   description: |
     The Weft API is the buyer-runtime surface that powers the `weft` CLI,
     the hosted MCP server (`weft.network/mcp`), and any third-party agent
