@@ -9,7 +9,8 @@ name: Release
 #   3. Runs e2e against staging.weft.network using the LOCALLY-BUILT
 #      TypeScript SDK — exercising the exact artifact that will ship.
 #   4. Only after e2e is green:
-#        - commits the version bump to main via WEFT_BOT_TOKEN
+#        - commits the version bump to main via a short-lived weft-release-bot
+#          GitHub App installation token (minted per-run)
 #        - tags `v<version>` and `go/v<version>` on that commit
 #        - pushes commit + tags
 #      The tag push is what triggers the existing per-language publishers
@@ -29,10 +30,13 @@ on:
     types: [release]
 
 # Default token has no write needs in this workflow — the only write
-# operations (commit-push + tag-push) go through WEFT_BOT_TOKEN against a
-# remote URL we set explicitly. Keeping the default token read-only is
-# defence in depth against npm/pip/bundler lifecycle scripts exfiltrating
-# an over-scoped token during install.
+# operations (commit-push + tag-push) go through a short-lived weft-release-bot
+# GitHub App installation token (minted per-run, scoped to weft-sdk
+# `contents: write`) fed to git via an Authorization header. Keeping the
+# default GITHUB_TOKEN read-only is defence in depth against
+# npm/pip/bundler lifecycle scripts exfiltrating an over-scoped token during
+# install. The create-github-app-token action uses app-id + private-key, so no
+# `id-token` permission is required here.
 permissions:
   contents: read
 
@@ -190,14 +194,28 @@ jobs:
         # to wait for staging or fix-forward + bump.
         run: node scripts/e2e-typescript-staging.mjs
 
+      - name: Mint weft-sdk App token (commit + tag push)
+        # Minted only on e2e green, immediately before the push. The token is
+        # scoped to weft-sdk `contents: write` (commit to main + tag push) and
+        # auto-revoked by the action's post step (~1h TTL). Uses app-id +
+        # private-key, so no `id-token` permission is needed.
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-sdk
+          permission-contents: write
+
       - name: Commit version bump and create tags
         # Only reached on e2e green. Commit the in-tree bump on main, then
-        # tag the commit. Both pushed via WEFT_BOT_TOKEN — required because
-        # tags pushed with the workflow's GITHUB_TOKEN do not trigger
-        # subsequent workflow runs, which would suppress the per-language
-        # publishers we depend on.
+        # tag the commit. Both pushed with the weft-release-bot App
+        # installation token — required because tags pushed with the
+        # workflow's GITHUB_TOKEN do not trigger subsequent workflow runs,
+        # which would suppress the per-language publishers we depend on.
         env:
-          BOT_TOKEN: ${{ secrets.WEFT_BOT_TOKEN }}
+          BOT_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           # No `set -x` in this step: a shell trace would echo the token if it
           # ever appeared in a command argument. We also never put the token in
@@ -206,7 +224,7 @@ jobs:
           # an HTTP Authorization header configured via `git config`, and the
           # remote stays token-free.
           if [ -z "$BOT_TOKEN" ]; then
-            echo "::error::WEFT_BOT_TOKEN is not set"
+            echo "::error::App installation token was not minted"
             exit 1
           fi
           git config user.name "github-actions[bot]"
