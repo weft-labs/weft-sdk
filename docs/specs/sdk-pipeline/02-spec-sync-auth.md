@@ -40,8 +40,8 @@ Replace the raw curl with an authenticated checkout or contents API call:
 - uses: actions/create-github-app-token@v1
   id: app-token
   with:
-    app-id: ${{ secrets.WEFT_BOT_APP_ID }}
-    private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
+    app-id: ${{ secrets.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
     owner: weft-labs
     repositories: weft-app
 
@@ -72,7 +72,7 @@ Alternative: `actions/checkout@v4` with `repository: weft-labs/weft-app` and `to
 ## Implementation outline
 
 1. Create (or reuse) `weft-labs-bot` GitHub App with `contents: read` on `weft-app` and `contents: write` + `pull-requests: write` on `weft-sdk`.
-2. Add `WEFT_BOT_APP_ID` and `WEFT_BOT_PRIVATE_KEY` to `weft-sdk` repo secrets.
+2. Add `APP_ID` and `APP_PRIVATE_KEY` to `weft-sdk` repo secrets.
 3. Rewrite `sync-spec.yml` fetch step as above.
 4. Add an end-to-end test: commit a no-op whitespace change to `weft-app/docs/openapi.yaml`, confirm a sync PR appears in `weft-sdk`, close it.
 5. Update `weft-sdk/README.md` with a short note on how the sync works + the bot identity.

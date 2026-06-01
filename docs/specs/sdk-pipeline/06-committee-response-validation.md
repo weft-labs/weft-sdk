@@ -14,7 +14,7 @@ depends-on: []
 
 Make runtime ↔ canonical-spec drift fail in CI on the next push that introduces it, instead of being caught downstream when a candidate PR's generated SDK silently mismatches what staging actually returns.
 
-The post-pivot audit (PRs #266/#267/#269/#270/#271) shipped five contract changes that were invisible to CI for months. The candidate-led pipeline catches the SDK side of that drift now; this spec catches the server side.
+The post-pivot audit (PRs #266/#267/#269/#270/#271) shipped five contract changes that were invisible to CI for months. The event-driven pipeline catches the SDK side of that drift now; this spec catches the server side.
 
 ## Non-goals
 

@@ -17,7 +17,7 @@ Folders are created on first use; not every folder is present yet.
 
 ## Current Docs
 
-- `architecture/sdk-pipeline.md` — candidate-led SDK release pipeline architecture.
+- `architecture/sdk-pipeline.md` — event-driven SDK release pipeline architecture.
 - `specs/sdk-pipeline/` — SDK pipeline specs, including historical and superseded work.
 - `research/2026-04-sdk-pipeline-post-pivot-audit.md` — post-pivot sync/release audit.
 - `research/2026-05-19-sdk-release-pipeline-review.md` — v0.5.0 release-pipeline hardening review.

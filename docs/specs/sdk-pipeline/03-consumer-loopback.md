@@ -58,10 +58,18 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'sdk-bump')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: weft-labs
+          repositories: weft-app
+          permission-contents: write
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.WEFT_BOT_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-node@v4
       - run: npm ci
       - run: npm run docs:generate

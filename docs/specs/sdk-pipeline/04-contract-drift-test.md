@@ -2,7 +2,7 @@
 
 **Status:** Superseded 2026-05-03 by `meetings/2026-05-03-sdk-pipeline-spec-03-04-conclusion.md`. The original three-check scope was trimmed:
 - **Check 1** (Runtime ↔ Spec via committee) → moved to `specs/sdk-pipeline/06-committee-response-validation.md`.
-- **Check 2** (weft-app spec ↔ weft-sdk spec) → dropped. The candidate-led pipeline regenerates the spec on every weft-app push; drift cannot accumulate.
+- **Check 2** (weft-app spec ↔ weft-sdk spec) → dropped. The event-driven pipeline regenerates the spec on every weft-app push; drift cannot accumulate.
 - **Check 3** (Spec ↔ Generated SDK) → replaced by a one-line post-condition assert in `weft-sdk/scripts/generate-all.sh` (fail if input spec dirty but no downstream files dirty after generation).
 
 **Owner:** unassigned
@@ -56,8 +56,8 @@ Add a scheduled workflow `.github/workflows/spec-drift.yml` (daily + on-push):
 - uses: actions/create-github-app-token@v1
   id: app-token
   with:
-    app-id: ${{ secrets.WEFT_BOT_APP_ID }}
-    private-key: ${{ secrets.WEFT_BOT_PRIVATE_KEY }}
+    app-id: ${{ secrets.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
     owner: weft-labs
     repositories: weft-app
 - name: Fetch canonical
