@@ -10,6 +10,15 @@ on:
     branches: ["main"]
     tags: ["v*", "go/v*"]
 
+# Default GITHUB_TOKEN is read-only for the whole workflow. The tag-check job
+# overrides this with its own job-level `permissions:` (id-token: write +
+# attestations: write for the actions/attest-build-provenance attestation on
+# the archived module source). Keeping the workflow default minimal closes
+# the default-scope exfiltration window on PR-triggered build jobs that run
+# `go mod download` against untrusted spec/** or scripts/** changes.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
