@@ -4,11 +4,11 @@
 > YAML in `.github/workflows/` (`sync-spec.yml`, `release.yml`, `typescript.yml`,
 > `python.yml`, `ruby.yml`, `go.yml`).
 >
-> **Active plans:**
+> **Plans:**
 > - Pipeline (event-driven, e2e-before-publish): [`plans/active/2026-05-27-sdk-release-pipeline-decoupled.md`](../../../cto-os/plans/active/2026-05-27-sdk-release-pipeline-decoupled.md)
-> - Auth hardening (retire bot PAT → GitHub App + OIDC): [`plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md`](../../../cto-os/plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md)
+> - Auth hardening (retire bot PAT → GitHub App + OIDC), **complete 2026-06-01**: [`plans/done/2026-05-28-s8-retire-bot-token-oidc-ghapp.md`](../../../cto-os/plans/done/2026-05-28-s8-retire-bot-token-oidc-ghapp.md)
 >
-> **Validated end-to-end:** v0.6.1 (2026-06-01).
+> **Validated end-to-end:** v0.6.1 and v0.6.2 (2026-06-01).
 
 ---
 
@@ -242,7 +242,7 @@ flowchart LR
 ## Related
 
 - Active pipeline plan: [`plans/active/2026-05-27-sdk-release-pipeline-decoupled.md`](../../../cto-os/plans/active/2026-05-27-sdk-release-pipeline-decoupled.md)
-- S8 auth-hardening plan: [`plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md`](../../../cto-os/plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md)
+- S8 auth-hardening plan (complete): [`plans/done/2026-05-28-s8-retire-bot-token-oidc-ghapp.md`](../../../cto-os/plans/done/2026-05-28-s8-retire-bot-token-oidc-ghapp.md)
 - Spec-sync auth spec: [`specs/sdk-pipeline/02-spec-sync-auth.md`](../specs/sdk-pipeline/02-spec-sync-auth.md)
 - Predecessor plans (archived): `cto-os/plans/done/2026-04-sdk-pipeline-{candidate-release,complete,production-readiness,post-pivot-audit}.md`
 
