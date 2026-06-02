@@ -17,12 +17,15 @@ import * as runtime from '../runtime';
 import type {
   BalanceResponse,
   ErrorResponse,
+  InsufficientScopeResponse,
 } from '../models/index';
 import {
     BalanceResponseFromJSON,
     BalanceResponseToJSON,
     ErrorResponseFromJSON,
     ErrorResponseToJSON,
+    InsufficientScopeResponseFromJSON,
+    InsufficientScopeResponseToJSON,
 } from '../models/index';
 
 /**

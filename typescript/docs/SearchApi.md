@@ -76,6 +76,7 @@ example().catch(console.error);
 |-------------|-------------|------------------|
 | **200** | Search results |  -  |
 | **401** | Unauthorized — missing or non-buyer-scoped API key |  -  |
+| **403** | The OAuth access token authenticated but lacks the &#x60;search&#x60; scope (RFC 6750 &#x60;insufficient_scope&#x60;). Carries a &#x60;WWW-Authenticate: Bearer error&#x3D;\&quot;insufficient_scope\&quot;, scope&#x3D;\&quot;search\&quot;&#x60; header. &#x60;wk_&#x60; API keys are unscoped and never see this.  |  -  |
 | **422** | Invalid query (empty/missing) |  -  |
 | **502** | Upstream search backend error (platform backend only) |  -  |
 | **500** | Backend misconfigured (&#x60;SEARCH_BACKEND&#x60; unset or unknown) |  -  |

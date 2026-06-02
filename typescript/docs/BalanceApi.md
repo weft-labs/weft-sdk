@@ -68,6 +68,7 @@ This endpoint does not need any parameter.
 |-------------|-------------|------------------|
 | **200** | Wallet + policy + spend snapshot |  -  |
 | **401** | Unauthorized — missing or non-buyer-scoped API key |  -  |
+| **403** | The OAuth access token authenticated but lacks the &#x60;balance&#x60; scope (RFC 6750 &#x60;insufficient_scope&#x60;). Carries a &#x60;WWW-Authenticate: Bearer error&#x3D;\&quot;insufficient_scope\&quot;, scope&#x3D;\&quot;balance\&quot;&#x60; header. &#x60;wk_&#x60; API keys are unscoped and never see this.  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

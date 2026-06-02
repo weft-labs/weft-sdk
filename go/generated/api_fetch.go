@@ -167,7 +167,7 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v FetchErrorResponse
+			var v Fetch403Response
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

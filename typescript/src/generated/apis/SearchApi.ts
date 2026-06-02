@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   ErrorResponse,
+  InsufficientScopeResponse,
   SearchErrorResponse,
   SearchRequest,
   SearchResponse,
@@ -23,6 +24,8 @@ import type {
 import {
     ErrorResponseFromJSON,
     ErrorResponseToJSON,
+    InsufficientScopeResponseFromJSON,
+    InsufficientScopeResponseToJSON,
     SearchErrorResponseFromJSON,
     SearchErrorResponseToJSON,
     SearchRequestFromJSON,

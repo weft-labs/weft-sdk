@@ -93,6 +93,7 @@ class SearchApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "SearchResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
             '422': "SearchErrorResponse",
             '502': "SearchErrorResponse",
             '500': "SearchErrorResponse",
@@ -164,6 +165,7 @@ class SearchApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "SearchResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
             '422': "SearchErrorResponse",
             '502': "SearchErrorResponse",
             '500': "SearchErrorResponse",
@@ -235,6 +237,7 @@ class SearchApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "SearchResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
             '422': "SearchErrorResponse",
             '502': "SearchErrorResponse",
             '500': "SearchErrorResponse",
