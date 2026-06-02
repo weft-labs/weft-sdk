@@ -208,9 +208,11 @@ jobs:
         # The PR's required checks (typescript / python / ruby / go build+test
         # jobs, which trigger on changes to spec/** and scripts/**, plus the
         # staging e2e job in e2e.yml) are the merge gate. Squash-merging keeps
-        # main's history one-commit-per-spec-bump. We refuse to act if more
-        # than one open PR matches the branch, since auto-merging the wrong
-        # PR would land unverified code on main.
+        # main's history one-commit-per-spec-bump. --delete-branch removes the
+        # sdk-candidate/<short_sha> head branch once the auto-merge lands, so
+        # candidate branches don't accumulate on origin. We refuse to act if
+        # more than one open PR matches the branch, since auto-merging the
+        # wrong PR would land unverified code on main.
         if: env.PR_BRANCH != ''
         env:
           GH_TOKEN: ${{ steps.app-token-write.outputs.token }}
@@ -237,4 +239,5 @@ jobs:
           gh pr merge "$PR_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
             --auto \
-            --squash
+            --squash \
+            --delete-branch
