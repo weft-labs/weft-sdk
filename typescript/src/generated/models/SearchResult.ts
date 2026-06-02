@@ -117,7 +117,8 @@ export interface SearchResult {
 export const SearchResultProtocolEnum = {
     A2a: 'a2a',
     Mcp: 'mcp',
-    Openapi: 'openapi'
+    Openapi: 'openapi',
+    AgentNet: 'AgentNet'
 } as const;
 export type SearchResultProtocolEnum = typeof SearchResultProtocolEnum[keyof typeof SearchResultProtocolEnum];
 

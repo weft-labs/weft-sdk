@@ -4,7 +4,7 @@
 
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
-| **results** | [**Array&lt;SearchResult&gt;**](SearchResult.md) |  |  |
+| **results** | [**Array&lt;SearchResponseResultsInner&gt;**](SearchResponseResultsInner.md) |  |  |
 | **paid_usd** | **String** | Always &#x60;null&#x60; in v1. | [optional] |
 | **tx_hash** | **String** | Always &#x60;null&#x60; in v1. | [optional] |
 | **artifact_id** | **String** | Always &#x60;null&#x60; in v1. | [optional] |

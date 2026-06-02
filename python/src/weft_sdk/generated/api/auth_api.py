@@ -1456,6 +1456,7 @@ class AuthApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "MessageResponse",
+            '422': "ErrorResponse",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -1522,6 +1523,7 @@ class AuthApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "MessageResponse",
+            '422': "ErrorResponse",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -1588,6 +1590,7 @@ class AuthApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "MessageResponse",
+            '422': "ErrorResponse",
         }
         response_data = self.api_client.call_api(
             *_param,

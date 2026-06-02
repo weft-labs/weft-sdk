@@ -25,7 +25,7 @@ type SearchFilters struct {
 	MaxPriceUsd *string `json:"max_price_usd,omitempty" validate:"regexp=^\\\\d+(\\\\.\\\\d{1,6})?$"`
 	// Payment protocol the agent settles on.
 	PaymentProtocol *string `json:"payment_protocol,omitempty"`
-	// Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).
+	// Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).
 	AgentProtocol *string `json:"agent_protocol,omitempty"`
 	// Substring match against any of the agent's declared domain tags (e.g. `email`, `sales`, `enrichment`). 
 	Domain *string `json:"domain,omitempty"`

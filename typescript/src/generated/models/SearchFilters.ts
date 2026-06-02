@@ -43,7 +43,7 @@ export interface SearchFilters {
      */
     paymentProtocol?: SearchFiltersPaymentProtocolEnum;
     /**
-     * Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).
+     * Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).
      * @type {string}
      * @memberof SearchFilters
      */
@@ -75,7 +75,8 @@ export type SearchFiltersPaymentProtocolEnum = typeof SearchFiltersPaymentProtoc
 export const SearchFiltersAgentProtocolEnum = {
     A2a: 'a2a',
     Mcp: 'mcp',
-    Openapi: 'openapi'
+    Openapi: 'openapi',
+    AgentNet: 'AgentNet'
 } as const;
 export type SearchFiltersAgentProtocolEnum = typeof SearchFiltersAgentProtocolEnum[keyof typeof SearchFiltersAgentProtocolEnum];
 

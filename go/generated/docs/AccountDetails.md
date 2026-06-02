@@ -5,18 +5,16 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Id** | **int32** |  | 
-**Email** | **string** |  | 
-**Status** | **string** |  | 
-**DisplayName** | Pointer to **string** |  | [optional] 
-**PublicProfile** | **bool** |  | 
-**PublicSlug** | Pointer to **string** |  | [optional] 
-**CreatedAt** | **time.Time** |  | 
+**Name** | **string** |  | 
+**Slug** | **string** |  | 
+**Kind** | **string** |  | 
+**ApiKey** | [**MeApiKey**](MeApiKey.md) |  | 
 
 ## Methods
 
 ### NewAccountDetails
 
-`func NewAccountDetails(id int32, email string, status string, publicProfile bool, createdAt time.Time, ) *AccountDetails`
+`func NewAccountDetails(id int32, name string, slug string, kind string, apiKey MeApiKey, ) *AccountDetails`
 
 NewAccountDetails instantiates a new AccountDetails object
 This constructor will assign default values to properties that have it defined,
@@ -51,134 +49,84 @@ and a boolean to check if the value has been set.
 SetId sets Id field to given value.
 
 
-### GetEmail
+### GetName
 
-`func (o *AccountDetails) GetEmail() string`
+`func (o *AccountDetails) GetName() string`
 
-GetEmail returns the Email field if non-nil, zero value otherwise.
+GetName returns the Name field if non-nil, zero value otherwise.
 
-### GetEmailOk
+### GetNameOk
 
-`func (o *AccountDetails) GetEmailOk() (*string, bool)`
+`func (o *AccountDetails) GetNameOk() (*string, bool)`
 
-GetEmailOk returns a tuple with the Email field if it's non-nil, zero value otherwise
+GetNameOk returns a tuple with the Name field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetEmail
+### SetName
 
-`func (o *AccountDetails) SetEmail(v string)`
+`func (o *AccountDetails) SetName(v string)`
 
-SetEmail sets Email field to given value.
+SetName sets Name field to given value.
 
 
-### GetStatus
+### GetSlug
 
-`func (o *AccountDetails) GetStatus() string`
+`func (o *AccountDetails) GetSlug() string`
 
-GetStatus returns the Status field if non-nil, zero value otherwise.
+GetSlug returns the Slug field if non-nil, zero value otherwise.
 
-### GetStatusOk
+### GetSlugOk
 
-`func (o *AccountDetails) GetStatusOk() (*string, bool)`
+`func (o *AccountDetails) GetSlugOk() (*string, bool)`
 
-GetStatusOk returns a tuple with the Status field if it's non-nil, zero value otherwise
+GetSlugOk returns a tuple with the Slug field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetStatus
+### SetSlug
 
-`func (o *AccountDetails) SetStatus(v string)`
+`func (o *AccountDetails) SetSlug(v string)`
 
-SetStatus sets Status field to given value.
+SetSlug sets Slug field to given value.
 
 
-### GetDisplayName
+### GetKind
 
-`func (o *AccountDetails) GetDisplayName() string`
+`func (o *AccountDetails) GetKind() string`
 
-GetDisplayName returns the DisplayName field if non-nil, zero value otherwise.
+GetKind returns the Kind field if non-nil, zero value otherwise.
 
-### GetDisplayNameOk
+### GetKindOk
 
-`func (o *AccountDetails) GetDisplayNameOk() (*string, bool)`
+`func (o *AccountDetails) GetKindOk() (*string, bool)`
 
-GetDisplayNameOk returns a tuple with the DisplayName field if it's non-nil, zero value otherwise
+GetKindOk returns a tuple with the Kind field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDisplayName
+### SetKind
 
-`func (o *AccountDetails) SetDisplayName(v string)`
+`func (o *AccountDetails) SetKind(v string)`
 
-SetDisplayName sets DisplayName field to given value.
+SetKind sets Kind field to given value.
 
-### HasDisplayName
 
-`func (o *AccountDetails) HasDisplayName() bool`
+### GetApiKey
 
-HasDisplayName returns a boolean if a field has been set.
+`func (o *AccountDetails) GetApiKey() MeApiKey`
 
-### GetPublicProfile
+GetApiKey returns the ApiKey field if non-nil, zero value otherwise.
 
-`func (o *AccountDetails) GetPublicProfile() bool`
+### GetApiKeyOk
 
-GetPublicProfile returns the PublicProfile field if non-nil, zero value otherwise.
+`func (o *AccountDetails) GetApiKeyOk() (*MeApiKey, bool)`
 
-### GetPublicProfileOk
-
-`func (o *AccountDetails) GetPublicProfileOk() (*bool, bool)`
-
-GetPublicProfileOk returns a tuple with the PublicProfile field if it's non-nil, zero value otherwise
+GetApiKeyOk returns a tuple with the ApiKey field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPublicProfile
+### SetApiKey
 
-`func (o *AccountDetails) SetPublicProfile(v bool)`
+`func (o *AccountDetails) SetApiKey(v MeApiKey)`
 
-SetPublicProfile sets PublicProfile field to given value.
-
-
-### GetPublicSlug
-
-`func (o *AccountDetails) GetPublicSlug() string`
-
-GetPublicSlug returns the PublicSlug field if non-nil, zero value otherwise.
-
-### GetPublicSlugOk
-
-`func (o *AccountDetails) GetPublicSlugOk() (*string, bool)`
-
-GetPublicSlugOk returns a tuple with the PublicSlug field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetPublicSlug
-
-`func (o *AccountDetails) SetPublicSlug(v string)`
-
-SetPublicSlug sets PublicSlug field to given value.
-
-### HasPublicSlug
-
-`func (o *AccountDetails) HasPublicSlug() bool`
-
-HasPublicSlug returns a boolean if a field has been set.
-
-### GetCreatedAt
-
-`func (o *AccountDetails) GetCreatedAt() time.Time`
-
-GetCreatedAt returns the CreatedAt field if non-nil, zero value otherwise.
-
-### GetCreatedAtOk
-
-`func (o *AccountDetails) GetCreatedAtOk() (*time.Time, bool)`
-
-GetCreatedAtOk returns a tuple with the CreatedAt field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetCreatedAt
-
-`func (o *AccountDetails) SetCreatedAt(v time.Time)`
-
-SetCreatedAt sets CreatedAt field to given value.
+SetApiKey sets ApiKey field to given value.
 
 
 

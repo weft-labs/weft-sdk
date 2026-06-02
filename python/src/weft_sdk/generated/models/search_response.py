@@ -19,15 +19,15 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
-from weft_sdk.generated.models.search_result import SearchResult
+from weft_sdk.generated.models.search_response_results_inner import SearchResponseResultsInner
 from typing import Optional, Set
 from typing_extensions import Self
 
 class SearchResponse(BaseModel):
     """
-    Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend. 
+    Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend.  Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default while the real index is unshipped) emits the rich, SDK-facing `SearchResult` shape. The legacy `platform` backend proxies the upstream search service and passes its result rows through verbatim — Weft does not own or reshape that payload, so those rows are typed as a free-form object. SDK clients on v1 should treat unknown row shapes defensively until the platform backend is retrofitted to the `SearchResult` contract (specs 07 + 10).  Because the `PlatformSearchResult` branch is intentionally permissive (free-form, to admit the un-owned platform rows), the `anyOf` is satisfied by any object — so the committee response-validation gate does NOT strictly validate result-row shapes; the rich `SearchResult` contract is instead guarded by the `/api/v1/search` request spec. 
     """ # noqa: E501
-    results: List[SearchResult]
+    results: List[SearchResponseResultsInner]
     paid_usd: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
     tx_hash: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
     artifact_id: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
@@ -92,7 +92,7 @@ class SearchResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "results": [SearchResult.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
+            "results": [SearchResponseResultsInner.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
             "paid_usd": obj.get("paid_usd"),
             "tx_hash": obj.get("tx_hash"),
             "artifact_id": obj.get("artifact_id"),

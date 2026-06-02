@@ -31,8 +31,8 @@ type FetchResponse struct {
 	PaidUsd string `json:"paid_usd"`
 	// Settlement transaction hash. Null for free upstreams.
 	TxHash string `json:"tx_hash"`
-	// Internal artifact identifier if the response was persisted.
-	ArtifactId string `json:"artifact_id"`
+	// Internal artifact identifier if the response was persisted; `null` otherwise.
+	ArtifactId int32 `json:"artifact_id"`
 	// Merchant reputation snapshot. Null for free upstreams.
 	Merchant Merchant `json:"merchant"`
 }
@@ -43,7 +43,7 @@ type _FetchResponse FetchResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId string, merchant Merchant) *FetchResponse {
+func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId int32, merchant Merchant) *FetchResponse {
 	this := FetchResponse{}
 	this.Status = status
 	this.Headers = headers
@@ -184,9 +184,9 @@ func (o *FetchResponse) SetTxHash(v string) {
 }
 
 // GetArtifactId returns the ArtifactId field value
-func (o *FetchResponse) GetArtifactId() string {
+func (o *FetchResponse) GetArtifactId() int32 {
 	if o == nil {
-		var ret string
+		var ret int32
 		return ret
 	}
 
@@ -195,7 +195,7 @@ func (o *FetchResponse) GetArtifactId() string {
 
 // GetArtifactIdOk returns a tuple with the ArtifactId field value
 // and a boolean to check if the value has been set.
-func (o *FetchResponse) GetArtifactIdOk() (*string, bool) {
+func (o *FetchResponse) GetArtifactIdOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -203,7 +203,7 @@ func (o *FetchResponse) GetArtifactIdOk() (*string, bool) {
 }
 
 // SetArtifactId sets field value
-func (o *FetchResponse) SetArtifactId(v string) {
+func (o *FetchResponse) SetArtifactId(v int32) {
 	o.ArtifactId = v
 }
 

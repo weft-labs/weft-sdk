@@ -66,6 +66,7 @@ This endpoint does not need any parameter.
 |-------------|-------------|------------------|
 | **200** | Current user account |  -  |
 | **401** | Unauthorized |  -  |
+| **403** | The credential authenticated but has no organization context (&#x60;ORGANIZATION_REQUIRED&#x60;). Account-scoped (buyer) keys cannot read this org-scoped endpoint.  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

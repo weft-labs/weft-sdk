@@ -30,7 +30,7 @@ class SearchFilters(BaseModel):
     min_price_usd: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Decimal USD floor; agent must have at least one skill priced at or above this.")
     max_price_usd: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Decimal USD ceiling; agent must have at least one skill priced at or below this.")
     payment_protocol: Optional[StrictStr] = Field(default=None, description="Payment protocol the agent settles on.")
-    agent_protocol: Optional[StrictStr] = Field(default=None, description="Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).")
+    agent_protocol: Optional[StrictStr] = Field(default=None, description="Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).")
     domain: Optional[StrictStr] = Field(default=None, description="Substring match against any of the agent's declared domain tags (e.g. `email`, `sales`, `enrichment`). ")
     __properties: ClassVar[List[str]] = ["min_price_usd", "max_price_usd", "payment_protocol", "agent_protocol", "domain"]
 
@@ -70,8 +70,8 @@ class SearchFilters(BaseModel):
         if value is None:
             return value
 
-        if value not in set(['a2a', 'mcp', 'openapi']):
-            raise ValueError("must be one of enum values ('a2a', 'mcp', 'openapi')")
+        if value not in set(['a2a', 'mcp', 'openapi', 'AgentNet']):
+            raise ValueError("must be one of enum values ('a2a', 'mcp', 'openapi', 'AgentNet')")
         return value
 
     model_config = ConfigDict(

@@ -13,7 +13,19 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MeApiKey } from './MeApiKey';
+import {
+    MeApiKeyFromJSON,
+    MeApiKeyFromJSONTyped,
+    MeApiKeyToJSON,
+    MeApiKeyToJSONTyped,
+} from './MeApiKey';
+
 /**
+ * The Organization that owns the authenticated API key — the principal
+ * in API v1 (the key represents an Org, not a person). `api_key` carries
+ * audit info about the key itself, including the user who minted it
+ * (`created_by`, which may be `null` if that user has left the Org).
  * 
  * @export
  * @interface AccountDetails
@@ -30,59 +42,36 @@ export interface AccountDetails {
      * @type {string}
      * @memberof AccountDetails
      */
-    email: string;
+    name: string;
     /**
      * 
      * @type {string}
      * @memberof AccountDetails
      */
-    status: AccountDetailsStatusEnum;
+    slug: string;
     /**
      * 
      * @type {string}
      * @memberof AccountDetails
      */
-    displayName?: string;
+    kind: string;
     /**
      * 
-     * @type {boolean}
+     * @type {MeApiKey}
      * @memberof AccountDetails
      */
-    publicProfile: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof AccountDetails
-     */
-    publicSlug?: string;
-    /**
-     * 
-     * @type {Date}
-     * @memberof AccountDetails
-     */
-    createdAt: Date;
+    apiKey: MeApiKey;
 }
-
-
-/**
- * @export
- */
-export const AccountDetailsStatusEnum = {
-    Active: 'active',
-    Blocked: 'blocked'
-} as const;
-export type AccountDetailsStatusEnum = typeof AccountDetailsStatusEnum[keyof typeof AccountDetailsStatusEnum];
-
 
 /**
  * Check if a given object implements the AccountDetails interface.
  */
 export function instanceOfAccountDetails(value: object): value is AccountDetails {
     if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('email' in value) || value['email'] === undefined) return false;
-    if (!('status' in value) || value['status'] === undefined) return false;
-    if (!('publicProfile' in value) || value['publicProfile'] === undefined) return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('kind' in value) || value['kind'] === undefined) return false;
+    if (!('apiKey' in value) || value['apiKey'] === undefined) return false;
     return true;
 }
 
@@ -97,12 +86,10 @@ export function AccountDetailsFromJSONTyped(json: any, ignoreDiscriminator: bool
     return {
         
         'id': json['id'],
-        'email': json['email'],
-        'status': json['status'],
-        'displayName': json['display_name'] == null ? undefined : json['display_name'],
-        'publicProfile': json['public_profile'],
-        'publicSlug': json['public_slug'] == null ? undefined : json['public_slug'],
-        'createdAt': (new Date(json['created_at'])),
+        'name': json['name'],
+        'slug': json['slug'],
+        'kind': json['kind'],
+        'apiKey': MeApiKeyFromJSON(json['api_key']),
     };
 }
 
@@ -118,12 +105,10 @@ export function AccountDetailsToJSONTyped(value?: AccountDetails | null, ignoreD
     return {
         
         'id': value['id'],
-        'email': value['email'],
-        'status': value['status'],
-        'display_name': value['displayName'],
-        'public_profile': value['publicProfile'],
-        'public_slug': value['publicSlug'],
-        'created_at': value['createdAt'].toISOString(),
+        'name': value['name'],
+        'slug': value['slug'],
+        'kind': value['kind'],
+        'api_key': MeApiKeyToJSON(value['apiKey']),
     };
 }
 

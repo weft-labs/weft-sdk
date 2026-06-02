@@ -9,7 +9,7 @@
 | **body_base64** | **String** | Base64-encoded response body. Empty string for empty bodies. |  |
 | **paid_usd** | **String** | USD amount actually settled. Null for free upstreams. |  |
 | **tx_hash** | **String** | Settlement transaction hash. Null for free upstreams. |  |
-| **artifact_id** | **String** | Internal artifact identifier if the response was persisted. |  |
+| **artifact_id** | **Integer** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. |  |
 | **merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. Null for free upstreams. |  |
 
 ## Example

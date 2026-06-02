@@ -24,6 +24,7 @@ __all__ = [
     "BalanceApi",
     "FetchApi",
     "PaymentsApi",
+    "ResourcesApi",
     "SearchApi",
     "DefaultApi",
     "ApiResponse",
@@ -45,6 +46,7 @@ __all__ = [
     "BalanceResponse",
     "ConfirmRequest",
     "CreateApiKeyRequest",
+    "EnrolledResource",
     "Error",
     "ErrorResponse",
     "FetchBalanceSnapshot",
@@ -52,6 +54,8 @@ __all__ = [
     "FetchRequest",
     "FetchRequestBody",
     "FetchResponse",
+    "MeApiKey",
+    "MeApiKeyCreator",
     "MeResponse",
     "Merchant",
     "MessageResponse",
@@ -64,6 +68,9 @@ __all__ = [
     "PaymentResponse",
     "PromoBalance",
     "ResendConfirmationRequest",
+    "ResourceEnrollmentRequest",
+    "ResourceEnrollmentResponse",
+    "ResourceStats",
     "SearchAgentCard",
     "SearchEndpoints",
     "SearchErrorResponse",
@@ -72,6 +79,7 @@ __all__ = [
     "SearchRanking",
     "SearchRequest",
     "SearchResponse",
+    "SearchResponseResultsInner",
     "SearchResult",
     "SearchSkill",
     "SearchSkillEndpoint",
@@ -89,6 +97,7 @@ from weft_sdk.generated.api.auth_api import AuthApi as AuthApi
 from weft_sdk.generated.api.balance_api import BalanceApi as BalanceApi
 from weft_sdk.generated.api.fetch_api import FetchApi as FetchApi
 from weft_sdk.generated.api.payments_api import PaymentsApi as PaymentsApi
+from weft_sdk.generated.api.resources_api import ResourcesApi as ResourcesApi
 from weft_sdk.generated.api.search_api import SearchApi as SearchApi
 from weft_sdk.generated.api.default_api import DefaultApi as DefaultApi
 
@@ -114,6 +123,7 @@ from weft_sdk.generated.models.auth_response_data import AuthResponseData as Aut
 from weft_sdk.generated.models.balance_response import BalanceResponse as BalanceResponse
 from weft_sdk.generated.models.confirm_request import ConfirmRequest as ConfirmRequest
 from weft_sdk.generated.models.create_api_key_request import CreateApiKeyRequest as CreateApiKeyRequest
+from weft_sdk.generated.models.enrolled_resource import EnrolledResource as EnrolledResource
 from weft_sdk.generated.models.error import Error as Error
 from weft_sdk.generated.models.error_response import ErrorResponse as ErrorResponse
 from weft_sdk.generated.models.fetch_balance_snapshot import FetchBalanceSnapshot as FetchBalanceSnapshot
@@ -121,6 +131,8 @@ from weft_sdk.generated.models.fetch_error_response import FetchErrorResponse as
 from weft_sdk.generated.models.fetch_request import FetchRequest as FetchRequest
 from weft_sdk.generated.models.fetch_request_body import FetchRequestBody as FetchRequestBody
 from weft_sdk.generated.models.fetch_response import FetchResponse as FetchResponse
+from weft_sdk.generated.models.me_api_key import MeApiKey as MeApiKey
+from weft_sdk.generated.models.me_api_key_creator import MeApiKeyCreator as MeApiKeyCreator
 from weft_sdk.generated.models.me_response import MeResponse as MeResponse
 from weft_sdk.generated.models.merchant import Merchant as Merchant
 from weft_sdk.generated.models.message_response import MessageResponse as MessageResponse
@@ -133,6 +145,9 @@ from weft_sdk.generated.models.payment_list_response import PaymentListResponse 
 from weft_sdk.generated.models.payment_response import PaymentResponse as PaymentResponse
 from weft_sdk.generated.models.promo_balance import PromoBalance as PromoBalance
 from weft_sdk.generated.models.resend_confirmation_request import ResendConfirmationRequest as ResendConfirmationRequest
+from weft_sdk.generated.models.resource_enrollment_request import ResourceEnrollmentRequest as ResourceEnrollmentRequest
+from weft_sdk.generated.models.resource_enrollment_response import ResourceEnrollmentResponse as ResourceEnrollmentResponse
+from weft_sdk.generated.models.resource_stats import ResourceStats as ResourceStats
 from weft_sdk.generated.models.search_agent_card import SearchAgentCard as SearchAgentCard
 from weft_sdk.generated.models.search_endpoints import SearchEndpoints as SearchEndpoints
 from weft_sdk.generated.models.search_error_response import SearchErrorResponse as SearchErrorResponse
@@ -141,6 +156,7 @@ from weft_sdk.generated.models.search_pricing import SearchPricing as SearchPric
 from weft_sdk.generated.models.search_ranking import SearchRanking as SearchRanking
 from weft_sdk.generated.models.search_request import SearchRequest as SearchRequest
 from weft_sdk.generated.models.search_response import SearchResponse as SearchResponse
+from weft_sdk.generated.models.search_response_results_inner import SearchResponseResultsInner as SearchResponseResultsInner
 from weft_sdk.generated.models.search_result import SearchResult as SearchResult
 from weft_sdk.generated.models.search_skill import SearchSkill as SearchSkill
 from weft_sdk.generated.models.search_skill_endpoint import SearchSkillEndpoint as SearchSkillEndpoint

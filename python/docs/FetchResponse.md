@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **body_base64** | **str** | Base64-encoded response body. Empty string for empty bodies. | 
 **paid_usd** | **str** | USD amount actually settled. Null for free upstreams. | 
 **tx_hash** | **str** | Settlement transaction hash. Null for free upstreams. | 
-**artifact_id** | **str** | Internal artifact identifier if the response was persisted. | 
+**artifact_id** | **int** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. | 
 **merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. Null for free upstreams. | 
 
 ## Example

@@ -31,7 +31,7 @@ module Weft
     # Settlement transaction hash. Null for free upstreams.
     attr_accessor :tx_hash
 
-    # Internal artifact identifier if the response was persisted.
+    # Internal artifact identifier if the response was persisted; `null` otherwise.
     attr_accessor :artifact_id
 
     # Merchant reputation snapshot. Null for free upstreams.
@@ -68,7 +68,7 @@ module Weft
         :'body_base64' => :'String',
         :'paid_usd' => :'String',
         :'tx_hash' => :'String',
-        :'artifact_id' => :'String',
+        :'artifact_id' => :'Integer',
         :'merchant' => :'Merchant'
       }
     end

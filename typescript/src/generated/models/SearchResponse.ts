@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SearchResult } from './SearchResult';
+import type { SearchResponseResultsInner } from './SearchResponseResultsInner';
 import {
-    SearchResultFromJSON,
-    SearchResultFromJSONTyped,
-    SearchResultToJSON,
-    SearchResultToJSONTyped,
-} from './SearchResult';
+    SearchResponseResultsInnerFromJSON,
+    SearchResponseResultsInnerFromJSONTyped,
+    SearchResponseResultsInnerToJSON,
+    SearchResponseResultsInnerToJSONTyped,
+} from './SearchResponseResultsInner';
 
 /**
  * Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id`
@@ -27,16 +27,31 @@ import {
  * artifact persistence; they are always `null` in v1. `_mock: true`
  * is set only by the mock backend.
  * 
+ * Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
+ * while the real index is unshipped) emits the rich, SDK-facing
+ * `SearchResult` shape. The legacy `platform` backend proxies the
+ * upstream search service and passes its result rows through verbatim —
+ * Weft does not own or reshape that payload, so those rows are typed as
+ * a free-form object. SDK clients on v1 should treat unknown row shapes
+ * defensively until the platform backend is retrofitted to the
+ * `SearchResult` contract (specs 07 + 10).
+ * 
+ * Because the `PlatformSearchResult` branch is intentionally permissive
+ * (free-form, to admit the un-owned platform rows), the `anyOf` is
+ * satisfied by any object — so the committee response-validation gate does
+ * NOT strictly validate result-row shapes; the rich `SearchResult`
+ * contract is instead guarded by the `/api/v1/search` request spec.
+ * 
  * @export
  * @interface SearchResponse
  */
 export interface SearchResponse {
     /**
      * 
-     * @type {Array<SearchResult>}
+     * @type {Array<SearchResponseResultsInner>}
      * @memberof SearchResponse
      */
-    results: Array<SearchResult>;
+    results: Array<SearchResponseResultsInner>;
     /**
      * Always `null` in v1.
      * @type {string}
@@ -81,7 +96,7 @@ export function SearchResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'results': ((json['results'] as Array<any>).map(SearchResultFromJSON)),
+        'results': ((json['results'] as Array<any>).map(SearchResponseResultsInnerFromJSON)),
         'paidUsd': json['paid_usd'] == null ? undefined : json['paid_usd'],
         'txHash': json['tx_hash'] == null ? undefined : json['tx_hash'],
         'artifactId': json['artifact_id'] == null ? undefined : json['artifact_id'],
@@ -100,7 +115,7 @@ export function SearchResponseToJSONTyped(value?: SearchResponse | null, ignoreD
 
     return {
         
-        'results': ((value['results'] as Array<any>).map(SearchResultToJSON)),
+        'results': ((value['results'] as Array<any>).map(SearchResponseResultsInnerToJSON)),
         'paid_usd': value['paidUsd'],
         'tx_hash': value['txHash'],
         'artifact_id': value['artifactId'],

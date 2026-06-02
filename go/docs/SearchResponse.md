@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Results** | [**[]SearchResult**](SearchResult.md) |  | 
+**Results** | [**[]SearchResponseResultsInner**](SearchResponseResultsInner.md) |  | 
 **PaidUsd** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
 **TxHash** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
 **ArtifactId** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 
 ### NewSearchResponse
 
-`func NewSearchResponse(results []SearchResult, ) *SearchResponse`
+`func NewSearchResponse(results []SearchResponseResultsInner, ) *SearchResponse`
 
 NewSearchResponse instantiates a new SearchResponse object
 This constructor will assign default values to properties that have it defined,
@@ -31,20 +31,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetResults
 
-`func (o *SearchResponse) GetResults() []SearchResult`
+`func (o *SearchResponse) GetResults() []SearchResponseResultsInner`
 
 GetResults returns the Results field if non-nil, zero value otherwise.
 
 ### GetResultsOk
 
-`func (o *SearchResponse) GetResultsOk() (*[]SearchResult, bool)`
+`func (o *SearchResponse) GetResultsOk() (*[]SearchResponseResultsInner, bool)`
 
 GetResultsOk returns a tuple with the Results field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetResults
 
-`func (o *SearchResponse) SetResults(v []SearchResult)`
+`func (o *SearchResponse) SetResults(v []SearchResponseResultsInner)`
 
 SetResults sets Results field to given value.
 

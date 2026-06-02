@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **min_price_usd** | **str** | Decimal USD floor; agent must have at least one skill priced at or above this. | [optional] 
 **max_price_usd** | **str** | Decimal USD ceiling; agent must have at least one skill priced at or below this. | [optional] 
 **payment_protocol** | **str** | Payment protocol the agent settles on. | [optional] 
-**agent_protocol** | **str** | Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI). | [optional] 
+**agent_protocol** | **str** | Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet). | [optional] 
 **domain** | **str** | Substring match against any of the agent&#39;s declared domain tags (e.g. &#x60;email&#x60;, &#x60;sales&#x60;, &#x60;enrichment&#x60;).  | [optional] 
 
 ## Example
