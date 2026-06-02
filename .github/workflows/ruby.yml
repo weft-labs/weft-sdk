@@ -77,7 +77,7 @@ jobs:
       # verify with `gh attestation verify weft-sdk-<version>.gem
       # --repo weft-labs/weft-sdk`.
       - name: Attest gem provenance
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: "ruby/weft-sdk-*.gem"
       - name: Configure RubyGems trusted publishing
