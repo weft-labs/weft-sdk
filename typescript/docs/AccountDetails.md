@@ -1,18 +1,17 @@
 
 # AccountDetails
 
+The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
 
 ## Properties
 
 Name | Type
 ------------ | -------------
 `id` | number
-`email` | string
-`status` | string
-`displayName` | string
-`publicProfile` | boolean
-`publicSlug` | string
-`createdAt` | Date
+`name` | string
+`slug` | string
+`kind` | string
+`apiKey` | [MeApiKey](MeApiKey.md)
 
 ## Example
 
@@ -22,12 +21,10 @@ import type { AccountDetails } from '@weft-labs/sdk'
 // TODO: Update the object below with actual values
 const example = {
   "id": null,
-  "email": null,
-  "status": null,
-  "displayName": null,
-  "publicProfile": null,
-  "publicSlug": null,
-  "createdAt": null,
+  "name": null,
+  "slug": null,
+  "kind": null,
+  "apiKey": null,
 } satisfies AccountDetails
 
 console.log(example)

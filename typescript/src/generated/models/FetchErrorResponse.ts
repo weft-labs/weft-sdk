@@ -34,8 +34,9 @@ import {
  * can render an actionable message without a second round-trip.
  * 
  * `error` values include the fixed codes listed below plus the
- * family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`)
- * where `<REASON>` matches the violated policy field.
+ * `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated
+ * policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see
+ * `PolicyViolation::REASONS`).
  * 
  * @export
  * @interface FetchErrorResponse
@@ -85,7 +86,10 @@ export const FetchErrorResponseErrorEnum = {
     ArtifactTooLarge: 'ARTIFACT_TOO_LARGE',
     DenylistedRecipient: 'DENYLISTED_RECIPIENT',
     SettlementFailed: 'SETTLEMENT_FAILED',
-    PolicyViolation: 'POLICY_VIOLATION'
+    UnsupportedPaymentMethod: 'UNSUPPORTED_PAYMENT_METHOD',
+    PolicyViolationMaxTx: 'POLICY_VIOLATION_MAX_TX',
+    PolicyViolationDaily: 'POLICY_VIOLATION_DAILY',
+    PolicyViolationWeekly: 'POLICY_VIOLATION_WEEKLY'
 } as const;
 export type FetchErrorResponseErrorEnum = typeof FetchErrorResponseErrorEnum[keyof typeof FetchErrorResponseErrorEnum];
 

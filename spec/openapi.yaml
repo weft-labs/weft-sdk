@@ -55,6 +55,11 @@ tags:
       changed?" without a second round-trip.
   - name: Payments
     description: Payment history and individual purchase details.
+  - name: Resources
+    description: |
+      Public, unauthenticated ghost-resource enrollment. Lets an agent
+      self-register so its human controller can later claim it from the
+      dashboard.
 servers:
   - url: https://weft.network
     description: Production
@@ -74,6 +79,48 @@ paths:
             application/yaml:
               schema:
                 type: string
+  /api/v1/resources/enroll:
+    post:
+      summary: Self-enroll a ghost resource (public, no auth)
+      description: |
+        Lets an unauthenticated agent (or its operator) self-enroll a
+        Resource as a "ghost" (no owning provider). The server generates the
+        `slug` and a single-use `claim_token`; the response also carries a
+        `claim_url` the agent hands to its human controller to claim the
+        resource from the dashboard.
+
+        Client-supplied `slug` and `category` are silently ignored: slugs are
+        server-generated from `name` (so callers cannot squat on reserved
+        names), and `category` is a post-claim concern set by a real human.
+
+        Rate-limited to 10 enrollments/hour/IP.
+      operationId: enrollResource
+      tags: [Resources]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceEnrollmentRequest"
+      responses:
+        "201":
+          description: Ghost resource created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceEnrollmentResponse"
+        "422":
+          description: Validation error (missing/blank fields, or unknown `kind`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (10 enrollments/hour/IP)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/auth/sign_up:
     post:
       summary: Create an account
@@ -200,6 +247,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+        "422":
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/me:
     get:
       summary: Get current account
@@ -220,6 +273,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/api_keys:
     get:
       summary: List API keys
@@ -236,6 +298,15 @@ paths:
                 $ref: "#/components/schemas/ApiKeyListResponse"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
           content:
             application/json:
               schema:
@@ -519,6 +590,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/payments/{id}:
     get:
       summary: Get payment details
@@ -611,6 +691,133 @@ components:
               type: string
           required: [message]
       required: [data]
+    ResourceEnrollmentRequest:
+      type: object
+      required: [kind, name]
+      description: |
+        `slug` and `category` are accepted but silently ignored — the server
+        generates the slug from `name`, and category is a post-claim concern.
+      properties:
+        kind:
+          type: string
+          description: |
+            Resource kind. Must be one of the supported kinds (currently
+            `agent`); an unknown value is rejected with a 422.
+          example: agent
+        name:
+          type: string
+          description: Human-readable name; the server derives the slug from it.
+          example: Self-Enrolled Bot
+        description:
+          type: string
+        wallet_address:
+          type: string
+          description: |
+            Declared EVM wallet address for the ghost resource. Stored as a
+            claim (unverified) until the resource is claimed.
+    ResourceEnrollmentResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/EnrolledResource"
+    EnrolledResource:
+      type: object
+      description: |
+        The `:created` view of a ghost resource. Adds `stats`, the single-use
+        `claim_token`, and the `claim_url` to the base resource shape. The
+        claim fields appear ONLY on this enrollment response — never in list
+        or read views.
+      required:
+        - id
+        - name
+        - slug
+        - kind
+        - visibility
+        - category
+        - verified
+        - claimed
+        - created_at
+        - stats
+        - claim_token
+        - claim_url
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        kind:
+          type: string
+          example: agent
+        visibility:
+          type: string
+          example: public_profile
+        wallet_address:
+          type: string
+          nullable: true
+          description: Declared wallet address, or `null` if none was provided.
+        category:
+          type: string
+          nullable: true
+          description: |
+            Legacy v3 taxonomy field. Returns a string only for `agent`-kind
+            resources that carry a `category` in their metadata; `null` for
+            all other kinds and for agents without one. Always `null` on
+            enrollment (category is a post-claim concern).
+        verified:
+          type: boolean
+        claimed:
+          type: boolean
+          description: True once the resource has an owning provider. Always false at enrollment.
+        created_at:
+          type: string
+          format: date-time
+        stats:
+          $ref: "#/components/schemas/ResourceStats"
+        claim_token:
+          type: string
+          description: Single-use token for the magic claim URL. Surfaced only on enrollment.
+        claim_url:
+          type: string
+          nullable: true
+          description: Dashboard path the agent hands to its human to claim the resource.
+    ResourceStats:
+      type: object
+      description: Aggregate public payment stats for the resource.
+      required:
+        - total_paid
+        - total_received
+        - payments_made
+        - payments_received
+        - unique_counterparties
+        - first_seen
+        - last_active
+      properties:
+        total_paid:
+          type: integer
+          description: Total atomic units paid out by this resource.
+        total_received:
+          type: integer
+          description: Total atomic units received by this resource.
+        payments_made:
+          type: integer
+        payments_received:
+          type: integer
+        unique_counterparties:
+          type: integer
+        first_seen:
+          type: string
+          format: date-time
+          nullable: true
+        last_active:
+          type: string
+          format: date-time
+          nullable: true
     Pagination:
       type: object
       properties:
@@ -707,27 +914,58 @@ components:
       required: [data]
     AccountDetails:
       type: object
+      description: |
+        The Organization that owns the authenticated API key — the principal
+        in API v1 (the key represents an Org, not a person). `api_key` carries
+        audit info about the key itself, including the user who minted it
+        (`created_by`, which may be `null` if that user has left the Org).
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        kind:
+          type: string
+        api_key:
+          $ref: "#/components/schemas/MeApiKey"
+      required: [id, name, slug, kind, api_key]
+    MeApiKey:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          $ref: "#/components/schemas/MeApiKeyCreator"
+      required: [id, created_at]
+    MeApiKeyCreator:
+      type: object
+      nullable: true
+      description: |
+        The user who minted this API key, surfaced for audit rendering only.
+        `null` if that user has since left the Organization. NEVER use for
+        authorization.
       properties:
         id:
           type: integer
         email:
           type: string
           format: email
-        status:
-          type: string
-          enum: [active, blocked]
         display_name:
           type: string
           nullable: true
-        public_profile:
-          type: boolean
-        public_slug:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-      required: [id, email, status, public_profile, created_at]
+      required: [id, email]
     CreateApiKeyRequest:
       type: object
       properties:
@@ -961,8 +1199,8 @@ components:
           description: Payment protocol the agent settles on.
         agent_protocol:
           type: string
-          enum: [a2a, mcp, openapi]
-          description: Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).
+          enum: [a2a, mcp, openapi, AgentNet]
+          description: Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).
         domain:
           type: string
           description: |
@@ -976,11 +1214,28 @@ components:
         are reserved for a later release that adds per-call billing and
         artifact persistence; they are always `null` in v1. `_mock: true`
         is set only by the mock backend.
+
+        Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
+        while the real index is unshipped) emits the rich, SDK-facing
+        `SearchResult` shape. The legacy `platform` backend proxies the
+        upstream search service and passes its result rows through verbatim —
+        Weft does not own or reshape that payload, so those rows are typed as
+        a free-form object. SDK clients on v1 should treat unknown row shapes
+        defensively until the platform backend is retrofitted to the
+        `SearchResult` contract (specs 07 + 10).
+
+        Because the `PlatformSearchResult` branch is intentionally permissive
+        (free-form, to admit the un-owned platform rows), the `anyOf` is
+        satisfied by any object — so the committee response-validation gate does
+        NOT strictly validate result-row shapes; the rich `SearchResult`
+        contract is instead guarded by the `/api/v1/search` request spec.
       properties:
         results:
           type: array
           items:
-            $ref: "#/components/schemas/SearchResult"
+            anyOf:
+              - $ref: "#/components/schemas/SearchResult"
+              - $ref: "#/components/schemas/PlatformSearchResult"
         paid_usd:
           type: string
           nullable: true
@@ -1011,7 +1266,7 @@ components:
           description: Cosine similarity score, clipped to [0, 1].
         protocol:
           type: string
-          enum: [a2a, mcp, openapi]
+          enum: [a2a, mcp, openapi, AgentNet]
           description: Agent protocol surface.
         domain:
           type: array
@@ -1034,6 +1289,16 @@ components:
           $ref: "#/components/schemas/SearchRanking"
         endpoints:
           $ref: "#/components/schemas/SearchEndpoints"
+    PlatformSearchResult:
+      type: object
+      description: |
+        A result row from the legacy `platform` search backend. The
+        `/api/v1/search` controller proxies the upstream search service and
+        passes its rows through verbatim, so Weft does not own or constrain
+        this shape. Documented as a free-form object purely so the canonical
+        spec stays truthful about both backends. SDK clients should prefer the
+        rich `SearchResult` shape and treat platform rows defensively.
+      additionalProperties: true
     SearchAgentCard:
       type: object
       description: |
@@ -1272,9 +1537,9 @@ components:
           nullable: true
           description: Settlement transaction hash. Null for free upstreams.
         artifact_id:
-          type: string
+          type: integer
           nullable: true
-          description: Internal artifact identifier if the response was persisted.
+          description: Internal artifact identifier if the response was persisted; `null` otherwise.
         merchant:
           allOf:
             - $ref: "#/components/schemas/Merchant"
@@ -1309,8 +1574,9 @@ components:
         can render an actionable message without a second round-trip.
 
         `error` values include the fixed codes listed below plus the
-        family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`)
-        where `<REASON>` matches the violated policy field.
+        `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated
+        policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see
+        `PolicyViolation::REASONS`).
       properties:
         error:
           type: string
@@ -1324,7 +1590,10 @@ components:
             - ARTIFACT_TOO_LARGE
             - DENYLISTED_RECIPIENT
             - SETTLEMENT_FAILED
-            - POLICY_VIOLATION
+            - UNSUPPORTED_PAYMENT_METHOD
+            - POLICY_VIOLATION_MAX_TX
+            - POLICY_VIOLATION_DAILY
+            - POLICY_VIOLATION_WEEKLY
         details:
           type: object
           additionalProperties: true

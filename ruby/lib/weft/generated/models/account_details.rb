@@ -14,53 +14,26 @@ require 'date'
 require 'time'
 
 module Weft
+  # The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
   class AccountDetails < ApiModelBase
     attr_accessor :id
 
-    attr_accessor :email
+    attr_accessor :name
 
-    attr_accessor :status
+    attr_accessor :slug
 
-    attr_accessor :display_name
+    attr_accessor :kind
 
-    attr_accessor :public_profile
-
-    attr_accessor :public_slug
-
-    attr_accessor :created_at
-
-    class EnumAttributeValidator
-      attr_reader :datatype
-      attr_reader :allowable_values
-
-      def initialize(datatype, allowable_values)
-        @allowable_values = allowable_values.map do |value|
-          case datatype.to_s
-          when /Integer/i
-            value.to_i
-          when /Float/i
-            value.to_f
-          else
-            value
-          end
-        end
-      end
-
-      def valid?(value)
-        !value || allowable_values.include?(value)
-      end
-    end
+    attr_accessor :api_key
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'id' => :'id',
-        :'email' => :'email',
-        :'status' => :'status',
-        :'display_name' => :'display_name',
-        :'public_profile' => :'public_profile',
-        :'public_slug' => :'public_slug',
-        :'created_at' => :'created_at'
+        :'name' => :'name',
+        :'slug' => :'slug',
+        :'kind' => :'kind',
+        :'api_key' => :'api_key'
       }
     end
 
@@ -78,12 +51,10 @@ module Weft
     def self.openapi_types
       {
         :'id' => :'Integer',
-        :'email' => :'String',
-        :'status' => :'String',
-        :'display_name' => :'String',
-        :'public_profile' => :'Boolean',
-        :'public_slug' => :'String',
-        :'created_at' => :'Time'
+        :'name' => :'String',
+        :'slug' => :'String',
+        :'kind' => :'String',
+        :'api_key' => :'MeApiKey'
       }
     end
 
@@ -115,36 +86,28 @@ module Weft
         self.id = nil
       end
 
-      if attributes.key?(:'email')
-        self.email = attributes[:'email']
+      if attributes.key?(:'name')
+        self.name = attributes[:'name']
       else
-        self.email = nil
+        self.name = nil
       end
 
-      if attributes.key?(:'status')
-        self.status = attributes[:'status']
+      if attributes.key?(:'slug')
+        self.slug = attributes[:'slug']
       else
-        self.status = nil
+        self.slug = nil
       end
 
-      if attributes.key?(:'display_name')
-        self.display_name = attributes[:'display_name']
-      end
-
-      if attributes.key?(:'public_profile')
-        self.public_profile = attributes[:'public_profile']
+      if attributes.key?(:'kind')
+        self.kind = attributes[:'kind']
       else
-        self.public_profile = nil
+        self.kind = nil
       end
 
-      if attributes.key?(:'public_slug')
-        self.public_slug = attributes[:'public_slug']
-      end
-
-      if attributes.key?(:'created_at')
-        self.created_at = attributes[:'created_at']
+      if attributes.key?(:'api_key')
+        self.api_key = attributes[:'api_key']
       else
-        self.created_at = nil
+        self.api_key = nil
       end
     end
 
@@ -157,20 +120,20 @@ module Weft
         invalid_properties.push('invalid value for "id", id cannot be nil.')
       end
 
-      if @email.nil?
-        invalid_properties.push('invalid value for "email", email cannot be nil.')
+      if @name.nil?
+        invalid_properties.push('invalid value for "name", name cannot be nil.')
       end
 
-      if @status.nil?
-        invalid_properties.push('invalid value for "status", status cannot be nil.')
+      if @slug.nil?
+        invalid_properties.push('invalid value for "slug", slug cannot be nil.')
       end
 
-      if @public_profile.nil?
-        invalid_properties.push('invalid value for "public_profile", public_profile cannot be nil.')
+      if @kind.nil?
+        invalid_properties.push('invalid value for "kind", kind cannot be nil.')
       end
 
-      if @created_at.nil?
-        invalid_properties.push('invalid value for "created_at", created_at cannot be nil.')
+      if @api_key.nil?
+        invalid_properties.push('invalid value for "api_key", api_key cannot be nil.')
       end
 
       invalid_properties
@@ -181,12 +144,10 @@ module Weft
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @id.nil?
-      return false if @email.nil?
-      return false if @status.nil?
-      status_validator = EnumAttributeValidator.new('String', ["active", "blocked"])
-      return false unless status_validator.valid?(@status)
-      return false if @public_profile.nil?
-      return false if @created_at.nil?
+      return false if @name.nil?
+      return false if @slug.nil?
+      return false if @kind.nil?
+      return false if @api_key.nil?
       true
     end
 
@@ -201,43 +162,43 @@ module Weft
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] email Value to be assigned
-    def email=(email)
-      if email.nil?
-        fail ArgumentError, 'email cannot be nil'
+    # @param [Object] name Value to be assigned
+    def name=(name)
+      if name.nil?
+        fail ArgumentError, 'name cannot be nil'
       end
 
-      @email = email
-    end
-
-    # Custom attribute writer method checking allowed values (enum).
-    # @param [Object] status Object to be assigned
-    def status=(status)
-      validator = EnumAttributeValidator.new('String', ["active", "blocked"])
-      unless validator.valid?(status)
-        fail ArgumentError, "invalid value for \"status\", must be one of #{validator.allowable_values}."
-      end
-      @status = status
+      @name = name
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] public_profile Value to be assigned
-    def public_profile=(public_profile)
-      if public_profile.nil?
-        fail ArgumentError, 'public_profile cannot be nil'
+    # @param [Object] slug Value to be assigned
+    def slug=(slug)
+      if slug.nil?
+        fail ArgumentError, 'slug cannot be nil'
       end
 
-      @public_profile = public_profile
+      @slug = slug
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] created_at Value to be assigned
-    def created_at=(created_at)
-      if created_at.nil?
-        fail ArgumentError, 'created_at cannot be nil'
+    # @param [Object] kind Value to be assigned
+    def kind=(kind)
+      if kind.nil?
+        fail ArgumentError, 'kind cannot be nil'
       end
 
-      @created_at = created_at
+      @kind = kind
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] api_key Value to be assigned
+    def api_key=(api_key)
+      if api_key.nil?
+        fail ArgumentError, 'api_key cannot be nil'
+      end
+
+      @api_key = api_key
     end
 
     # Checks equality by comparing each attribute.
@@ -246,12 +207,10 @@ module Weft
       return true if self.equal?(o)
       self.class == o.class &&
           id == o.id &&
-          email == o.email &&
-          status == o.status &&
-          display_name == o.display_name &&
-          public_profile == o.public_profile &&
-          public_slug == o.public_slug &&
-          created_at == o.created_at
+          name == o.name &&
+          slug == o.slug &&
+          kind == o.kind &&
+          api_key == o.api_key
     end
 
     # @see the `==` method
@@ -263,7 +222,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, email, status, display_name, public_profile, public_slug, created_at].hash
+      [id, name, slug, kind, api_key].hash
     end
 
     # Builds the object from hash

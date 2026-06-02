@@ -14,7 +14,7 @@ require 'date'
 require 'time'
 
 module Weft
-  # Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`) where `<REASON>` matches the violated policy field. 
+  # Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see `PolicyViolation::REASONS`). 
   class FetchErrorResponse < ApiModelBase
     # Stable error code.
     attr_accessor :error
@@ -171,7 +171,7 @@ module Weft
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @error.nil?
-      error_validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "POLICY_VIOLATION"])
+      error_validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
       return false unless error_validator.valid?(@error)
       return false if @details.nil?
       return false if @policy.nil?
@@ -183,7 +183,7 @@ module Weft
     # Custom attribute writer method checking allowed values (enum).
     # @param [Object] error Object to be assigned
     def error=(error)
-      validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "POLICY_VIOLATION"])
+      validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
       unless validator.valid?(error)
         fail ArgumentError, "invalid value for \"error\", must be one of #{validator.allowable_values}."
       end

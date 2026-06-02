@@ -17,31 +17,22 @@ import pprint
 import re  # noqa: F401
 import json
 
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
+from typing import Any, ClassVar, Dict, List
+from weft_sdk.generated.models.me_api_key import MeApiKey
 from typing import Optional, Set
 from typing_extensions import Self
 
 class AccountDetails(BaseModel):
     """
-    AccountDetails
+    The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
     """ # noqa: E501
     id: StrictInt
-    email: StrictStr
-    status: StrictStr
-    display_name: Optional[StrictStr] = None
-    public_profile: StrictBool
-    public_slug: Optional[StrictStr] = None
-    created_at: datetime
-    __properties: ClassVar[List[str]] = ["id", "email", "status", "display_name", "public_profile", "public_slug", "created_at"]
-
-    @field_validator('status')
-    def status_validate_enum(cls, value):
-        """Validates the enum"""
-        if value not in set(['active', 'blocked']):
-            raise ValueError("must be one of enum values ('active', 'blocked')")
-        return value
+    name: StrictStr
+    slug: StrictStr
+    kind: StrictStr
+    api_key: MeApiKey
+    __properties: ClassVar[List[str]] = ["id", "name", "slug", "kind", "api_key"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -82,6 +73,9 @@ class AccountDetails(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of api_key
+        if self.api_key:
+            _dict['api_key'] = self.api_key.to_dict()
         return _dict
 
     @classmethod
@@ -95,12 +89,10 @@ class AccountDetails(BaseModel):
 
         _obj = cls.model_validate({
             "id": obj.get("id"),
-            "email": obj.get("email"),
-            "status": obj.get("status"),
-            "display_name": obj.get("display_name"),
-            "public_profile": obj.get("public_profile"),
-            "public_slug": obj.get("public_slug"),
-            "created_at": obj.get("created_at")
+            "name": obj.get("name"),
+            "slug": obj.get("slug"),
+            "kind": obj.get("kind"),
+            "api_key": MeApiKey.from_dict(obj["api_key"]) if obj.get("api_key") is not None else None
         })
         return _obj
 

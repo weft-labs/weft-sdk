@@ -62,6 +62,11 @@ tags:
   name: Fetch
 - description: Payment history and individual purchase details.
   name: Payments
+- description: |
+    Public, unauthenticated ghost-resource enrollment. Lets an agent
+    self-register so its human controller can later claim it from the
+    dashboard.
+  name: Resources
 paths:
   /docs/openapi.yaml:
     get:
@@ -74,6 +79,49 @@ paths:
                 type: string
           description: OpenAPI 3.1 document (YAML)
       summary: Fetch this OpenAPI document
+  /api/v1/resources/enroll:
+    post:
+      description: |
+        Lets an unauthenticated agent (or its operator) self-enroll a
+        Resource as a "ghost" (no owning provider). The server generates the
+        `slug` and a single-use `claim_token`; the response also carries a
+        `claim_url` the agent hands to its human controller to claim the
+        resource from the dashboard.
+
+        Client-supplied `slug` and `category` are silently ignored: slugs are
+        server-generated from `name` (so callers cannot squat on reserved
+        names), and `category` is a post-claim concern set by a real human.
+
+        Rate-limited to 10 enrollments/hour/IP.
+      operationId: enrollResource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceEnrollmentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceEnrollmentResponse"
+          description: Ghost resource created
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Validation error (missing/blank fields, or unknown `kind`)"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Rate limit exceeded (10 enrollments/hour/IP)
+      summary: "Self-enroll a ghost resource (public, no auth)"
+      tags:
+      - Resources
   /api/v1/auth/sign_up:
     post:
       operationId: signUp
@@ -203,6 +251,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
           description: Password updated
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid or expired reset token
       summary: Update password with reset token
       tags:
       - Auth
@@ -222,6 +276,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
       security:
       - bearerAuth: []
       summary: Get current account
@@ -243,6 +306,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
       security:
       - bearerAuth: []
       summary: List API keys
@@ -538,6 +610,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: |
+            The credential authenticated but has no organization context
+            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
+            this org-scoped endpoint.
       security:
       - bearerAuth: []
       summary: List payments
@@ -633,6 +714,192 @@ components:
           $ref: "#/components/schemas/MessageResponse_data"
       required:
       - data
+    ResourceEnrollmentRequest:
+      description: |
+        `slug` and `category` are accepted but silently ignored — the server
+        generates the slug from `name`, and category is a post-claim concern.
+      example:
+        wallet_address: wallet_address
+        kind: agent
+        name: Self-Enrolled Bot
+        description: description
+      properties:
+        kind:
+          description: |
+            Resource kind. Must be one of the supported kinds (currently
+            `agent`); an unknown value is rejected with a 422.
+          example: agent
+          type: string
+        name:
+          description: Human-readable name; the server derives the slug from it.
+          example: Self-Enrolled Bot
+          type: string
+        description:
+          type: string
+        wallet_address:
+          description: |
+            Declared EVM wallet address for the ghost resource. Stored as a
+            claim (unverified) until the resource is claimed.
+          type: string
+      required:
+      - kind
+      - name
+    ResourceEnrollmentResponse:
+      example:
+        data:
+          wallet_address: wallet_address
+          claim_url: claim_url
+          visibility: public_profile
+          kind: agent
+          claim_token: claim_token
+          claimed: true
+          verified: true
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          stats:
+            payments_received: 5
+            first_seen: 2000-01-23T04:56:07.000+00:00
+            total_paid: 6
+            payments_made: 5
+            last_active: 2000-01-23T04:56:07.000+00:00
+            total_received: 1
+            unique_counterparties: 2
+          name: name
+          id: 0
+          category: category
+          slug: slug
+      properties:
+        data:
+          $ref: "#/components/schemas/EnrolledResource"
+      required:
+      - data
+    EnrolledResource:
+      description: |
+        The `:created` view of a ghost resource. Adds `stats`, the single-use
+        `claim_token`, and the `claim_url` to the base resource shape. The
+        claim fields appear ONLY on this enrollment response — never in list
+        or read views.
+      example:
+        wallet_address: wallet_address
+        claim_url: claim_url
+        visibility: public_profile
+        kind: agent
+        claim_token: claim_token
+        claimed: true
+        verified: true
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        stats:
+          payments_received: 5
+          first_seen: 2000-01-23T04:56:07.000+00:00
+          total_paid: 6
+          payments_made: 5
+          last_active: 2000-01-23T04:56:07.000+00:00
+          total_received: 1
+          unique_counterparties: 2
+        name: name
+        id: 0
+        category: category
+        slug: slug
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        kind:
+          example: agent
+          type: string
+        visibility:
+          example: public_profile
+          type: string
+        wallet_address:
+          description: "Declared wallet address, or `null` if none was provided."
+          type: string
+          nullable: true
+        category:
+          description: |
+            Legacy v3 taxonomy field. Returns a string only for `agent`-kind
+            resources that carry a `category` in their metadata; `null` for
+            all other kinds and for agents without one. Always `null` on
+            enrollment (category is a post-claim concern).
+          type: string
+          nullable: true
+        verified:
+          type: boolean
+        claimed:
+          description: True once the resource has an owning provider. Always false
+            at enrollment.
+          type: boolean
+        created_at:
+          format: date-time
+          type: string
+        stats:
+          $ref: "#/components/schemas/ResourceStats"
+        claim_token:
+          description: Single-use token for the magic claim URL. Surfaced only on
+            enrollment.
+          type: string
+        claim_url:
+          description: Dashboard path the agent hands to its human to claim the resource.
+          type: string
+          nullable: true
+      required:
+      - category
+      - claim_token
+      - claim_url
+      - claimed
+      - created_at
+      - id
+      - kind
+      - name
+      - slug
+      - stats
+      - verified
+      - visibility
+    ResourceStats:
+      description: Aggregate public payment stats for the resource.
+      example:
+        payments_received: 5
+        first_seen: 2000-01-23T04:56:07.000+00:00
+        total_paid: 6
+        payments_made: 5
+        last_active: 2000-01-23T04:56:07.000+00:00
+        total_received: 1
+        unique_counterparties: 2
+      properties:
+        total_paid:
+          description: Total atomic units paid out by this resource.
+          type: integer
+        total_received:
+          description: Total atomic units received by this resource.
+          type: integer
+        payments_made:
+          type: integer
+        payments_received:
+          type: integer
+        unique_counterparties:
+          type: integer
+        first_seen:
+          format: date-time
+          type: string
+          nullable: true
+        last_active:
+          format: date-time
+          type: string
+          nullable: true
+      required:
+      - first_seen
+      - last_active
+      - payments_made
+      - payments_received
+      - total_paid
+      - total_received
+      - unique_counterparties
     Pagination:
       example:
         per_page: 1
@@ -758,55 +1025,111 @@ components:
     MeResponse:
       example:
         data:
-          public_profile: true
-          created_at: 2000-01-23T04:56:07.000+00:00
+          api_key:
+            last_used_at: 2000-01-23T04:56:07.000+00:00
+            name: name
+            created_at: 2000-01-23T04:56:07.000+00:00
+            id: 6
+            created_by:
+              id: 1
+              display_name: display_name
+              email: email
+          kind: kind
+          name: name
           id: 0
-          display_name: display_name
-          email: email
-          public_slug: public_slug
-          status: active
+          slug: slug
       properties:
         data:
           $ref: "#/components/schemas/AccountDetails"
       required:
       - data
     AccountDetails:
+      description: |
+        The Organization that owns the authenticated API key — the principal
+        in API v1 (the key represents an Org, not a person). `api_key` carries
+        audit info about the key itself, including the user who minted it
+        (`created_by`, which may be `null` if that user has left the Org).
       example:
-        public_profile: true
-        created_at: 2000-01-23T04:56:07.000+00:00
+        api_key:
+          last_used_at: 2000-01-23T04:56:07.000+00:00
+          name: name
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 6
+          created_by:
+            id: 1
+            display_name: display_name
+            email: email
+        kind: kind
+        name: name
         id: 0
+        slug: slug
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        kind:
+          type: string
+        api_key:
+          $ref: "#/components/schemas/MeApiKey"
+      required:
+      - api_key
+      - id
+      - kind
+      - name
+      - slug
+    MeApiKey:
+      example:
+        last_used_at: 2000-01-23T04:56:07.000+00:00
+        name: name
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 6
+        created_by:
+          id: 1
+          display_name: display_name
+          email: email
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        created_at:
+          format: date-time
+          type: string
+        last_used_at:
+          format: date-time
+          type: string
+          nullable: true
+        created_by:
+          $ref: "#/components/schemas/MeApiKeyCreator"
+      required:
+      - created_at
+      - id
+    MeApiKeyCreator:
+      description: |
+        The user who minted this API key, surfaced for audit rendering only.
+        `null` if that user has since left the Organization. NEVER use for
+        authorization.
+      example:
+        id: 1
         display_name: display_name
         email: email
-        public_slug: public_slug
-        status: active
       properties:
         id:
           type: integer
         email:
           format: email
           type: string
-        status:
-          enum:
-          - active
-          - blocked
-          type: string
         display_name:
           type: string
           nullable: true
-        public_profile:
-          type: boolean
-        public_slug:
-          type: string
-          nullable: true
-        created_at:
-          format: date-time
-          type: string
       required:
-      - created_at
       - email
       - id
-      - public_profile
-      - status
+      nullable: true
     CreateApiKeyRequest:
       example:
         name: name
@@ -1220,11 +1543,13 @@ components:
           - free
           type: string
         agent_protocol:
-          description: "Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI)."
+          description: "Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI,\
+            \ or AgentNet)."
           enum:
           - a2a
           - mcp
           - openapi
+          - AgentNet
           type: string
         domain:
           description: |
@@ -1237,6 +1562,21 @@ components:
         are reserved for a later release that adds per-call billing and
         artifact persistence; they are always `null` in v1. `_mock: true`
         is set only by the mock backend.
+
+        Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
+        while the real index is unshipped) emits the rich, SDK-facing
+        `SearchResult` shape. The legacy `platform` backend proxies the
+        upstream search service and passes its result rows through verbatim —
+        Weft does not own or reshape that payload, so those rows are typed as
+        a free-form object. SDK clients on v1 should treat unknown row shapes
+        defensively until the platform backend is retrofitted to the
+        `SearchResult` contract (specs 07 + 10).
+
+        Because the `PlatformSearchResult` branch is intentionally permissive
+        (free-form, to admit the un-owned platform rows), the `anyOf` is
+        satisfied by any object — so the committee response-validation gate does
+        NOT strictly validate result-row shapes; the rich `SearchResult`
+        contract is instead guarded by the `/api/v1/search` request spec.
       example:
         _mock: true
         paid_usd: paid_usd
@@ -1404,7 +1744,7 @@ components:
       properties:
         results:
           items:
-            $ref: "#/components/schemas/SearchResult"
+            $ref: "#/components/schemas/SearchResponse_results_inner"
           type: array
         paid_usd:
           description: Always `null` in v1.
@@ -1520,6 +1860,7 @@ components:
           - a2a
           - mcp
           - openapi
+          - AgentNet
           type: string
         domain:
           description: Domain tags declared by the agent.
@@ -1552,6 +1893,16 @@ components:
       - protocol
       - ranking
       - score
+    PlatformSearchResult:
+      additionalProperties: true
+      description: |
+        A result row from the legacy `platform` search backend. The
+        `/api/v1/search` controller proxies the upstream search service and
+        passes its rows through verbatim, so Weft does not own or constrain
+        this shape. Documented as a free-form object purely so the canonical
+        spec stays truthful about both backends. SDK clients should prefer the
+        rich `SearchResult` shape and treat platform rows defensively.
+      type: object
     SearchAgentCard:
       additionalProperties: {}
       description: |
@@ -1870,7 +2221,7 @@ components:
         body_base64: body_base64
         merchant: ""
         tx_hash: tx_hash
-        artifact_id: artifact_id
+        artifact_id: 0
         status: 200
       properties:
         status:
@@ -1894,8 +2245,9 @@ components:
           type: string
           nullable: true
         artifact_id:
-          description: Internal artifact identifier if the response was persisted.
-          type: string
+          description: Internal artifact identifier if the response was persisted;
+            `null` otherwise.
+          type: integer
           nullable: true
         merchant:
           allOf:
@@ -1940,8 +2292,9 @@ components:
         can render an actionable message without a second round-trip.
 
         `error` values include the fixed codes listed below plus the
-        family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`)
-        where `<REASON>` matches the violated policy field.
+        `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated
+        policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see
+        `PolicyViolation::REASONS`).
       example:
         balance:
           promo_usd: "0.00"
@@ -1966,7 +2319,10 @@ components:
           - ARTIFACT_TOO_LARGE
           - DENYLISTED_RECIPIENT
           - SETTLEMENT_FAILED
-          - POLICY_VIOLATION
+          - UNSUPPORTED_PAYMENT_METHOD
+          - POLICY_VIOLATION_MAX_TX
+          - POLICY_VIOLATION_DAILY
+          - POLICY_VIOLATION_WEEKLY
           example: EXCEEDED_MAX_COST
           type: string
         details:
@@ -2037,6 +2393,10 @@ components:
       required:
       - confirmation_required
       - user
+    SearchResponse_results_inner:
+      anyOf:
+      - $ref: "#/components/schemas/SearchResult"
+      - $ref: "#/components/schemas/PlatformSearchResult"
     SearchSkill_endpoint:
       additionalProperties: true
       example:

@@ -12,7 +12,6 @@ package generated
 
 import (
 	"encoding/json"
-	"time"
 	"bytes"
 	"fmt"
 )
@@ -20,15 +19,13 @@ import (
 // checks if the AccountDetails type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &AccountDetails{}
 
-// AccountDetails struct for AccountDetails
+// AccountDetails The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
 type AccountDetails struct {
 	Id int32 `json:"id"`
-	Email string `json:"email"`
-	Status string `json:"status"`
-	DisplayName *string `json:"display_name,omitempty"`
-	PublicProfile bool `json:"public_profile"`
-	PublicSlug *string `json:"public_slug,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+	Kind string `json:"kind"`
+	ApiKey MeApiKey `json:"api_key"`
 }
 
 type _AccountDetails AccountDetails
@@ -37,13 +34,13 @@ type _AccountDetails AccountDetails
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAccountDetails(id int32, email string, status string, publicProfile bool, createdAt time.Time) *AccountDetails {
+func NewAccountDetails(id int32, name string, slug string, kind string, apiKey MeApiKey) *AccountDetails {
 	this := AccountDetails{}
 	this.Id = id
-	this.Email = email
-	this.Status = status
-	this.PublicProfile = publicProfile
-	this.CreatedAt = createdAt
+	this.Name = name
+	this.Slug = slug
+	this.Kind = kind
+	this.ApiKey = apiKey
 	return &this
 }
 
@@ -79,164 +76,100 @@ func (o *AccountDetails) SetId(v int32) {
 	o.Id = v
 }
 
-// GetEmail returns the Email field value
-func (o *AccountDetails) GetEmail() string {
+// GetName returns the Name field value
+func (o *AccountDetails) GetName() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Email
+	return o.Name
 }
 
-// GetEmailOk returns a tuple with the Email field value
+// GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
-func (o *AccountDetails) GetEmailOk() (*string, bool) {
+func (o *AccountDetails) GetNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Email, true
+	return &o.Name, true
 }
 
-// SetEmail sets field value
-func (o *AccountDetails) SetEmail(v string) {
-	o.Email = v
+// SetName sets field value
+func (o *AccountDetails) SetName(v string) {
+	o.Name = v
 }
 
-// GetStatus returns the Status field value
-func (o *AccountDetails) GetStatus() string {
+// GetSlug returns the Slug field value
+func (o *AccountDetails) GetSlug() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Status
+	return o.Slug
 }
 
-// GetStatusOk returns a tuple with the Status field value
+// GetSlugOk returns a tuple with the Slug field value
 // and a boolean to check if the value has been set.
-func (o *AccountDetails) GetStatusOk() (*string, bool) {
+func (o *AccountDetails) GetSlugOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Status, true
+	return &o.Slug, true
 }
 
-// SetStatus sets field value
-func (o *AccountDetails) SetStatus(v string) {
-	o.Status = v
+// SetSlug sets field value
+func (o *AccountDetails) SetSlug(v string) {
+	o.Slug = v
 }
 
-// GetDisplayName returns the DisplayName field value if set, zero value otherwise.
-func (o *AccountDetails) GetDisplayName() string {
-	if o == nil || IsNil(o.DisplayName) {
+// GetKind returns the Kind field value
+func (o *AccountDetails) GetKind() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.DisplayName
+
+	return o.Kind
 }
 
-// GetDisplayNameOk returns a tuple with the DisplayName field value if set, nil otherwise
+// GetKindOk returns a tuple with the Kind field value
 // and a boolean to check if the value has been set.
-func (o *AccountDetails) GetDisplayNameOk() (*string, bool) {
-	if o == nil || IsNil(o.DisplayName) {
+func (o *AccountDetails) GetKindOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.DisplayName, true
+	return &o.Kind, true
 }
 
-// HasDisplayName returns a boolean if a field has been set.
-func (o *AccountDetails) HasDisplayName() bool {
-	if o != nil && !IsNil(o.DisplayName) {
-		return true
-	}
-
-	return false
+// SetKind sets field value
+func (o *AccountDetails) SetKind(v string) {
+	o.Kind = v
 }
 
-// SetDisplayName gets a reference to the given string and assigns it to the DisplayName field.
-func (o *AccountDetails) SetDisplayName(v string) {
-	o.DisplayName = &v
-}
-
-// GetPublicProfile returns the PublicProfile field value
-func (o *AccountDetails) GetPublicProfile() bool {
+// GetApiKey returns the ApiKey field value
+func (o *AccountDetails) GetApiKey() MeApiKey {
 	if o == nil {
-		var ret bool
+		var ret MeApiKey
 		return ret
 	}
 
-	return o.PublicProfile
+	return o.ApiKey
 }
 
-// GetPublicProfileOk returns a tuple with the PublicProfile field value
+// GetApiKeyOk returns a tuple with the ApiKey field value
 // and a boolean to check if the value has been set.
-func (o *AccountDetails) GetPublicProfileOk() (*bool, bool) {
+func (o *AccountDetails) GetApiKeyOk() (*MeApiKey, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PublicProfile, true
+	return &o.ApiKey, true
 }
 
-// SetPublicProfile sets field value
-func (o *AccountDetails) SetPublicProfile(v bool) {
-	o.PublicProfile = v
-}
-
-// GetPublicSlug returns the PublicSlug field value if set, zero value otherwise.
-func (o *AccountDetails) GetPublicSlug() string {
-	if o == nil || IsNil(o.PublicSlug) {
-		var ret string
-		return ret
-	}
-	return *o.PublicSlug
-}
-
-// GetPublicSlugOk returns a tuple with the PublicSlug field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *AccountDetails) GetPublicSlugOk() (*string, bool) {
-	if o == nil || IsNil(o.PublicSlug) {
-		return nil, false
-	}
-	return o.PublicSlug, true
-}
-
-// HasPublicSlug returns a boolean if a field has been set.
-func (o *AccountDetails) HasPublicSlug() bool {
-	if o != nil && !IsNil(o.PublicSlug) {
-		return true
-	}
-
-	return false
-}
-
-// SetPublicSlug gets a reference to the given string and assigns it to the PublicSlug field.
-func (o *AccountDetails) SetPublicSlug(v string) {
-	o.PublicSlug = &v
-}
-
-// GetCreatedAt returns the CreatedAt field value
-func (o *AccountDetails) GetCreatedAt() time.Time {
-	if o == nil {
-		var ret time.Time
-		return ret
-	}
-
-	return o.CreatedAt
-}
-
-// GetCreatedAtOk returns a tuple with the CreatedAt field value
-// and a boolean to check if the value has been set.
-func (o *AccountDetails) GetCreatedAtOk() (*time.Time, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.CreatedAt, true
-}
-
-// SetCreatedAt sets field value
-func (o *AccountDetails) SetCreatedAt(v time.Time) {
-	o.CreatedAt = v
+// SetApiKey sets field value
+func (o *AccountDetails) SetApiKey(v MeApiKey) {
+	o.ApiKey = v
 }
 
 func (o AccountDetails) MarshalJSON() ([]byte, error) {
@@ -250,16 +183,10 @@ func (o AccountDetails) MarshalJSON() ([]byte, error) {
 func (o AccountDetails) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
-	toSerialize["email"] = o.Email
-	toSerialize["status"] = o.Status
-	if !IsNil(o.DisplayName) {
-		toSerialize["display_name"] = o.DisplayName
-	}
-	toSerialize["public_profile"] = o.PublicProfile
-	if !IsNil(o.PublicSlug) {
-		toSerialize["public_slug"] = o.PublicSlug
-	}
-	toSerialize["created_at"] = o.CreatedAt
+	toSerialize["name"] = o.Name
+	toSerialize["slug"] = o.Slug
+	toSerialize["kind"] = o.Kind
+	toSerialize["api_key"] = o.ApiKey
 	return toSerialize, nil
 }
 
@@ -269,10 +196,10 @@ func (o *AccountDetails) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"id",
-		"email",
-		"status",
-		"public_profile",
-		"created_at",
+		"name",
+		"slug",
+		"kind",
+		"api_key",
 	}
 
 	allProperties := make(map[string]interface{})

@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **MinPriceUsd** | Pointer to **string** | Decimal USD floor; agent must have at least one skill priced at or above this. | [optional] 
 **MaxPriceUsd** | Pointer to **string** | Decimal USD ceiling; agent must have at least one skill priced at or below this. | [optional] 
 **PaymentProtocol** | Pointer to **string** | Payment protocol the agent settles on. | [optional] 
-**AgentProtocol** | Pointer to **string** | Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI). | [optional] 
+**AgentProtocol** | Pointer to **string** | Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet). | [optional] 
 **Domain** | Pointer to **string** | Substring match against any of the agent&#39;s declared domain tags (e.g. &#x60;email&#x60;, &#x60;sales&#x60;, &#x60;enrichment&#x60;).  | [optional] 
 
 ## Methods

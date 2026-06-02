@@ -9,14 +9,14 @@ Name | Type | Description | Notes
 **BodyBase64** | **string** | Base64-encoded response body. Empty string for empty bodies. | 
 **PaidUsd** | **string** | USD amount actually settled. Null for free upstreams. | 
 **TxHash** | **string** | Settlement transaction hash. Null for free upstreams. | 
-**ArtifactId** | **string** | Internal artifact identifier if the response was persisted. | 
+**ArtifactId** | **int32** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. | 
 **Merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. Null for free upstreams. | 
 
 ## Methods
 
 ### NewFetchResponse
 
-`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId string, merchant Merchant, ) *FetchResponse`
+`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId int32, merchant Merchant, ) *FetchResponse`
 
 NewFetchResponse instantiates a new FetchResponse object
 This constructor will assign default values to properties that have it defined,
@@ -133,20 +133,20 @@ SetTxHash sets TxHash field to given value.
 
 ### GetArtifactId
 
-`func (o *FetchResponse) GetArtifactId() string`
+`func (o *FetchResponse) GetArtifactId() int32`
 
 GetArtifactId returns the ArtifactId field if non-nil, zero value otherwise.
 
 ### GetArtifactIdOk
 
-`func (o *FetchResponse) GetArtifactIdOk() (*string, bool)`
+`func (o *FetchResponse) GetArtifactIdOk() (*int32, bool)`
 
 GetArtifactIdOk returns a tuple with the ArtifactId field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetArtifactId
 
-`func (o *FetchResponse) SetArtifactId(v string)`
+`func (o *FetchResponse) SetArtifactId(v int32)`
 
 SetArtifactId sets ArtifactId field to given value.
 

@@ -26,7 +26,7 @@ from typing_extensions import Self
 
 class FetchErrorResponse(BaseModel):
     """
-    Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`) where `<REASON>` matches the violated policy field. 
+    Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see `PolicyViolation::REASONS`). 
     """ # noqa: E501
     error: StrictStr = Field(description="Stable error code.")
     details: Dict[str, Any] = Field(description="Optional context. Shape varies by error code.")
@@ -38,8 +38,8 @@ class FetchErrorResponse(BaseModel):
     @field_validator('error')
     def error_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['INVALID_URL', 'EXCEEDED_MAX_COST', 'INSUFFICIENT_BALANCE', 'MERCHANT_RETURNED_NON_402', 'ARTIFACT_TOO_LARGE', 'DENYLISTED_RECIPIENT', 'SETTLEMENT_FAILED', 'POLICY_VIOLATION']):
-            raise ValueError("must be one of enum values ('INVALID_URL', 'EXCEEDED_MAX_COST', 'INSUFFICIENT_BALANCE', 'MERCHANT_RETURNED_NON_402', 'ARTIFACT_TOO_LARGE', 'DENYLISTED_RECIPIENT', 'SETTLEMENT_FAILED', 'POLICY_VIOLATION')")
+        if value not in set(['INVALID_URL', 'EXCEEDED_MAX_COST', 'INSUFFICIENT_BALANCE', 'MERCHANT_RETURNED_NON_402', 'ARTIFACT_TOO_LARGE', 'DENYLISTED_RECIPIENT', 'SETTLEMENT_FAILED', 'UNSUPPORTED_PAYMENT_METHOD', 'POLICY_VIOLATION_MAX_TX', 'POLICY_VIOLATION_DAILY', 'POLICY_VIOLATION_WEEKLY']):
+            raise ValueError("must be one of enum values ('INVALID_URL', 'EXCEEDED_MAX_COST', 'INSUFFICIENT_BALANCE', 'MERCHANT_RETURNED_NON_402', 'ARTIFACT_TOO_LARGE', 'DENYLISTED_RECIPIENT', 'SETTLEMENT_FAILED', 'UNSUPPORTED_PAYMENT_METHOD', 'POLICY_VIOLATION_MAX_TX', 'POLICY_VIOLATION_DAILY', 'POLICY_VIOLATION_WEEKLY')")
         return value
 
     model_config = ConfigDict(

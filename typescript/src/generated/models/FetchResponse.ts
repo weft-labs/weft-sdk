@@ -61,11 +61,11 @@ export interface FetchResponse {
      */
     txHash: string;
     /**
-     * Internal artifact identifier if the response was persisted.
-     * @type {string}
+     * Internal artifact identifier if the response was persisted; `null` otherwise.
+     * @type {number}
      * @memberof FetchResponse
      */
-    artifactId: string;
+    artifactId: number;
     /**
      * Merchant reputation snapshot. Null for free upstreams.
      * @type {Merchant}

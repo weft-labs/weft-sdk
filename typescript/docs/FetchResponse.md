@@ -12,7 +12,7 @@ Name | Type
 `bodyBase64` | string
 `paidUsd` | string
 `txHash` | string
-`artifactId` | string
+`artifactId` | number
 `merchant` | [Merchant](Merchant.md)
 
 ## Example

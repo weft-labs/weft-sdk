@@ -243,7 +243,7 @@ module Weft
       return false if @score > 1
       return false if @score < 0
       return false if @protocol.nil?
-      protocol_validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi"])
+      protocol_validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
       return false unless protocol_validator.valid?(@protocol)
       return false if @domain.nil?
       return false if @agent_card.nil?
@@ -284,7 +284,7 @@ module Weft
     # Custom attribute writer method checking allowed values (enum).
     # @param [Object] protocol Object to be assigned
     def protocol=(protocol)
-      validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi"])
+      validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
       unless validator.valid?(protocol)
         fail ArgumentError, "invalid value for \"protocol\", must be one of #{validator.allowable_values}."
       end

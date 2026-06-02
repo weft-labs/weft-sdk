@@ -1,7 +1,7 @@
 
 # FetchErrorResponse
 
-Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer\'s current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the family `POLICY_VIOLATION_<REASON>` (e.g. `POLICY_VIOLATION_DAILY_LIMIT`) where `<REASON>` matches the violated policy field. 
+Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer\'s current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see `PolicyViolation::REASONS`). 
 
 ## Properties
 

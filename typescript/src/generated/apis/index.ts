@@ -7,4 +7,5 @@ export * from './BalanceApi';
 export * from './DefaultApi';
 export * from './FetchApi';
 export * from './PaymentsApi';
+export * from './ResourcesApi';
 export * from './SearchApi';

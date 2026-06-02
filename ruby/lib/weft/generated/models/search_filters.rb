@@ -25,7 +25,7 @@ module Weft
     # Payment protocol the agent settles on.
     attr_accessor :payment_protocol
 
-    # Agent protocol surface (Agent-to-Agent, MCP, or raw OpenAPI).
+    # Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).
     attr_accessor :agent_protocol
 
     # Substring match against any of the agent's declared domain tags (e.g. `email`, `sales`, `enrichment`). 
@@ -154,7 +154,7 @@ module Weft
       return false if !@max_price_usd.nil? && @max_price_usd !~ Regexp.new(/^\d+(\.\d{1,6})?$/)
       payment_protocol_validator = EnumAttributeValidator.new('String', ["x402", "mpp", "free"])
       return false unless payment_protocol_validator.valid?(@payment_protocol)
-      agent_protocol_validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi"])
+      agent_protocol_validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
       return false unless agent_protocol_validator.valid?(@agent_protocol)
       true
     end
@@ -202,7 +202,7 @@ module Weft
     # Custom attribute writer method checking allowed values (enum).
     # @param [Object] agent_protocol Object to be assigned
     def agent_protocol=(agent_protocol)
-      validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi"])
+      validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
       unless validator.valid?(agent_protocol)
         fail ArgumentError, "invalid value for \"agent_protocol\", must be one of #{validator.allowable_values}."
       end

@@ -1,17 +1,16 @@
 # AccountDetails
 
+The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **int** |  | 
-**email** | **str** |  | 
-**status** | **str** |  | 
-**display_name** | **str** |  | [optional] 
-**public_profile** | **bool** |  | 
-**public_slug** | **str** |  | [optional] 
-**created_at** | **datetime** |  | 
+**name** | **str** |  | 
+**slug** | **str** |  | 
+**kind** | **str** |  | 
+**api_key** | [**MeApiKey**](MeApiKey.md) |  | 
 
 ## Example
 

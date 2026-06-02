@@ -115,6 +115,7 @@ Class | Method | HTTP request | Description
 *FetchAPI* | [**Fetch**](docs/FetchAPI.md#fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402 proxy)
 *PaymentsAPI* | [**GetPayment**](docs/PaymentsAPI.md#getpayment) | **Get** /api/v1/payments/{id} | Get payment details
 *PaymentsAPI* | [**ListPayments**](docs/PaymentsAPI.md#listpayments) | **Get** /api/v1/payments | List payments
+*ResourcesAPI* | [**EnrollResource**](docs/ResourcesAPI.md#enrollresource) | **Post** /api/v1/resources/enroll | Self-enroll a ghost resource (public, no auth)
 *SearchAPI* | [**Search**](docs/SearchAPI.md#search) | **Post** /api/v1/search | Search the Weft index
 
 
@@ -130,6 +131,7 @@ Class | Method | HTTP request | Description
  - [BalanceResponse](docs/BalanceResponse.md)
  - [ConfirmRequest](docs/ConfirmRequest.md)
  - [CreateApiKeyRequest](docs/CreateApiKeyRequest.md)
+ - [EnrolledResource](docs/EnrolledResource.md)
  - [Error](docs/Error.md)
  - [ErrorResponse](docs/ErrorResponse.md)
  - [FetchBalanceSnapshot](docs/FetchBalanceSnapshot.md)
@@ -137,6 +139,8 @@ Class | Method | HTTP request | Description
  - [FetchRequest](docs/FetchRequest.md)
  - [FetchRequestBody](docs/FetchRequestBody.md)
  - [FetchResponse](docs/FetchResponse.md)
+ - [MeApiKey](docs/MeApiKey.md)
+ - [MeApiKeyCreator](docs/MeApiKeyCreator.md)
  - [MeResponse](docs/MeResponse.md)
  - [Merchant](docs/Merchant.md)
  - [MessageResponse](docs/MessageResponse.md)
@@ -149,6 +153,9 @@ Class | Method | HTTP request | Description
  - [PaymentResponse](docs/PaymentResponse.md)
  - [PromoBalance](docs/PromoBalance.md)
  - [ResendConfirmationRequest](docs/ResendConfirmationRequest.md)
+ - [ResourceEnrollmentRequest](docs/ResourceEnrollmentRequest.md)
+ - [ResourceEnrollmentResponse](docs/ResourceEnrollmentResponse.md)
+ - [ResourceStats](docs/ResourceStats.md)
  - [SearchAgentCard](docs/SearchAgentCard.md)
  - [SearchEndpoints](docs/SearchEndpoints.md)
  - [SearchErrorResponse](docs/SearchErrorResponse.md)
@@ -157,6 +164,7 @@ Class | Method | HTTP request | Description
  - [SearchRanking](docs/SearchRanking.md)
  - [SearchRequest](docs/SearchRequest.md)
  - [SearchResponse](docs/SearchResponse.md)
+ - [SearchResponseResultsInner](docs/SearchResponseResultsInner.md)
  - [SearchResult](docs/SearchResult.md)
  - [SearchSkill](docs/SearchSkill.md)
  - [SearchSkillEndpoint](docs/SearchSkillEndpoint.md)

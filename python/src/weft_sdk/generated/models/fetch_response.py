@@ -32,7 +32,7 @@ class FetchResponse(BaseModel):
     body_base64: StrictStr = Field(description="Base64-encoded response body. Empty string for empty bodies.")
     paid_usd: StrictStr = Field(description="USD amount actually settled. Null for free upstreams.")
     tx_hash: StrictStr = Field(description="Settlement transaction hash. Null for free upstreams.")
-    artifact_id: StrictStr = Field(description="Internal artifact identifier if the response was persisted.")
+    artifact_id: StrictInt = Field(description="Internal artifact identifier if the response was persisted; `null` otherwise.")
     merchant: Merchant = Field(description="Merchant reputation snapshot. Null for free upstreams.")
     __properties: ClassVar[List[str]] = ["status", "headers", "body_base64", "paid_usd", "tx_hash", "artifact_id", "merchant"]
 

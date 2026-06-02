@@ -19,9 +19,9 @@ import (
 // checks if the SearchResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &SearchResponse{}
 
-// SearchResponse Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend. 
+// SearchResponse Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend.  Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default while the real index is unshipped) emits the rich, SDK-facing `SearchResult` shape. The legacy `platform` backend proxies the upstream search service and passes its result rows through verbatim — Weft does not own or reshape that payload, so those rows are typed as a free-form object. SDK clients on v1 should treat unknown row shapes defensively until the platform backend is retrofitted to the `SearchResult` contract (specs 07 + 10).  Because the `PlatformSearchResult` branch is intentionally permissive (free-form, to admit the un-owned platform rows), the `anyOf` is satisfied by any object — so the committee response-validation gate does NOT strictly validate result-row shapes; the rich `SearchResult` contract is instead guarded by the `/api/v1/search` request spec. 
 type SearchResponse struct {
-	Results []SearchResult `json:"results"`
+	Results []SearchResponseResultsInner `json:"results"`
 	// Always `null` in v1.
 	PaidUsd *string `json:"paid_usd,omitempty"`
 	// Always `null` in v1.
@@ -38,7 +38,7 @@ type _SearchResponse SearchResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewSearchResponse(results []SearchResult) *SearchResponse {
+func NewSearchResponse(results []SearchResponseResultsInner) *SearchResponse {
 	this := SearchResponse{}
 	this.Results = results
 	return &this
@@ -53,9 +53,9 @@ func NewSearchResponseWithDefaults() *SearchResponse {
 }
 
 // GetResults returns the Results field value
-func (o *SearchResponse) GetResults() []SearchResult {
+func (o *SearchResponse) GetResults() []SearchResponseResultsInner {
 	if o == nil {
-		var ret []SearchResult
+		var ret []SearchResponseResultsInner
 		return ret
 	}
 
@@ -64,7 +64,7 @@ func (o *SearchResponse) GetResults() []SearchResult {
 
 // GetResultsOk returns a tuple with the Results field value
 // and a boolean to check if the value has been set.
-func (o *SearchResponse) GetResultsOk() ([]SearchResult, bool) {
+func (o *SearchResponse) GetResultsOk() ([]SearchResponseResultsInner, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -72,7 +72,7 @@ func (o *SearchResponse) GetResultsOk() ([]SearchResult, bool) {
 }
 
 // SetResults sets field value
-func (o *SearchResponse) SetResults(v []SearchResult) {
+func (o *SearchResponse) SetResults(v []SearchResponseResultsInner) {
 	o.Results = v
 }
 

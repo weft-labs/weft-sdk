@@ -46,8 +46,8 @@ class SearchResult(BaseModel):
     @field_validator('protocol')
     def protocol_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['a2a', 'mcp', 'openapi']):
-            raise ValueError("must be one of enum values ('a2a', 'mcp', 'openapi')")
+        if value not in set(['a2a', 'mcp', 'openapi', 'AgentNet']):
+            raise ValueError("must be one of enum values ('a2a', 'mcp', 'openapi', 'AgentNet')")
         return value
 
     model_config = ConfigDict(

@@ -63,6 +63,8 @@ type APIClient struct {
 
 	PaymentsAPI *PaymentsAPIService
 
+	ResourcesAPI *ResourcesAPIService
+
 	SearchAPI *SearchAPIService
 }
 
@@ -89,6 +91,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.DefaultAPI = (*DefaultAPIService)(&c.common)
 	c.FetchAPI = (*FetchAPIService)(&c.common)
 	c.PaymentsAPI = (*PaymentsAPIService)(&c.common)
+	c.ResourcesAPI = (*ResourcesAPIService)(&c.common)
 	c.SearchAPI = (*SearchAPIService)(&c.common)
 
 	return c
