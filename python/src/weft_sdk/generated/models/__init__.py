@@ -26,11 +26,13 @@ from weft_sdk.generated.models.create_api_key_request import CreateApiKeyRequest
 from weft_sdk.generated.models.enrolled_resource import EnrolledResource
 from weft_sdk.generated.models.error import Error
 from weft_sdk.generated.models.error_response import ErrorResponse
+from weft_sdk.generated.models.fetch403_response import Fetch403Response
 from weft_sdk.generated.models.fetch_balance_snapshot import FetchBalanceSnapshot
 from weft_sdk.generated.models.fetch_error_response import FetchErrorResponse
 from weft_sdk.generated.models.fetch_request import FetchRequest
 from weft_sdk.generated.models.fetch_request_body import FetchRequestBody
 from weft_sdk.generated.models.fetch_response import FetchResponse
+from weft_sdk.generated.models.insufficient_scope_response import InsufficientScopeResponse
 from weft_sdk.generated.models.me_api_key import MeApiKey
 from weft_sdk.generated.models.me_api_key_creator import MeApiKeyCreator
 from weft_sdk.generated.models.me_response import MeResponse

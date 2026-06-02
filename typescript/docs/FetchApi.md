@@ -77,7 +77,7 @@ example().catch(console.error);
 | **200** | Fetch succeeded (or upstream was free); artifact streamed back base64-encoded. |  -  |
 | **401** | Unauthorized — missing or non-buyer-scoped API key |  -  |
 | **402** | Payment refused — &#x60;EXCEEDED_MAX_COST&#x60; or &#x60;INSUFFICIENT_BALANCE&#x60;. |  -  |
-| **403** | Policy violation or denylisted recipient. |  -  |
+| **403** | Policy violation or denylisted recipient (&#x60;FetchErrorResponse&#x60;), or an OAuth access token lacking the &#x60;fetch&#x60; scope (&#x60;InsufficientScopeResponse&#x60;, RFC 6750 &#x60;insufficient_scope&#x60;, with a &#x60;WWW-Authenticate&#x60; challenge). The two envelopes are disjoint; branch on the &#x60;error&#x60; value.  |  -  |
 | **413** | Upstream artifact exceeded the proxy\&#39;s size cap. |  -  |
 | **422** | Invalid request URL. |  -  |
 | **502** | Upstream did not return a valid 402 challenge, or settlement signing failed. |  -  |

@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   ErrorResponse,
+  Fetch403Response,
   FetchErrorResponse,
   FetchRequest,
   FetchResponse,
@@ -23,6 +24,8 @@ import type {
 import {
     ErrorResponseFromJSON,
     ErrorResponseToJSON,
+    Fetch403ResponseFromJSON,
+    Fetch403ResponseToJSON,
     FetchErrorResponseFromJSON,
     FetchErrorResponseToJSON,
     FetchRequestFromJSON,

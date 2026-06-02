@@ -88,6 +88,7 @@ class BalanceApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "BalanceResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -152,6 +153,7 @@ class BalanceApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "BalanceResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -216,6 +218,7 @@ class BalanceApi:
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "BalanceResponse",
             '401': "ErrorResponse",
+            '403': "InsufficientScopeResponse",
         }
         response_data = self.api_client.call_api(
             *_param,

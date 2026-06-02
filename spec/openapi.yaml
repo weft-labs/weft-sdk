@@ -404,6 +404,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            The OAuth access token authenticated but lacks the `balance`
+            scope (RFC 6750 `insufficient_scope`). Carries a
+            `WWW-Authenticate: Bearer error="insufficient_scope", scope="balance"`
+            header. `wk_` API keys are unscoped and never see this.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
   /api/v1/search:
     post:
       summary: Search the Weft index
@@ -454,6 +464,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            The OAuth access token authenticated but lacks the `search`
+            scope (RFC 6750 `insufficient_scope`). Carries a
+            `WWW-Authenticate: Bearer error="insufficient_scope", scope="search"`
+            header. `wk_` API keys are unscoped and never see this.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
         "422":
           description: Invalid query (empty/missing)
           content:
@@ -533,11 +553,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
         "403":
-          description: Policy violation or denylisted recipient.
+          description: |
+            Policy violation or denylisted recipient (`FetchErrorResponse`),
+            or an OAuth access token lacking the `fetch` scope
+            (`InsufficientScopeResponse`, RFC 6750 `insufficient_scope`, with
+            a `WWW-Authenticate` challenge). The two envelopes are disjoint;
+            branch on the `error` value.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FetchErrorResponse"
+                oneOf:
+                  - $ref: "#/components/schemas/FetchErrorResponse"
+                  - $ref: "#/components/schemas/InsufficientScopeResponse"
         "413":
           description: Upstream artifact exceeded the proxy's size cap.
           content:
@@ -681,6 +708,28 @@ components:
           description: Correlates with server logs; include when reporting bugs.
           example: "req_01HX9F3K7B2N4P8Q1R6T8Y2Z5"
       required: [code, message]
+    InsufficientScopeResponse:
+      type: object
+      required: [error, error_description, scope]
+      description: |
+        RFC 6750 §3.1 `insufficient_scope` error. Returned with HTTP 403 and
+        a `WWW-Authenticate: Bearer error="insufficient_scope", scope="..."`
+        header when an OAuth access token authenticates successfully but does
+        not carry the scope the endpoint requires. Only OAuth bearer tokens
+        are scope-gated; `wk_`-prefixed API keys are unscoped and never see
+        this response.
+      properties:
+        error:
+          type: string
+          enum: [insufficient_scope]
+          example: insufficient_scope
+        error_description:
+          type: string
+          example: The access token does not include the required scope.
+        scope:
+          type: string
+          description: Space-delimited list of scopes the endpoint requires.
+          example: balance
     MessageResponse:
       type: object
       properties:

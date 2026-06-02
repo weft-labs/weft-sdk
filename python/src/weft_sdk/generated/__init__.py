@@ -49,11 +49,13 @@ __all__ = [
     "EnrolledResource",
     "Error",
     "ErrorResponse",
+    "Fetch403Response",
     "FetchBalanceSnapshot",
     "FetchErrorResponse",
     "FetchRequest",
     "FetchRequestBody",
     "FetchResponse",
+    "InsufficientScopeResponse",
     "MeApiKey",
     "MeApiKeyCreator",
     "MeResponse",
@@ -126,11 +128,13 @@ from weft_sdk.generated.models.create_api_key_request import CreateApiKeyRequest
 from weft_sdk.generated.models.enrolled_resource import EnrolledResource as EnrolledResource
 from weft_sdk.generated.models.error import Error as Error
 from weft_sdk.generated.models.error_response import ErrorResponse as ErrorResponse
+from weft_sdk.generated.models.fetch403_response import Fetch403Response as Fetch403Response
 from weft_sdk.generated.models.fetch_balance_snapshot import FetchBalanceSnapshot as FetchBalanceSnapshot
 from weft_sdk.generated.models.fetch_error_response import FetchErrorResponse as FetchErrorResponse
 from weft_sdk.generated.models.fetch_request import FetchRequest as FetchRequest
 from weft_sdk.generated.models.fetch_request_body import FetchRequestBody as FetchRequestBody
 from weft_sdk.generated.models.fetch_response import FetchResponse as FetchResponse
+from weft_sdk.generated.models.insufficient_scope_response import InsufficientScopeResponse as InsufficientScopeResponse
 from weft_sdk.generated.models.me_api_key import MeApiKey as MeApiKey
 from weft_sdk.generated.models.me_api_key_creator import MeApiKeyCreator as MeApiKeyCreator
 from weft_sdk.generated.models.me_response import MeResponse as MeResponse

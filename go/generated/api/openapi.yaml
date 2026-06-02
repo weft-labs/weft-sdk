@@ -413,6 +413,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized — missing or non-buyer-scoped API key
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
+          description: |
+            The OAuth access token authenticated but lacks the `balance`
+            scope (RFC 6750 `insufficient_scope`). Carries a
+            `WWW-Authenticate: Bearer error="insufficient_scope", scope="balance"`
+            header. `wk_` API keys are unscoped and never see this.
       security:
       - bearerAuth: []
       summary: "Get wallet, spending policy, and current-window spend"
@@ -464,6 +474,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized — missing or non-buyer-scoped API key
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
+          description: |
+            The OAuth access token authenticated but lacks the `search`
+            scope (RFC 6750 `insufficient_scope`). Carries a
+            `WWW-Authenticate: Bearer error="insufficient_scope", scope="search"`
+            header. `wk_` API keys are unscoped and never see this.
         "422":
           content:
             application/json:
@@ -548,8 +568,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FetchErrorResponse"
-          description: Policy violation or denylisted recipient.
+                $ref: "#/components/schemas/fetch_403_response"
+          description: |
+            Policy violation or denylisted recipient (`FetchErrorResponse`),
+            or an OAuth access token lacking the `fetch` scope
+            (`InsufficientScopeResponse`, RFC 6750 `insufficient_scope`, with
+            a `WWW-Authenticate` challenge). The two envelopes are disjoint;
+            branch on the `error` value.
         "413":
           content:
             application/json:
@@ -705,6 +730,35 @@ components:
       required:
       - code
       - message
+    InsufficientScopeResponse:
+      description: |
+        RFC 6750 §3.1 `insufficient_scope` error. Returned with HTTP 403 and
+        a `WWW-Authenticate: Bearer error="insufficient_scope", scope="..."`
+        header when an OAuth access token authenticates successfully but does
+        not carry the scope the endpoint requires. Only OAuth bearer tokens
+        are scope-gated; `wk_`-prefixed API keys are unscoped and never see
+        this response.
+      example:
+        error_description: The access token does not include the required scope.
+        scope: balance
+        error: insufficient_scope
+      properties:
+        error:
+          enum:
+          - insufficient_scope
+          example: insufficient_scope
+          type: string
+        error_description:
+          example: The access token does not include the required scope.
+          type: string
+        scope:
+          description: Space-delimited list of scopes the endpoint requires.
+          example: balance
+          type: string
+      required:
+      - error
+      - error_description
+      - scope
     MessageResponse:
       example:
         data:
@@ -2366,6 +2420,10 @@ components:
       - promo_usd
       - spent_today_usd
       - wallet_usdc
+    fetch_403_response:
+      oneOf:
+      - $ref: "#/components/schemas/FetchErrorResponse"
+      - $ref: "#/components/schemas/InsufficientScopeResponse"
     MessageResponse_data:
       example:
         message: message
