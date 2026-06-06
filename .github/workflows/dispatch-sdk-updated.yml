@@ -33,7 +33,7 @@ jobs:
       contents: read
     steps:
       - name: Mint weft-app App token (cross-repo dispatch)
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
