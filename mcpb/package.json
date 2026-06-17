@@ -1,0 +1,9 @@
+{
+  "name": "weft-mcpb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Weft MCP Bundle (Claude Desktop extension) — bridges to the hosted Weft MCP server.",
+  "dependencies": {
+    "mcp-remote": "0.1.38"
+  }
+}
