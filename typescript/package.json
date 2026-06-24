@@ -76,15 +76,15 @@
     "@x402/core": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
+    "@types/node": "^25.9.1",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
-    "eslint": "^9.24.0",
-    "fast-check": "^3.23.2",
-    "prettier": "3.5.2",
+    "eslint": "^10.4.1",
+    "fast-check": "^4.8.0",
+    "prettier": "3.8.3",
     "tsup": "^8.4.0",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "files": [
     "dist",
