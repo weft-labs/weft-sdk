@@ -199,7 +199,7 @@ jobs:
         # scoped to weft-sdk `contents: write` (commit to main + tag push) and
         # auto-revoked by the action's post step (~1h TTL). Uses app-id +
         # private-key, so no `id-token` permission is needed.
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
