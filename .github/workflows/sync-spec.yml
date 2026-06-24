@@ -122,6 +122,19 @@ jobs:
       - name: Verify generated output
         run: ./scripts/test-sdk.sh
 
+      - name: Generate OpenAPI changelog (release notes)
+        # Diffs the incoming spec (working tree) against the spec on origin/main
+        # and writes a human-readable markdown changelog to
+        # .release-candidates/CHANGELOG.md. It is committed into the candidate
+        # PR by the `git add -A` below, so reviewers and consumers see what
+        # changed without a raw spec diff. Pure tooling — never touches
+        # generated SDK source. Non-fatal: a changelog failure must not block a
+        # verified SDK regen, so we log and continue.
+        # oasdiff is installed by the script's self-install fallback; in a
+        # heavier CI we could swap in the oasdiff GitHub Action.
+        continue-on-error: true
+        run: ./scripts/generate-changelog.sh origin/main
+
       - name: Mint weft-sdk App token (branch push + PR ops + auto-merge)
         # Minted only after generate + verify succeed, immediately before the
         # branch push / PR ops. The token is scoped to weft-sdk

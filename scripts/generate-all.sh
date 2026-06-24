@@ -11,7 +11,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # output. Equality means every generator silently no-oped on the input,
 # which is exactly the failure mode that ships a "successful" candidate PR
 # carrying stale SDK code.
-# See cto-os/meetings/2026-05-03-sdk-pipeline-spec-03-04-conclusion.md.
 dirty_before="$(git -C "$ROOT_DIR" status --porcelain 2>/dev/null | sort || true)"
 
 "${ROOT_DIR}/scripts/generate-typescript.sh"
