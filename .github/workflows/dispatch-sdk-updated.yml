@@ -1,19 +1,16 @@
 name: "CD: SDK Updated Dispatch"
 
 # Fires `weft-sdk-updated` to weft-labs/weft-app whenever weft-sdk main advances
-# with changes that affect consumed artifacts. weft-app's S4 handler opens an
-# auto-PR that pins the 4 SDKs at this SHA. Re-firing with the same SHA is
-# safe: S4 dedupes via the candidate branch name (`sdk-candidate/<short_sha>`).
+# with changes that affect consumed artifacts. weft-app's handler opens an
+# auto-PR that pins the four SDK clients at this SHA. Re-firing with the same
+# SHA is safe: the handler dedupes via the candidate branch name
+# (`sdk-candidate/<short_sha>`).
 #
 # Mirrors the dispatch idiom in weft-app/.github/workflows/cd_openapi-dispatch.yml
 # (curl + jq + short-lived GitHub App installation token, repository_dispatch
-# event_type). See cto-os plan
-# `plans/active/2026-05-27-sdk-release-pipeline-decoupled.md` (event 2, spec S3)
-# and `plans/scoped/2026-05-28-s8-retire-bot-token-oidc-ghapp.md` (S8: retire
-# the long-lived bot PAT). The cross-repo dispatch is authed by a
-# `weft-release-bot` App token minted per-run and scoped to weft-app
-# `contents: write` — the built-in GITHUB_TOKEN cannot reach a different
-# repository.
+# event_type). The cross-repo dispatch is authed by a `weft-release-bot` App
+# token minted per-run and scoped to weft-app `contents: write` — the built-in
+# GITHUB_TOKEN cannot reach a different repository.
 
 on:
   push:
