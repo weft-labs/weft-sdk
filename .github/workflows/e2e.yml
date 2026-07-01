@@ -36,7 +36,7 @@ jobs:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
       - name: Checkout PR head
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # actions/checkout on pull_request already checks out the PR's
           # merge ref by default; we want the head ref so the test exercises
