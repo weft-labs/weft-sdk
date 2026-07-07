@@ -14,11 +14,18 @@ require 'date'
 require 'time'
 
 module Weft
-  # Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the three fields a CLI needs to explain why a fetch failed. 
+  # Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed. 
   class FetchBalanceSnapshot < ApiModelBase
     attr_accessor :promo_usd
 
+    # Live Base USDC balance.
     attr_accessor :wallet_usdc
+
+    # Aggregated USD of allowlisted Tempo dollar tokens, 2dp. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. 
+    attr_accessor :tempo_usd
+
+    # Aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. 
+    attr_accessor :total_usd
 
     attr_accessor :spent_today_usd
 
@@ -27,6 +34,8 @@ module Weft
       {
         :'promo_usd' => :'promo_usd',
         :'wallet_usdc' => :'wallet_usdc',
+        :'tempo_usd' => :'tempo_usd',
+        :'total_usd' => :'total_usd',
         :'spent_today_usd' => :'spent_today_usd'
       }
     end
@@ -46,6 +55,8 @@ module Weft
       {
         :'promo_usd' => :'String',
         :'wallet_usdc' => :'String',
+        :'tempo_usd' => :'String',
+        :'total_usd' => :'String',
         :'spent_today_usd' => :'String'
       }
     end
@@ -84,6 +95,18 @@ module Weft
         self.wallet_usdc = nil
       end
 
+      if attributes.key?(:'tempo_usd')
+        self.tempo_usd = attributes[:'tempo_usd']
+      else
+        self.tempo_usd = nil
+      end
+
+      if attributes.key?(:'total_usd')
+        self.total_usd = attributes[:'total_usd']
+      else
+        self.total_usd = nil
+      end
+
       if attributes.key?(:'spent_today_usd')
         self.spent_today_usd = attributes[:'spent_today_usd']
       else
@@ -104,6 +127,14 @@ module Weft
         invalid_properties.push('invalid value for "wallet_usdc", wallet_usdc cannot be nil.')
       end
 
+      if @tempo_usd.nil?
+        invalid_properties.push('invalid value for "tempo_usd", tempo_usd cannot be nil.')
+      end
+
+      if @total_usd.nil?
+        invalid_properties.push('invalid value for "total_usd", total_usd cannot be nil.')
+      end
+
       if @spent_today_usd.nil?
         invalid_properties.push('invalid value for "spent_today_usd", spent_today_usd cannot be nil.')
       end
@@ -117,6 +148,8 @@ module Weft
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @promo_usd.nil?
       return false if @wallet_usdc.nil?
+      return false if @tempo_usd.nil?
+      return false if @total_usd.nil?
       return false if @spent_today_usd.nil?
       true
     end
@@ -142,6 +175,26 @@ module Weft
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] tempo_usd Value to be assigned
+    def tempo_usd=(tempo_usd)
+      if tempo_usd.nil?
+        fail ArgumentError, 'tempo_usd cannot be nil'
+      end
+
+      @tempo_usd = tempo_usd
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] total_usd Value to be assigned
+    def total_usd=(total_usd)
+      if total_usd.nil?
+        fail ArgumentError, 'total_usd cannot be nil'
+      end
+
+      @total_usd = total_usd
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] spent_today_usd Value to be assigned
     def spent_today_usd=(spent_today_usd)
       if spent_today_usd.nil?
@@ -158,6 +211,8 @@ module Weft
       self.class == o.class &&
           promo_usd == o.promo_usd &&
           wallet_usdc == o.wallet_usdc &&
+          tempo_usd == o.tempo_usd &&
+          total_usd == o.total_usd &&
           spent_today_usd == o.spent_today_usd
     end
 
@@ -170,7 +225,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [promo_usd, wallet_usdc, spent_today_usd].hash
+      [promo_usd, wallet_usdc, tempo_usd, total_usd, spent_today_usd].hash
     end
 
     # Builds the object from hash
