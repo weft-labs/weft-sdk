@@ -23,8 +23,12 @@ var _ MappedNullable = &Wallet{}
 type Wallet struct {
 	// EVM address of the buyer's Privy-managed wallet. Null if no wallet provisioned.
 	Address string `json:"address"`
-	// Live USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.
+	// Live Base USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.
 	BalanceUsdc string `json:"balance_usdc"`
+	// Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. 
+	TempoUsd string `json:"tempo_usd"`
+	// Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. 
+	TotalUsd string `json:"total_usd"`
 	// Wallet network (e.g. `base-sepolia`).
 	Network string `json:"network"`
 }
@@ -35,10 +39,12 @@ type _Wallet Wallet
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWallet(address string, balanceUsdc string, network string) *Wallet {
+func NewWallet(address string, balanceUsdc string, tempoUsd string, totalUsd string, network string) *Wallet {
 	this := Wallet{}
 	this.Address = address
 	this.BalanceUsdc = balanceUsdc
+	this.TempoUsd = tempoUsd
+	this.TotalUsd = totalUsd
 	this.Network = network
 	return &this
 }
@@ -99,6 +105,54 @@ func (o *Wallet) SetBalanceUsdc(v string) {
 	o.BalanceUsdc = v
 }
 
+// GetTempoUsd returns the TempoUsd field value
+func (o *Wallet) GetTempoUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.TempoUsd
+}
+
+// GetTempoUsdOk returns a tuple with the TempoUsd field value
+// and a boolean to check if the value has been set.
+func (o *Wallet) GetTempoUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TempoUsd, true
+}
+
+// SetTempoUsd sets field value
+func (o *Wallet) SetTempoUsd(v string) {
+	o.TempoUsd = v
+}
+
+// GetTotalUsd returns the TotalUsd field value
+func (o *Wallet) GetTotalUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.TotalUsd
+}
+
+// GetTotalUsdOk returns a tuple with the TotalUsd field value
+// and a boolean to check if the value has been set.
+func (o *Wallet) GetTotalUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TotalUsd, true
+}
+
+// SetTotalUsd sets field value
+func (o *Wallet) SetTotalUsd(v string) {
+	o.TotalUsd = v
+}
+
 // GetNetwork returns the Network field value
 func (o *Wallet) GetNetwork() string {
 	if o == nil {
@@ -135,6 +189,8 @@ func (o Wallet) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["address"] = o.Address
 	toSerialize["balance_usdc"] = o.BalanceUsdc
+	toSerialize["tempo_usd"] = o.TempoUsd
+	toSerialize["total_usd"] = o.TotalUsd
 	toSerialize["network"] = o.Network
 	return toSerialize, nil
 }
@@ -146,6 +202,8 @@ func (o *Wallet) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"address",
 		"balance_usdc",
+		"tempo_usd",
+		"total_usd",
 		"network",
 	}
 
