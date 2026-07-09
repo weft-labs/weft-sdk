@@ -26,11 +26,25 @@ export interface Wallet {
      */
     address: string;
     /**
-     * Live USDC balance, 2dp. Returns "0.00" if the upstream wallet provider is unreachable.
+     * Live Base USDC balance, 2dp. Returns "0.00" if the upstream wallet provider is unreachable.
      * @type {string}
      * @memberof Wallet
      */
     balanceUsdc: string;
+    /**
+     * Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never "0.00"; it means "we couldn't determine it", and `total_usd` then reflects the Base component only.
+     * 
+     * @type {string}
+     * @memberof Wallet
+     */
+    tempoUsd: string;
+    /**
+     * Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
+     * 
+     * @type {string}
+     * @memberof Wallet
+     */
+    totalUsd: string;
     /**
      * Wallet network (e.g. `base-sepolia`).
      * @type {string}
@@ -45,6 +59,8 @@ export interface Wallet {
 export function instanceOfWallet(value: object): value is Wallet {
     if (!('address' in value) || value['address'] === undefined) return false;
     if (!('balanceUsdc' in value) || value['balanceUsdc'] === undefined) return false;
+    if (!('tempoUsd' in value) || value['tempoUsd'] === undefined) return false;
+    if (!('totalUsd' in value) || value['totalUsd'] === undefined) return false;
     if (!('network' in value) || value['network'] === undefined) return false;
     return true;
 }
@@ -61,6 +77,8 @@ export function WalletFromJSONTyped(json: any, ignoreDiscriminator: boolean): Wa
         
         'address': json['address'],
         'balanceUsdc': json['balance_usdc'],
+        'tempoUsd': json['tempo_usd'],
+        'totalUsd': json['total_usd'],
         'network': json['network'],
     };
 }
@@ -78,6 +96,8 @@ export function WalletToJSONTyped(value?: Wallet | null, ignoreDiscriminator: bo
         
         'address': value['address'],
         'balance_usdc': value['balanceUsdc'],
+        'tempo_usd': value['tempoUsd'],
+        'total_usd': value['totalUsd'],
         'network': value['network'],
     };
 }

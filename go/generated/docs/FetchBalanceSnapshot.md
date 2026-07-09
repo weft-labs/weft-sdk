@@ -5,14 +5,16 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **PromoUsd** | **string** |  | 
-**WalletUsdc** | **string** |  | 
+**WalletUsdc** | **string** | Live Base USDC balance. | 
+**TempoUsd** | **string** | Aggregated USD of allowlisted Tempo dollar tokens, 2dp. &#x60;null&#x60; when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \&quot;0.00\&quot; for an unread component.  | 
+**TotalUsd** | **string** | Aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, 2dp. Equals &#x60;wallet_usdc&#x60; alone when &#x60;tempo_usd&#x60; is null. Null when the Base USDC provider is unreachable.  | 
 **SpentTodayUsd** | **string** |  | 
 
 ## Methods
 
 ### NewFetchBalanceSnapshot
 
-`func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, spentTodayUsd string, ) *FetchBalanceSnapshot`
+`func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, tempoUsd string, totalUsd string, spentTodayUsd string, ) *FetchBalanceSnapshot`
 
 NewFetchBalanceSnapshot instantiates a new FetchBalanceSnapshot object
 This constructor will assign default values to properties that have it defined,
@@ -65,6 +67,46 @@ and a boolean to check if the value has been set.
 `func (o *FetchBalanceSnapshot) SetWalletUsdc(v string)`
 
 SetWalletUsdc sets WalletUsdc field to given value.
+
+
+### GetTempoUsd
+
+`func (o *FetchBalanceSnapshot) GetTempoUsd() string`
+
+GetTempoUsd returns the TempoUsd field if non-nil, zero value otherwise.
+
+### GetTempoUsdOk
+
+`func (o *FetchBalanceSnapshot) GetTempoUsdOk() (*string, bool)`
+
+GetTempoUsdOk returns a tuple with the TempoUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTempoUsd
+
+`func (o *FetchBalanceSnapshot) SetTempoUsd(v string)`
+
+SetTempoUsd sets TempoUsd field to given value.
+
+
+### GetTotalUsd
+
+`func (o *FetchBalanceSnapshot) GetTotalUsd() string`
+
+GetTotalUsd returns the TotalUsd field if non-nil, zero value otherwise.
+
+### GetTotalUsdOk
+
+`func (o *FetchBalanceSnapshot) GetTotalUsdOk() (*string, bool)`
+
+GetTotalUsdOk returns a tuple with the TotalUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTotalUsd
+
+`func (o *FetchBalanceSnapshot) SetTotalUsd(v string)`
+
+SetTotalUsd sets TotalUsd field to given value.
 
 
 ### GetSpentTodayUsd
