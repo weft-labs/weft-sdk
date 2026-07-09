@@ -97,6 +97,7 @@ class FetchApi:
             '403': "Fetch403Response",
             '413': "FetchErrorResponse",
             '422': "FetchErrorResponse",
+            '424': "FetchErrorResponse",
             '502': "FetchErrorResponse",
         }
         response_data = self.api_client.call_api(
@@ -170,6 +171,7 @@ class FetchApi:
             '403': "Fetch403Response",
             '413': "FetchErrorResponse",
             '422': "FetchErrorResponse",
+            '424': "FetchErrorResponse",
             '502': "FetchErrorResponse",
         }
         response_data = self.api_client.call_api(
@@ -243,6 +245,7 @@ class FetchApi:
             '403': "Fetch403Response",
             '413': "FetchErrorResponse",
             '422': "FetchErrorResponse",
+            '424': "FetchErrorResponse",
             '502': "FetchErrorResponse",
         }
         response_data = self.api_client.call_api(

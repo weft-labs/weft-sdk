@@ -79,8 +79,9 @@ example().catch(console.error);
 | **402** | Payment refused — &#x60;EXCEEDED_MAX_COST&#x60; or &#x60;INSUFFICIENT_BALANCE&#x60;. |  -  |
 | **403** | Policy violation or denylisted recipient (&#x60;FetchErrorResponse&#x60;), or an OAuth access token lacking the &#x60;fetch&#x60; scope (&#x60;InsufficientScopeResponse&#x60;, RFC 6750 &#x60;insufficient_scope&#x60;, with a &#x60;WWW-Authenticate&#x60; challenge). The two envelopes are disjoint; branch on the &#x60;error&#x60; value.  |  -  |
 | **413** | Upstream artifact exceeded the proxy\&#39;s size cap. |  -  |
-| **422** | Invalid request URL. |  -  |
-| **502** | Upstream did not return a valid 402 challenge, or settlement signing failed. |  -  |
+| **422** | Invalid request URL, or the merchant advertised a payment method Weft cannot sign. |  -  |
+| **424** | &#x60;MERCHANT_RETURNED_NON_402&#x60; — the upstream merchant is at fault: it did not return a 402, or its 402 challenge was invalid. A 4xx (not 5xx) because Weft behaved correctly and the caller should act on &#x60;details.reason&#x60; (e.g. pick another merchant); it also keeps the error envelope intact through CDNs that replace 5xx bodies.  |  -  |
+| **502** | Settlement signing failed on Weft\&#39;s side (&#x60;SETTLEMENT_FAILED&#x60;). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
