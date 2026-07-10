@@ -18,8 +18,14 @@ module Weft
     # EVM address of the buyer's Privy-managed wallet. Null if no wallet provisioned.
     attr_accessor :address
 
-    # Live USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.
+    # Live Base USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.
     attr_accessor :balance_usdc
+
+    # Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. 
+    attr_accessor :tempo_usd
+
+    # Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. 
+    attr_accessor :total_usd
 
     # Wallet network (e.g. `base-sepolia`).
     attr_accessor :network
@@ -29,6 +35,8 @@ module Weft
       {
         :'address' => :'address',
         :'balance_usdc' => :'balance_usdc',
+        :'tempo_usd' => :'tempo_usd',
+        :'total_usd' => :'total_usd',
         :'network' => :'network'
       }
     end
@@ -48,6 +56,8 @@ module Weft
       {
         :'address' => :'String',
         :'balance_usdc' => :'String',
+        :'tempo_usd' => :'String',
+        :'total_usd' => :'String',
         :'network' => :'String'
       }
     end
@@ -86,6 +96,18 @@ module Weft
         self.balance_usdc = nil
       end
 
+      if attributes.key?(:'tempo_usd')
+        self.tempo_usd = attributes[:'tempo_usd']
+      else
+        self.tempo_usd = nil
+      end
+
+      if attributes.key?(:'total_usd')
+        self.total_usd = attributes[:'total_usd']
+      else
+        self.total_usd = nil
+      end
+
       if attributes.key?(:'network')
         self.network = attributes[:'network']
       else
@@ -106,6 +128,14 @@ module Weft
         invalid_properties.push('invalid value for "balance_usdc", balance_usdc cannot be nil.')
       end
 
+      if @tempo_usd.nil?
+        invalid_properties.push('invalid value for "tempo_usd", tempo_usd cannot be nil.')
+      end
+
+      if @total_usd.nil?
+        invalid_properties.push('invalid value for "total_usd", total_usd cannot be nil.')
+      end
+
       if @network.nil?
         invalid_properties.push('invalid value for "network", network cannot be nil.')
       end
@@ -119,6 +149,8 @@ module Weft
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @address.nil?
       return false if @balance_usdc.nil?
+      return false if @tempo_usd.nil?
+      return false if @total_usd.nil?
       return false if @network.nil?
       true
     end
@@ -144,6 +176,26 @@ module Weft
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] tempo_usd Value to be assigned
+    def tempo_usd=(tempo_usd)
+      if tempo_usd.nil?
+        fail ArgumentError, 'tempo_usd cannot be nil'
+      end
+
+      @tempo_usd = tempo_usd
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] total_usd Value to be assigned
+    def total_usd=(total_usd)
+      if total_usd.nil?
+        fail ArgumentError, 'total_usd cannot be nil'
+      end
+
+      @total_usd = total_usd
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] network Value to be assigned
     def network=(network)
       if network.nil?
@@ -160,6 +212,8 @@ module Weft
       self.class == o.class &&
           address == o.address &&
           balance_usdc == o.balance_usdc &&
+          tempo_usd == o.tempo_usd &&
+          total_usd == o.total_usd &&
           network == o.network
     end
 
@@ -172,7 +226,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [address, balance_usdc, network].hash
+      [address, balance_usdc, tempo_usd, total_usd, network].hash
     end
 
     # Builds the object from hash
