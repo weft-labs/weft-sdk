@@ -15,8 +15,8 @@
 import { mapValues } from '../runtime';
 /**
  * Compact balance snapshot returned inside `FetchErrorResponse`. Less
- * rich than `BalanceResponse` — just the three fields a CLI needs to
- * explain why a fetch failed.
+ * rich than `BalanceResponse` — just the fields a CLI needs to explain
+ * why a fetch failed.
  * 
  * @export
  * @interface FetchBalanceSnapshot
@@ -29,11 +29,25 @@ export interface FetchBalanceSnapshot {
      */
     promoUsd: string;
     /**
-     * 
+     * Live Base USDC balance.
      * @type {string}
      * @memberof FetchBalanceSnapshot
      */
     walletUsdc: string;
+    /**
+     * Aggregated USD of allowlisted Tempo dollar tokens, 2dp. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never "0.00" for an unread component.
+     * 
+     * @type {string}
+     * @memberof FetchBalanceSnapshot
+     */
+    tempoUsd: string;
+    /**
+     * Aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable.
+     * 
+     * @type {string}
+     * @memberof FetchBalanceSnapshot
+     */
+    totalUsd: string;
     /**
      * 
      * @type {string}
@@ -48,6 +62,8 @@ export interface FetchBalanceSnapshot {
 export function instanceOfFetchBalanceSnapshot(value: object): value is FetchBalanceSnapshot {
     if (!('promoUsd' in value) || value['promoUsd'] === undefined) return false;
     if (!('walletUsdc' in value) || value['walletUsdc'] === undefined) return false;
+    if (!('tempoUsd' in value) || value['tempoUsd'] === undefined) return false;
+    if (!('totalUsd' in value) || value['totalUsd'] === undefined) return false;
     if (!('spentTodayUsd' in value) || value['spentTodayUsd'] === undefined) return false;
     return true;
 }
@@ -64,6 +80,8 @@ export function FetchBalanceSnapshotFromJSONTyped(json: any, ignoreDiscriminator
         
         'promoUsd': json['promo_usd'],
         'walletUsdc': json['wallet_usdc'],
+        'tempoUsd': json['tempo_usd'],
+        'totalUsd': json['total_usd'],
         'spentTodayUsd': json['spent_today_usd'],
     };
 }
@@ -81,6 +99,8 @@ export function FetchBalanceSnapshotToJSONTyped(value?: FetchBalanceSnapshot | n
         
         'promo_usd': value['promoUsd'],
         'wallet_usdc': value['walletUsdc'],
+        'tempo_usd': value['tempoUsd'],
+        'total_usd': value['totalUsd'],
         'spent_today_usd': value['spentTodayUsd'],
     };
 }
