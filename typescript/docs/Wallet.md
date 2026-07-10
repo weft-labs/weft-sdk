@@ -8,6 +8,8 @@ Name | Type
 ------------ | -------------
 `address` | string
 `balanceUsdc` | string
+`tempoUsd` | string
+`totalUsd` | string
 `network` | string
 
 ## Example
@@ -19,6 +21,8 @@ import type { Wallet } from '@weft-labs/sdk'
 const example = {
   "address": null,
   "balanceUsdc": 12.34,
+  "tempoUsd": 3.00,
+  "totalUsd": 15.34,
   "network": null,
 } satisfies Wallet
 

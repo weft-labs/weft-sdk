@@ -1,7 +1,7 @@
 
 # FetchBalanceSnapshot
 
-Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the three fields a CLI needs to explain why a fetch failed. 
+Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed. 
 
 ## Properties
 
@@ -9,6 +9,8 @@ Name | Type
 ------------ | -------------
 `promoUsd` | string
 `walletUsdc` | string
+`tempoUsd` | string
+`totalUsd` | string
 `spentTodayUsd` | string
 
 ## Example
@@ -20,6 +22,8 @@ import type { FetchBalanceSnapshot } from '@weft-labs/sdk'
 const example = {
   "promoUsd": 0.00,
   "walletUsdc": 12.34,
+  "tempoUsd": 3.00,
+  "totalUsd": 15.34,
   "spentTodayUsd": 0.42,
 } satisfies FetchBalanceSnapshot
 

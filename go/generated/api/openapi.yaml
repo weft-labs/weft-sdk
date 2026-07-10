@@ -586,14 +586,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
-          description: Invalid request URL.
+          description: "Invalid request URL, or the merchant advertised a payment\
+            \ method Weft cannot sign."
+        "424":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+          description: |
+            `MERCHANT_RETURNED_NON_402` — the upstream merchant is at fault: it
+            did not return a 402, or its 402 challenge was invalid. A 4xx (not
+            5xx) because Weft behaved correctly and the caller should act on
+            `details.reason` (e.g. pick another merchant); it also keeps the
+            error envelope intact through CDNs that replace 5xx bodies.
         "502":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
-          description: "Upstream did not return a valid 402 challenge, or settlement\
-            \ signing failed."
+          description: Settlement signing failed on Weft's side (`SETTLEMENT_FAILED`).
       security:
       - bearerAuth: []
       summary: Pay-and-fetch any URL (x402 proxy)
@@ -1435,7 +1446,9 @@ components:
           balance_usd: "0.00"
         wallet:
           address: address
+          total_usd: "15.34"
           balance_usdc: "12.34"
+          tempo_usd: "3.00"
           network: network
         spent_today_usd: "0.42"
         spent_week_usd: "3.10"
@@ -1493,7 +1506,9 @@ components:
     Wallet:
       example:
         address: address
+        total_usd: "15.34"
         balance_usdc: "12.34"
+        tempo_usd: "3.00"
         network: network
       properties:
         address:
@@ -1502,10 +1517,22 @@ components:
           type: string
           nullable: true
         balance_usdc:
-          description: "Live USDC balance, 2dp. Returns \"0.00\" if the upstream wallet\
-            \ provider is unreachable."
+          description: "Live Base USDC balance, 2dp. Returns \"0.00\" if the upstream\
+            \ wallet provider is unreachable."
           example: "12.34"
           type: string
+        tempo_usd:
+          description: |
+            Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never "0.00"; it means "we couldn't determine it", and `total_usd` then reflects the Base component only.
+          example: "3.00"
+          type: string
+          nullable: true
+        total_usd:
+          description: |
+            Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
+          example: "15.34"
+          type: string
+          nullable: true
         network:
           description: Wallet network (e.g. `base-sepolia`).
           type: string
@@ -1514,6 +1541,8 @@ components:
       - address
       - balance_usdc
       - network
+      - tempo_usd
+      - total_usd
     SpendingPolicy:
       example:
         weekly_limit_usd: "50.00"
@@ -2353,7 +2382,9 @@ components:
         balance:
           promo_usd: "0.00"
           spent_today_usd: "0.42"
+          total_usd: "15.34"
           wallet_usdc: "12.34"
+          tempo_usd: "3.00"
         details:
           key: ""
         error: EXCEEDED_MAX_COST
@@ -2400,25 +2431,42 @@ components:
     FetchBalanceSnapshot:
       description: |
         Compact balance snapshot returned inside `FetchErrorResponse`. Less
-        rich than `BalanceResponse` — just the three fields a CLI needs to
-        explain why a fetch failed.
+        rich than `BalanceResponse` — just the fields a CLI needs to explain
+        why a fetch failed.
       example:
         promo_usd: "0.00"
         spent_today_usd: "0.42"
+        total_usd: "15.34"
         wallet_usdc: "12.34"
+        tempo_usd: "3.00"
       properties:
         promo_usd:
           example: "0.00"
           type: string
         wallet_usdc:
+          description: Live Base USDC balance.
           example: "12.34"
           type: string
+        tempo_usd:
+          description: |
+            Aggregated USD of allowlisted Tempo dollar tokens, 2dp. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never "0.00" for an unread component.
+          example: "3.00"
+          type: string
+          nullable: true
+        total_usd:
+          description: |
+            Aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable.
+          example: "15.34"
+          type: string
+          nullable: true
         spent_today_usd:
           example: "0.42"
           type: string
       required:
       - promo_usd
       - spent_today_usd
+      - tempo_usd
+      - total_usd
       - wallet_usdc
     fetch_403_response:
       oneOf:
