@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: npm
     directory: "/typescript"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       production-dependencies:
@@ -19,7 +19,7 @@ updates:
   - package-ecosystem: pip
     directory: "/python"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       production-dependencies:
@@ -34,7 +34,7 @@ updates:
   - package-ecosystem: bundler
     directory: "/ruby"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       production-dependencies:
@@ -51,7 +51,7 @@ updates:
       - "/go"
       - "/go/generated"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       go-dependencies:
@@ -64,7 +64,7 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       actions:
