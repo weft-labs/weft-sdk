@@ -563,18 +563,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
-          description: Payment refused — `EXCEEDED_MAX_COST` or `INSUFFICIENT_BALANCE`.
+          description: |
+            Payment refused. `EXCEEDED_MAX_COST` (over the caller cap) or
+            `INSUFFICIENT_BALANCE` (the buyer is genuinely short). Also
+            `CONVERSION_UNAVAILABLE` — a cross-chain provision route is down
+            while the buyer's funds are intact (`details.venue`,
+            `details.retryable: true`); retry later, do NOT top up. All use
+            `FetchErrorResponse`.
         "403":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/fetch_403_response"
           description: |
-            Policy violation or denylisted recipient (`FetchErrorResponse`),
-            or an OAuth access token lacking the `fetch` scope
-            (`InsufficientScopeResponse`, RFC 6750 `insufficient_scope`, with
-            a `WWW-Authenticate` challenge). The two envelopes are disjoint;
-            branch on the `error` value.
+            Policy violation, denylisted recipient, or a merchant challenge on a
+            chain outside the wallet's own environment — a testnet wallet may
+            not pay a mainnet challenge, nor the reverse
+            (`WALLET_ENVIRONMENT_MISMATCH`; terminal, not retryable). All three
+            use `FetchErrorResponse`. Alternatively an OAuth access token
+            lacking the `fetch` scope (`InsufficientScopeResponse`, RFC 6750
+            `insufficient_scope`, with a `WWW-Authenticate` challenge). The two
+            envelopes are disjoint; branch on the `error` value.
         "413":
           content:
             application/json:
@@ -2400,9 +2409,11 @@ components:
           - INVALID_URL
           - EXCEEDED_MAX_COST
           - INSUFFICIENT_BALANCE
+          - CONVERSION_UNAVAILABLE
           - MERCHANT_RETURNED_NON_402
           - ARTIFACT_TOO_LARGE
           - DENYLISTED_RECIPIENT
+          - WALLET_ENVIRONMENT_MISMATCH
           - SETTLEMENT_FAILED
           - UNSUPPORTED_PAYMENT_METHOD
           - POLICY_VIOLATION_MAX_TX

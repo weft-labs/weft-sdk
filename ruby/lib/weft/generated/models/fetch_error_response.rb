@@ -171,7 +171,7 @@ module Weft
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @error.nil?
-      error_validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
+      error_validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "CONVERSION_UNAVAILABLE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "WALLET_ENVIRONMENT_MISMATCH", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
       return false unless error_validator.valid?(@error)
       return false if @details.nil?
       return false if @policy.nil?
@@ -183,7 +183,7 @@ module Weft
     # Custom attribute writer method checking allowed values (enum).
     # @param [Object] error Object to be assigned
     def error=(error)
-      validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
+      validator = EnumAttributeValidator.new('String', ["INVALID_URL", "EXCEEDED_MAX_COST", "INSUFFICIENT_BALANCE", "CONVERSION_UNAVAILABLE", "MERCHANT_RETURNED_NON_402", "ARTIFACT_TOO_LARGE", "DENYLISTED_RECIPIENT", "WALLET_ENVIRONMENT_MISMATCH", "SETTLEMENT_FAILED", "UNSUPPORTED_PAYMENT_METHOD", "POLICY_VIOLATION_MAX_TX", "POLICY_VIOLATION_DAILY", "POLICY_VIOLATION_WEEKLY"])
       unless validator.valid?(error)
         fail ArgumentError, "invalid value for \"error\", must be one of #{validator.allowable_values}."
       end
