@@ -5,8 +5,8 @@
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
 | **query** | **String** | Free-text query. Required and non-empty. |  |
-| **limit** | **Integer** | Max number of hits to return. Clamped to [1, 50]. | [optional][default to 10] |
-| **filters** | [**SearchFilters**](SearchFilters.md) |  | [optional] |
+| **max_results** | **Integer** | Max number of hits to return. Invalid values are rejected, not clamped. | [optional][default to 10] |
+| **filters** | [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional] |
 
 ## Example
 
@@ -15,7 +15,7 @@ require 'weft-sdk'
 
 instance = Weft::SearchRequest.new(
   query: send email from an agent,
-  limit: null,
+  max_results: null,
   filters: null
 )
 ```

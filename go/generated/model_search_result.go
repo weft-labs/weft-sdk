@@ -21,22 +21,10 @@ var _ MappedNullable = &SearchResult{}
 
 // SearchResult struct for SearchResult
 type SearchResult struct {
-	// Stable agent identifier (e.g. `weft:agent:agentmail`).
-	Id string `json:"id"`
-	// Cosine similarity score, clipped to [0, 1].
+	Provider SearchProviderRef `json:"provider"`
+	Capability SearchCapabilityRef `json:"capability"`
+	Endpoints []SearchEndpointHit `json:"endpoints"`
 	Score float64 `json:"score"`
-	// Agent protocol surface.
-	Protocol string `json:"protocol"`
-	// Domain tags declared by the agent.
-	Domain []string `json:"domain"`
-	// Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).
-	Reseller *string `json:"reseller,omitempty"`
-	// Upstream provider hostname when fronted by a reseller.
-	Upstream *string `json:"upstream,omitempty"`
-	AgentCard SearchAgentCard `json:"agent_card"`
-	Pricing SearchPricing `json:"pricing"`
-	Ranking SearchRanking `json:"ranking"`
-	Endpoints SearchEndpoints `json:"endpoints"`
 }
 
 type _SearchResult SearchResult
@@ -45,16 +33,12 @@ type _SearchResult SearchResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewSearchResult(id string, score float64, protocol string, domain []string, agentCard SearchAgentCard, pricing SearchPricing, ranking SearchRanking, endpoints SearchEndpoints) *SearchResult {
+func NewSearchResult(provider SearchProviderRef, capability SearchCapabilityRef, endpoints []SearchEndpointHit, score float64) *SearchResult {
 	this := SearchResult{}
-	this.Id = id
-	this.Score = score
-	this.Protocol = protocol
-	this.Domain = domain
-	this.AgentCard = agentCard
-	this.Pricing = pricing
-	this.Ranking = ranking
+	this.Provider = provider
+	this.Capability = capability
 	this.Endpoints = endpoints
+	this.Score = score
 	return &this
 }
 
@@ -66,28 +50,76 @@ func NewSearchResultWithDefaults() *SearchResult {
 	return &this
 }
 
-// GetId returns the Id field value
-func (o *SearchResult) GetId() string {
+// GetProvider returns the Provider field value
+func (o *SearchResult) GetProvider() SearchProviderRef {
 	if o == nil {
-		var ret string
+		var ret SearchProviderRef
 		return ret
 	}
 
-	return o.Id
+	return o.Provider
 }
 
-// GetIdOk returns a tuple with the Id field value
+// GetProviderOk returns a tuple with the Provider field value
 // and a boolean to check if the value has been set.
-func (o *SearchResult) GetIdOk() (*string, bool) {
+func (o *SearchResult) GetProviderOk() (*SearchProviderRef, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return &o.Provider, true
 }
 
-// SetId sets field value
-func (o *SearchResult) SetId(v string) {
-	o.Id = v
+// SetProvider sets field value
+func (o *SearchResult) SetProvider(v SearchProviderRef) {
+	o.Provider = v
+}
+
+// GetCapability returns the Capability field value
+func (o *SearchResult) GetCapability() SearchCapabilityRef {
+	if o == nil {
+		var ret SearchCapabilityRef
+		return ret
+	}
+
+	return o.Capability
+}
+
+// GetCapabilityOk returns a tuple with the Capability field value
+// and a boolean to check if the value has been set.
+func (o *SearchResult) GetCapabilityOk() (*SearchCapabilityRef, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Capability, true
+}
+
+// SetCapability sets field value
+func (o *SearchResult) SetCapability(v SearchCapabilityRef) {
+	o.Capability = v
+}
+
+// GetEndpoints returns the Endpoints field value
+func (o *SearchResult) GetEndpoints() []SearchEndpointHit {
+	if o == nil {
+		var ret []SearchEndpointHit
+		return ret
+	}
+
+	return o.Endpoints
+}
+
+// GetEndpointsOk returns a tuple with the Endpoints field value
+// and a boolean to check if the value has been set.
+func (o *SearchResult) GetEndpointsOk() ([]SearchEndpointHit, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Endpoints, true
+}
+
+// SetEndpoints sets field value
+func (o *SearchResult) SetEndpoints(v []SearchEndpointHit) {
+	o.Endpoints = v
 }
 
 // GetScore returns the Score field value
@@ -114,214 +146,6 @@ func (o *SearchResult) SetScore(v float64) {
 	o.Score = v
 }
 
-// GetProtocol returns the Protocol field value
-func (o *SearchResult) GetProtocol() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Protocol
-}
-
-// GetProtocolOk returns a tuple with the Protocol field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetProtocolOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Protocol, true
-}
-
-// SetProtocol sets field value
-func (o *SearchResult) SetProtocol(v string) {
-	o.Protocol = v
-}
-
-// GetDomain returns the Domain field value
-func (o *SearchResult) GetDomain() []string {
-	if o == nil {
-		var ret []string
-		return ret
-	}
-
-	return o.Domain
-}
-
-// GetDomainOk returns a tuple with the Domain field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetDomainOk() ([]string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.Domain, true
-}
-
-// SetDomain sets field value
-func (o *SearchResult) SetDomain(v []string) {
-	o.Domain = v
-}
-
-// GetReseller returns the Reseller field value if set, zero value otherwise.
-func (o *SearchResult) GetReseller() string {
-	if o == nil || IsNil(o.Reseller) {
-		var ret string
-		return ret
-	}
-	return *o.Reseller
-}
-
-// GetResellerOk returns a tuple with the Reseller field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetResellerOk() (*string, bool) {
-	if o == nil || IsNil(o.Reseller) {
-		return nil, false
-	}
-	return o.Reseller, true
-}
-
-// HasReseller returns a boolean if a field has been set.
-func (o *SearchResult) HasReseller() bool {
-	if o != nil && !IsNil(o.Reseller) {
-		return true
-	}
-
-	return false
-}
-
-// SetReseller gets a reference to the given string and assigns it to the Reseller field.
-func (o *SearchResult) SetReseller(v string) {
-	o.Reseller = &v
-}
-
-// GetUpstream returns the Upstream field value if set, zero value otherwise.
-func (o *SearchResult) GetUpstream() string {
-	if o == nil || IsNil(o.Upstream) {
-		var ret string
-		return ret
-	}
-	return *o.Upstream
-}
-
-// GetUpstreamOk returns a tuple with the Upstream field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetUpstreamOk() (*string, bool) {
-	if o == nil || IsNil(o.Upstream) {
-		return nil, false
-	}
-	return o.Upstream, true
-}
-
-// HasUpstream returns a boolean if a field has been set.
-func (o *SearchResult) HasUpstream() bool {
-	if o != nil && !IsNil(o.Upstream) {
-		return true
-	}
-
-	return false
-}
-
-// SetUpstream gets a reference to the given string and assigns it to the Upstream field.
-func (o *SearchResult) SetUpstream(v string) {
-	o.Upstream = &v
-}
-
-// GetAgentCard returns the AgentCard field value
-func (o *SearchResult) GetAgentCard() SearchAgentCard {
-	if o == nil {
-		var ret SearchAgentCard
-		return ret
-	}
-
-	return o.AgentCard
-}
-
-// GetAgentCardOk returns a tuple with the AgentCard field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetAgentCardOk() (*SearchAgentCard, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AgentCard, true
-}
-
-// SetAgentCard sets field value
-func (o *SearchResult) SetAgentCard(v SearchAgentCard) {
-	o.AgentCard = v
-}
-
-// GetPricing returns the Pricing field value
-func (o *SearchResult) GetPricing() SearchPricing {
-	if o == nil {
-		var ret SearchPricing
-		return ret
-	}
-
-	return o.Pricing
-}
-
-// GetPricingOk returns a tuple with the Pricing field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetPricingOk() (*SearchPricing, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Pricing, true
-}
-
-// SetPricing sets field value
-func (o *SearchResult) SetPricing(v SearchPricing) {
-	o.Pricing = v
-}
-
-// GetRanking returns the Ranking field value
-func (o *SearchResult) GetRanking() SearchRanking {
-	if o == nil {
-		var ret SearchRanking
-		return ret
-	}
-
-	return o.Ranking
-}
-
-// GetRankingOk returns a tuple with the Ranking field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetRankingOk() (*SearchRanking, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Ranking, true
-}
-
-// SetRanking sets field value
-func (o *SearchResult) SetRanking(v SearchRanking) {
-	o.Ranking = v
-}
-
-// GetEndpoints returns the Endpoints field value
-func (o *SearchResult) GetEndpoints() SearchEndpoints {
-	if o == nil {
-		var ret SearchEndpoints
-		return ret
-	}
-
-	return o.Endpoints
-}
-
-// GetEndpointsOk returns a tuple with the Endpoints field value
-// and a boolean to check if the value has been set.
-func (o *SearchResult) GetEndpointsOk() (*SearchEndpoints, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Endpoints, true
-}
-
-// SetEndpoints sets field value
-func (o *SearchResult) SetEndpoints(v SearchEndpoints) {
-	o.Endpoints = v
-}
-
 func (o SearchResult) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -332,20 +156,10 @@ func (o SearchResult) MarshalJSON() ([]byte, error) {
 
 func (o SearchResult) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["score"] = o.Score
-	toSerialize["protocol"] = o.Protocol
-	toSerialize["domain"] = o.Domain
-	if !IsNil(o.Reseller) {
-		toSerialize["reseller"] = o.Reseller
-	}
-	if !IsNil(o.Upstream) {
-		toSerialize["upstream"] = o.Upstream
-	}
-	toSerialize["agent_card"] = o.AgentCard
-	toSerialize["pricing"] = o.Pricing
-	toSerialize["ranking"] = o.Ranking
+	toSerialize["provider"] = o.Provider
+	toSerialize["capability"] = o.Capability
 	toSerialize["endpoints"] = o.Endpoints
+	toSerialize["score"] = o.Score
 	return toSerialize, nil
 }
 
@@ -354,14 +168,10 @@ func (o *SearchResult) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"id",
-		"score",
-		"protocol",
-		"domain",
-		"agent_card",
-		"pricing",
-		"ranking",
+		"provider",
+		"capability",
 		"endpoints",
+		"score",
 	}
 
 	allProperties := make(map[string]interface{})

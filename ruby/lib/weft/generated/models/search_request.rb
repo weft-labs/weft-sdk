@@ -18,8 +18,8 @@ module Weft
     # Free-text query. Required and non-empty.
     attr_accessor :query
 
-    # Max number of hits to return. Clamped to [1, 50].
-    attr_accessor :limit
+    # Max number of hits to return. Invalid values are rejected, not clamped.
+    attr_accessor :max_results
 
     attr_accessor :filters
 
@@ -27,7 +27,7 @@ module Weft
     def self.attribute_map
       {
         :'query' => :'query',
-        :'limit' => :'limit',
+        :'max_results' => :'max_results',
         :'filters' => :'filters'
       }
     end
@@ -46,8 +46,8 @@ module Weft
     def self.openapi_types
       {
         :'query' => :'String',
-        :'limit' => :'Integer',
-        :'filters' => :'SearchFilters'
+        :'max_results' => :'Integer',
+        :'filters' => :'SearchFilterSpec'
       }
     end
 
@@ -79,10 +79,10 @@ module Weft
         self.query = nil
       end
 
-      if attributes.key?(:'limit')
-        self.limit = attributes[:'limit']
+      if attributes.key?(:'max_results')
+        self.max_results = attributes[:'max_results']
       else
-        self.limit = 10
+        self.max_results = 10
       end
 
       if attributes.key?(:'filters')
@@ -99,16 +99,20 @@ module Weft
         invalid_properties.push('invalid value for "query", query cannot be nil.')
       end
 
+      if @query.to_s.length > 2000
+        invalid_properties.push('invalid value for "query", the character length must be smaller than or equal to 2000.')
+      end
+
       if @query.to_s.length < 1
         invalid_properties.push('invalid value for "query", the character length must be greater than or equal to 1.')
       end
 
-      if !@limit.nil? && @limit > 50
-        invalid_properties.push('invalid value for "limit", must be smaller than or equal to 50.')
+      if !@max_results.nil? && @max_results > 50
+        invalid_properties.push('invalid value for "max_results", must be smaller than or equal to 50.')
       end
 
-      if !@limit.nil? && @limit < 1
-        invalid_properties.push('invalid value for "limit", must be greater than or equal to 1.')
+      if !@max_results.nil? && @max_results < 1
+        invalid_properties.push('invalid value for "max_results", must be greater than or equal to 1.')
       end
 
       invalid_properties
@@ -119,9 +123,10 @@ module Weft
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @query.nil?
+      return false if @query.to_s.length > 2000
       return false if @query.to_s.length < 1
-      return false if !@limit.nil? && @limit > 50
-      return false if !@limit.nil? && @limit < 1
+      return false if !@max_results.nil? && @max_results > 50
+      return false if !@max_results.nil? && @max_results < 1
       true
     end
 
@@ -132,6 +137,10 @@ module Weft
         fail ArgumentError, 'query cannot be nil'
       end
 
+      if query.to_s.length > 2000
+        fail ArgumentError, 'invalid value for "query", the character length must be smaller than or equal to 2000.'
+      end
+
       if query.to_s.length < 1
         fail ArgumentError, 'invalid value for "query", the character length must be greater than or equal to 1.'
       end
@@ -140,21 +149,21 @@ module Weft
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] limit Value to be assigned
-    def limit=(limit)
-      if limit.nil?
-        fail ArgumentError, 'limit cannot be nil'
+    # @param [Object] max_results Value to be assigned
+    def max_results=(max_results)
+      if max_results.nil?
+        fail ArgumentError, 'max_results cannot be nil'
       end
 
-      if limit > 50
-        fail ArgumentError, 'invalid value for "limit", must be smaller than or equal to 50.'
+      if max_results > 50
+        fail ArgumentError, 'invalid value for "max_results", must be smaller than or equal to 50.'
       end
 
-      if limit < 1
-        fail ArgumentError, 'invalid value for "limit", must be greater than or equal to 1.'
+      if max_results < 1
+        fail ArgumentError, 'invalid value for "max_results", must be greater than or equal to 1.'
       end
 
-      @limit = limit
+      @max_results = max_results
     end
 
     # Checks equality by comparing each attribute.
@@ -163,7 +172,7 @@ module Weft
       return true if self.equal?(o)
       self.class == o.class &&
           query == o.query &&
-          limit == o.limit &&
+          max_results == o.max_results &&
           filters == o.filters
     end
 
@@ -176,7 +185,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [query, limit, filters].hash
+      [query, max_results, filters].hash
     end
 
     # Builds the object from hash

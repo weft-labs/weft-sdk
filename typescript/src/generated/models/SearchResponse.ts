@@ -13,63 +13,91 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SearchResponseResultsInner } from './SearchResponseResultsInner';
+import type { SearchFilterSpec } from './SearchFilterSpec';
 import {
-    SearchResponseResultsInnerFromJSON,
-    SearchResponseResultsInnerFromJSONTyped,
-    SearchResponseResultsInnerToJSON,
-    SearchResponseResultsInnerToJSONTyped,
-} from './SearchResponseResultsInner';
+    SearchFilterSpecFromJSON,
+    SearchFilterSpecFromJSONTyped,
+    SearchFilterSpecToJSON,
+    SearchFilterSpecToJSONTyped,
+} from './SearchFilterSpec';
+import type { SearchResult } from './SearchResult';
+import {
+    SearchResultFromJSON,
+    SearchResultFromJSONTyped,
+    SearchResultToJSON,
+    SearchResultToJSONTyped,
+} from './SearchResult';
+import type { SearchResponseWarningsInner } from './SearchResponseWarningsInner';
+import {
+    SearchResponseWarningsInnerFromJSON,
+    SearchResponseWarningsInnerFromJSONTyped,
+    SearchResponseWarningsInnerToJSON,
+    SearchResponseWarningsInnerToJSONTyped,
+} from './SearchResponseWarningsInner';
 
 /**
- * Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id`
- * are reserved for a later release that adds per-call billing and
- * artifact persistence; they are always `null` in v1. `_mock: true`
- * is set only by the mock backend.
- * 
- * Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
- * while the real index is unshipped) emits the rich, SDK-facing
- * `SearchResult` shape. The legacy `platform` backend proxies the
- * upstream search service and passes its result rows through verbatim —
- * Weft does not own or reshape that payload, so those rows are typed as
- * a free-form object. SDK clients on v1 should treat unknown row shapes
- * defensively until the platform backend is retrofitted to the
- * `SearchResult` contract (specs 07 + 10).
- * 
- * Because the `PlatformSearchResult` branch is intentionally permissive
- * (free-form, to admit the un-owned platform rows), the `anyOf` is
- * satisfied by any object — so the committee response-validation gate does
- * NOT strictly validate result-row shapes; the rich `SearchResult`
- * contract is instead guarded by the `/api/v1/search` request spec.
+ * The weft-search-platform `POST /v1/search` response envelope. The
+ * mock backend emits the same shape and adds `_mock: true`.
  * 
  * @export
  * @interface SearchResponse
  */
 export interface SearchResponse {
     /**
+     * Opaque trace id for the served query, matching the platform `query_trace_id`.
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    queryTraceId: string;
+    /**
      * 
-     * @type {Array<SearchResponseResultsInner>}
-     * @memberof SearchResponse
-     */
-    results: Array<SearchResponseResultsInner>;
-    /**
-     * Always `null` in v1.
      * @type {string}
      * @memberof SearchResponse
      */
-    paidUsd?: string;
+    query: string;
     /**
-     * Always `null` in v1.
+     * The `FilterSpec` actually applied to recall, echoed back so the
+     * caller sees exactly what constrained the results. In the current
+     * contract this is the caller's `filters` verbatim (empty object when
+     * none were sent).
+     * 
+     * @type {SearchFilterSpec}
+     * @memberof SearchResponse
+     */
+    appliedFilters?: SearchFilterSpec;
+    /**
+     * Origin of `applied_filters`. `CALLER` today (the mock and the B1
+     * platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
+     * `FALLBACK` arrive additively when the decomposer lands.
+     * 
      * @type {string}
      * @memberof SearchResponse
      */
-    txHash?: string;
+    decompositionSource?: SearchResponseDecompositionSourceEnum;
     /**
-     * Always `null` in v1.
+     * 
      * @type {string}
      * @memberof SearchResponse
      */
-    artifactId?: string;
+    embedderModel: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof SearchResponse
+     */
+    candidatesConsidered: number;
+    /**
+     * 
+     * @type {Array<SearchResponseWarningsInner>}
+     * @memberof SearchResponse
+     */
+    warnings: Array<SearchResponseWarningsInner>;
+    /**
+     * 
+     * @type {Array<SearchResult>}
+     * @memberof SearchResponse
+     */
+    results: Array<SearchResult>;
     /**
      * Present and `true` only when served by the mock backend.
      * @type {boolean}
@@ -78,10 +106,28 @@ export interface SearchResponse {
     mock?: boolean;
 }
 
+
+/**
+ * @export
+ */
+export const SearchResponseDecompositionSourceEnum = {
+    Caller: 'CALLER',
+    Classifier: 'CLASSIFIER',
+    Merged: 'MERGED',
+    Fallback: 'FALLBACK'
+} as const;
+export type SearchResponseDecompositionSourceEnum = typeof SearchResponseDecompositionSourceEnum[keyof typeof SearchResponseDecompositionSourceEnum];
+
+
 /**
  * Check if a given object implements the SearchResponse interface.
  */
 export function instanceOfSearchResponse(value: object): value is SearchResponse {
+    if (!('queryTraceId' in value) || value['queryTraceId'] === undefined) return false;
+    if (!('query' in value) || value['query'] === undefined) return false;
+    if (!('embedderModel' in value) || value['embedderModel'] === undefined) return false;
+    if (!('candidatesConsidered' in value) || value['candidatesConsidered'] === undefined) return false;
+    if (!('warnings' in value) || value['warnings'] === undefined) return false;
     if (!('results' in value) || value['results'] === undefined) return false;
     return true;
 }
@@ -96,10 +142,14 @@ export function SearchResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'results': ((json['results'] as Array<any>).map(SearchResponseResultsInnerFromJSON)),
-        'paidUsd': json['paid_usd'] == null ? undefined : json['paid_usd'],
-        'txHash': json['tx_hash'] == null ? undefined : json['tx_hash'],
-        'artifactId': json['artifact_id'] == null ? undefined : json['artifact_id'],
+        'queryTraceId': json['query_trace_id'],
+        'query': json['query'],
+        'appliedFilters': json['applied_filters'] == null ? undefined : SearchFilterSpecFromJSON(json['applied_filters']),
+        'decompositionSource': json['decomposition_source'] == null ? undefined : json['decomposition_source'],
+        'embedderModel': json['embedder_model'],
+        'candidatesConsidered': json['candidates_considered'],
+        'warnings': ((json['warnings'] as Array<any>).map(SearchResponseWarningsInnerFromJSON)),
+        'results': ((json['results'] as Array<any>).map(SearchResultFromJSON)),
         'mock': json['_mock'] == null ? undefined : json['_mock'],
     };
 }
@@ -115,10 +165,14 @@ export function SearchResponseToJSONTyped(value?: SearchResponse | null, ignoreD
 
     return {
         
-        'results': ((value['results'] as Array<any>).map(SearchResponseResultsInnerToJSON)),
-        'paid_usd': value['paidUsd'],
-        'tx_hash': value['txHash'],
-        'artifact_id': value['artifactId'],
+        'query_trace_id': value['queryTraceId'],
+        'query': value['query'],
+        'applied_filters': SearchFilterSpecToJSON(value['appliedFilters']),
+        'decomposition_source': value['decompositionSource'],
+        'embedder_model': value['embedderModel'],
+        'candidates_considered': value['candidatesConsidered'],
+        'warnings': ((value['warnings'] as Array<any>).map(SearchResponseWarningsInnerToJSON)),
+        'results': ((value['results'] as Array<any>).map(SearchResultToJSON)),
         '_mock': value['mock'],
     };
 }

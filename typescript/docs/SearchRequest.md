@@ -7,8 +7,8 @@
 Name | Type
 ------------ | -------------
 `query` | string
-`limit` | number
-`filters` | [SearchFilters](SearchFilters.md)
+`maxResults` | number
+`filters` | [SearchFilterSpec](SearchFilterSpec.md)
 
 ## Example
 
@@ -18,7 +18,7 @@ import type { SearchRequest } from '@weft-labs/sdk'
 // TODO: Update the object below with actual values
 const example = {
   "query": send email from an agent,
-  "limit": null,
+  "maxResults": null,
   "filters": null,
 } satisfies SearchRequest
 

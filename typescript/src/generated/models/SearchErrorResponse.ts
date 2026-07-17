@@ -44,6 +44,9 @@ export interface SearchErrorResponse {
  */
 export const SearchErrorResponseErrorEnum = {
     InvalidQuery: 'INVALID_QUERY',
+    InvalidMaxResults: 'INVALID_MAX_RESULTS',
+    InvalidFilters: 'INVALID_FILTERS',
+    UnknownParameter: 'UNKNOWN_PARAMETER',
     SearchUpstreamError: 'SEARCH_UPSTREAM_ERROR',
     SearchBackendMisconfigured: 'SEARCH_BACKEND_MISCONFIGURED'
 } as const;

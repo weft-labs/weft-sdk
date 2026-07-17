@@ -4,17 +4,21 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Results** | [**[]SearchResponseResultsInner**](SearchResponseResultsInner.md) |  | 
-**PaidUsd** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
-**TxHash** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
-**ArtifactId** | Pointer to **string** | Always &#x60;null&#x60; in v1. | [optional] 
+**QueryTraceId** | **string** | Opaque trace id for the served query, matching the platform &#x60;query_trace_id&#x60;. | 
+**Query** | **string** |  | 
+**AppliedFilters** | Pointer to [**SearchFilterSpec**](SearchFilterSpec.md) | The &#x60;FilterSpec&#x60; actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller&#39;s &#x60;filters&#x60; verbatim (empty object when none were sent).  | [optional] 
+**DecompositionSource** | Pointer to **string** | Origin of &#x60;applied_filters&#x60;. &#x60;CALLER&#x60; today (the mock and the B1 platform have no query decomposer yet); &#x60;CLASSIFIER&#x60; / &#x60;MERGED&#x60; / &#x60;FALLBACK&#x60; arrive additively when the decomposer lands.  | [optional] 
+**EmbedderModel** | **string** |  | 
+**CandidatesConsidered** | **int32** |  | 
+**Warnings** | [**[]SearchResponseWarningsInner**](SearchResponseWarningsInner.md) |  | 
+**Results** | [**[]SearchResult**](SearchResult.md) |  | 
 **Mock** | Pointer to **bool** | Present and &#x60;true&#x60; only when served by the mock backend. | [optional] 
 
 ## Methods
 
 ### NewSearchResponse
 
-`func NewSearchResponse(results []SearchResponseResultsInner, ) *SearchResponse`
+`func NewSearchResponse(queryTraceId string, query string, embedderModel string, candidatesConsidered int32, warnings []SearchResponseWarningsInner, results []SearchResult, ) *SearchResponse`
 
 NewSearchResponse instantiates a new SearchResponse object
 This constructor will assign default values to properties that have it defined,
@@ -29,100 +33,175 @@ NewSearchResponseWithDefaults instantiates a new SearchResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
+### GetQueryTraceId
+
+`func (o *SearchResponse) GetQueryTraceId() string`
+
+GetQueryTraceId returns the QueryTraceId field if non-nil, zero value otherwise.
+
+### GetQueryTraceIdOk
+
+`func (o *SearchResponse) GetQueryTraceIdOk() (*string, bool)`
+
+GetQueryTraceIdOk returns a tuple with the QueryTraceId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetQueryTraceId
+
+`func (o *SearchResponse) SetQueryTraceId(v string)`
+
+SetQueryTraceId sets QueryTraceId field to given value.
+
+
+### GetQuery
+
+`func (o *SearchResponse) GetQuery() string`
+
+GetQuery returns the Query field if non-nil, zero value otherwise.
+
+### GetQueryOk
+
+`func (o *SearchResponse) GetQueryOk() (*string, bool)`
+
+GetQueryOk returns a tuple with the Query field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetQuery
+
+`func (o *SearchResponse) SetQuery(v string)`
+
+SetQuery sets Query field to given value.
+
+
+### GetAppliedFilters
+
+`func (o *SearchResponse) GetAppliedFilters() SearchFilterSpec`
+
+GetAppliedFilters returns the AppliedFilters field if non-nil, zero value otherwise.
+
+### GetAppliedFiltersOk
+
+`func (o *SearchResponse) GetAppliedFiltersOk() (*SearchFilterSpec, bool)`
+
+GetAppliedFiltersOk returns a tuple with the AppliedFilters field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAppliedFilters
+
+`func (o *SearchResponse) SetAppliedFilters(v SearchFilterSpec)`
+
+SetAppliedFilters sets AppliedFilters field to given value.
+
+### HasAppliedFilters
+
+`func (o *SearchResponse) HasAppliedFilters() bool`
+
+HasAppliedFilters returns a boolean if a field has been set.
+
+### GetDecompositionSource
+
+`func (o *SearchResponse) GetDecompositionSource() string`
+
+GetDecompositionSource returns the DecompositionSource field if non-nil, zero value otherwise.
+
+### GetDecompositionSourceOk
+
+`func (o *SearchResponse) GetDecompositionSourceOk() (*string, bool)`
+
+GetDecompositionSourceOk returns a tuple with the DecompositionSource field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDecompositionSource
+
+`func (o *SearchResponse) SetDecompositionSource(v string)`
+
+SetDecompositionSource sets DecompositionSource field to given value.
+
+### HasDecompositionSource
+
+`func (o *SearchResponse) HasDecompositionSource() bool`
+
+HasDecompositionSource returns a boolean if a field has been set.
+
+### GetEmbedderModel
+
+`func (o *SearchResponse) GetEmbedderModel() string`
+
+GetEmbedderModel returns the EmbedderModel field if non-nil, zero value otherwise.
+
+### GetEmbedderModelOk
+
+`func (o *SearchResponse) GetEmbedderModelOk() (*string, bool)`
+
+GetEmbedderModelOk returns a tuple with the EmbedderModel field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetEmbedderModel
+
+`func (o *SearchResponse) SetEmbedderModel(v string)`
+
+SetEmbedderModel sets EmbedderModel field to given value.
+
+
+### GetCandidatesConsidered
+
+`func (o *SearchResponse) GetCandidatesConsidered() int32`
+
+GetCandidatesConsidered returns the CandidatesConsidered field if non-nil, zero value otherwise.
+
+### GetCandidatesConsideredOk
+
+`func (o *SearchResponse) GetCandidatesConsideredOk() (*int32, bool)`
+
+GetCandidatesConsideredOk returns a tuple with the CandidatesConsidered field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCandidatesConsidered
+
+`func (o *SearchResponse) SetCandidatesConsidered(v int32)`
+
+SetCandidatesConsidered sets CandidatesConsidered field to given value.
+
+
+### GetWarnings
+
+`func (o *SearchResponse) GetWarnings() []SearchResponseWarningsInner`
+
+GetWarnings returns the Warnings field if non-nil, zero value otherwise.
+
+### GetWarningsOk
+
+`func (o *SearchResponse) GetWarningsOk() (*[]SearchResponseWarningsInner, bool)`
+
+GetWarningsOk returns a tuple with the Warnings field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetWarnings
+
+`func (o *SearchResponse) SetWarnings(v []SearchResponseWarningsInner)`
+
+SetWarnings sets Warnings field to given value.
+
+
 ### GetResults
 
-`func (o *SearchResponse) GetResults() []SearchResponseResultsInner`
+`func (o *SearchResponse) GetResults() []SearchResult`
 
 GetResults returns the Results field if non-nil, zero value otherwise.
 
 ### GetResultsOk
 
-`func (o *SearchResponse) GetResultsOk() (*[]SearchResponseResultsInner, bool)`
+`func (o *SearchResponse) GetResultsOk() (*[]SearchResult, bool)`
 
 GetResultsOk returns a tuple with the Results field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetResults
 
-`func (o *SearchResponse) SetResults(v []SearchResponseResultsInner)`
+`func (o *SearchResponse) SetResults(v []SearchResult)`
 
 SetResults sets Results field to given value.
 
-
-### GetPaidUsd
-
-`func (o *SearchResponse) GetPaidUsd() string`
-
-GetPaidUsd returns the PaidUsd field if non-nil, zero value otherwise.
-
-### GetPaidUsdOk
-
-`func (o *SearchResponse) GetPaidUsdOk() (*string, bool)`
-
-GetPaidUsdOk returns a tuple with the PaidUsd field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetPaidUsd
-
-`func (o *SearchResponse) SetPaidUsd(v string)`
-
-SetPaidUsd sets PaidUsd field to given value.
-
-### HasPaidUsd
-
-`func (o *SearchResponse) HasPaidUsd() bool`
-
-HasPaidUsd returns a boolean if a field has been set.
-
-### GetTxHash
-
-`func (o *SearchResponse) GetTxHash() string`
-
-GetTxHash returns the TxHash field if non-nil, zero value otherwise.
-
-### GetTxHashOk
-
-`func (o *SearchResponse) GetTxHashOk() (*string, bool)`
-
-GetTxHashOk returns a tuple with the TxHash field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTxHash
-
-`func (o *SearchResponse) SetTxHash(v string)`
-
-SetTxHash sets TxHash field to given value.
-
-### HasTxHash
-
-`func (o *SearchResponse) HasTxHash() bool`
-
-HasTxHash returns a boolean if a field has been set.
-
-### GetArtifactId
-
-`func (o *SearchResponse) GetArtifactId() string`
-
-GetArtifactId returns the ArtifactId field if non-nil, zero value otherwise.
-
-### GetArtifactIdOk
-
-`func (o *SearchResponse) GetArtifactIdOk() (*string, bool)`
-
-GetArtifactIdOk returns a tuple with the ArtifactId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetArtifactId
-
-`func (o *SearchResponse) SetArtifactId(v string)`
-
-SetArtifactId sets ArtifactId field to given value.
-
-### HasArtifactId
-
-`func (o *SearchResponse) HasArtifactId() bool`
-
-HasArtifactId returns a boolean if a field has been set.
 
 ### GetMock
 

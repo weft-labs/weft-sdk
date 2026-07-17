@@ -419,15 +419,18 @@ paths:
       summary: Search the Weft index
       description: |
         Semantic search over the Weft index of paid agent resources. The
-        request body carries a free-text `query`, an optional `limit`, and
-        an optional `filters` object that narrows by price band, payment
-        protocol, agent protocol, or domain tag. Filters are applied as a
-        post-filter after the embedding score is computed.
+        request body is the weft-search-platform `/v1/search` contract:
+        a free-text `query`, optional `max_results`, and optional structured
+        `filters` (price / price_atomic / type / protocol — the canonical
+        FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is
+        a dual representation of one constraint: `price` in USD decimal strings
+        (the reasoning form) XOR `price_atomic` in integer micro-USD (the
+        settlement form) — mutually exclusive, set at most one.
 
         Backend selection is server-side via the `SEARCH_BACKEND` env var:
         `mock` (default, reads YAML fixtures and sets `_mock: true` in the
         response) or `platform` (proxies to the upstream search service).
-        Both backends return the same envelope.
+        Both backends return the platform `SearchResponse` envelope.
 
         Account-scoped: the bearer token must be a buyer-scoped API key.
         Free for authenticated buyers in v1; billing is planned for a later
@@ -475,7 +478,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/InsufficientScopeResponse"
         "422":
-          description: Invalid query (empty/missing)
+          description: |
+            Invalid request — empty/missing `query`, out-of-range
+            `max_results`, an unknown top-level parameter, or invalid
+            `filters` (unknown filter key/operator, bad enum value, or a
+            sub-filter without exactly one operator). See the `error` code.
           content:
             application/json:
               schema:
@@ -581,7 +588,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
         "422":
-          description: Invalid request URL, or the merchant advertised a payment method Weft cannot sign.
+          description: |
+            Invalid request URL, a merchant payment method Weft cannot sign
+            (`UNSUPPORTED_PAYMENT_METHOD`), or a merchant settlement token Weft
+            cannot convert into (`UNSUPPORTED_ASSET` — the token's on-chain
+            `currency()` is not USD; terminal for this merchant, funds
+            untouched, `details.asset` names it).
           content:
             application/json:
               schema:
@@ -1249,294 +1261,315 @@ components:
     SearchRequest:
       type: object
       required: [query]
+      additionalProperties: false
       properties:
         query:
           type: string
           minLength: 1
+          maxLength: 2000
           description: Free-text query. Required and non-empty.
           example: "send email from an agent"
-        limit:
+        max_results:
           type: integer
           minimum: 1
           maximum: 50
           default: 10
-          description: Max number of hits to return. Clamped to [1, 50].
+          description: Max number of hits to return. Invalid values are rejected, not clamped.
         filters:
-          $ref: "#/components/schemas/SearchFilters"
-    SearchFilters:
+          $ref: "#/components/schemas/SearchFilterSpec"
+    SearchFilterSpec:
       type: object
-      description: |
-        Optional narrowing applied after the embedding score is computed.
-        Unknown keys are rejected. Price filters use the agent's cheapest
-        skill for `max_price_usd` and the most-expensive skill for
-        `min_price_usd`, so an agent stays in results as long as any one
-        of its skills satisfies the band.
       additionalProperties: false
+      description: |
+        Structured hard constraints on the query — the weft-search-platform
+        `FilterSpec` v1 typed subset, vendored verbatim (D1 contract). Every
+        field is optional; an empty object is the no-filter query. Set fields
+        are ANDed. Each sub-filter takes exactly one operator; unknown filter
+        keys and unknown operators are rejected (`422 INVALID_FILTERS`).
+
+        `price` (USD decimal strings) and `price_atomic` (integer micro-USD) are
+        two representations of ONE price constraint — the reasoning form and the
+        settlement form. They are MUTUALLY EXCLUSIVE: setting both is
+        `422 INVALID_FILTERS`. A JSON number in `price` is rejected (only decimal
+        strings), so `{lte: 5}` can never be mis-read as 5 micro-dollars.
+
+        The canonical enum value sets are pinned to the platform spec by the CI
+        drift gate (`docs/contracts/search-platform.openapi.yaml`).
       properties:
-        min_price_usd:
+        price:
+          $ref: "#/components/schemas/SearchPriceUsdFilter"
+        price_atomic:
+          $ref: "#/components/schemas/SearchPriceAtomicFilter"
+        type:
+          $ref: "#/components/schemas/SearchResourceTypeFilter"
+        protocol:
+          $ref: "#/components/schemas/SearchProtocolFilter"
+    SearchPriceUsdFilter:
+      type: object
+      additionalProperties: false
+      description: |
+        Price constraint in USD, as decimal STRINGS (the reasoning form). Set
+        exactly one operator: a scalar (`lte` / `gte` / `eq`) OR a range
+        (`range_gte` + `range_lte` together, lower ≤ upper). Each value is a
+        string matching `^\d+(\.\d{1,6})?$` (≤ 6 decimals, ≥ 0); a JSON number is
+        rejected. Mutually exclusive with `price_atomic`. An unpriced resource is
+        excluded from any price-filtered query.
+      properties:
+        lte:
           type: string
           pattern: '^\d+(\.\d{1,6})?$'
-          description: Decimal USD floor; agent must have at least one skill priced at or above this.
-          example: "0.01"
-        max_price_usd:
+          description: Price ≤ this many USD (inclusive ceiling), e.g. "0.009".
+        gte:
           type: string
           pattern: '^\d+(\.\d{1,6})?$'
-          description: Decimal USD ceiling; agent must have at least one skill priced at or below this.
-          example: "0.10"
-        payment_protocol:
+          description: Price ≥ this many USD (inclusive floor), e.g. "0.001".
+        eq:
           type: string
-          enum: [x402, mpp, free]
-          description: Payment protocol the agent settles on.
-        agent_protocol:
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Price exactly this many USD, e.g. "1.5".
+        range_gte:
           type: string
-          enum: [a2a, mcp, openapi, AgentNet]
-          description: Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI, or AgentNet).
-        domain:
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Range lower bound (inclusive), USD. Set with range_lte.
+        range_lte:
           type: string
-          description: |
-            Substring match against any of the agent's declared domain tags
-            (e.g. `email`, `sales`, `enrichment`).
+          pattern: '^\d+(\.\d{1,6})?$'
+          description: Range upper bound (inclusive), USD. Set with range_gte.
+    SearchPriceAtomicFilter:
+      type: object
+      additionalProperties: false
+      description: |
+        The same price constraint in integer micro-USD (1 USDC = 1_000_000
+        micro-USD) — the settlement form. Set exactly one operator: a scalar
+        (`lte` / `gte` / `eq`) OR a range (`range_gte` + `range_lte` together,
+        lower ≤ upper). Mutually exclusive with `price`. An unpriced resource is
+        excluded from any price-filtered query.
+      properties:
+        lte:
+          type: integer
+          minimum: 0
+          description: Price ≤ this many micro-USD (inclusive ceiling).
+        gte:
+          type: integer
+          minimum: 0
+          description: Price ≥ this many micro-USD (inclusive floor).
+        eq:
+          type: integer
+          minimum: 0
+          description: Price exactly this many micro-USD.
+        range_gte:
+          type: integer
+          minimum: 0
+          description: Range lower bound (inclusive), micro-USD. Set with range_lte.
+        range_lte:
+          type: integer
+          minimum: 0
+          description: Range upper bound (inclusive), micro-USD. Set with range_gte.
+    SearchResourceTypeFilter:
+      type: object
+      additionalProperties: false
+      description: Resource-type constraint. Set exactly one of `eq` / `in`.
+      properties:
+        eq:
+          type: string
+          enum: [api, agent, mcp_tool, webpage, feed, document, dataset]
+          description: Resource type is exactly this value.
+        in:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [api, agent, mcp_tool, webpage, feed, document, dataset]
+          description: Resource type is one of these values.
+    SearchProtocolFilter:
+      type: object
+      additionalProperties: false
+      description: Payment-protocol constraint. Set exactly one of `eq` / `in`.
+      properties:
+        eq:
+          type: string
+          enum: [x402, a2a, mpp, erc_8004]
+          description: Primary protocol is exactly this value.
+        in:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [x402, a2a, mpp, erc_8004]
+          description: Primary protocol is one of these values.
     SearchResponse:
       type: object
-      required: [results]
+      required: [query_trace_id, query, embedder_model, candidates_considered, warnings, results]
       description: |
-        Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id`
-        are reserved for a later release that adds per-call billing and
-        artifact persistence; they are always `null` in v1. `_mock: true`
-        is set only by the mock backend.
-
-        Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
-        while the real index is unshipped) emits the rich, SDK-facing
-        `SearchResult` shape. The legacy `platform` backend proxies the
-        upstream search service and passes its result rows through verbatim —
-        Weft does not own or reshape that payload, so those rows are typed as
-        a free-form object. SDK clients on v1 should treat unknown row shapes
-        defensively until the platform backend is retrofitted to the
-        `SearchResult` contract (specs 07 + 10).
-
-        Because the `PlatformSearchResult` branch is intentionally permissive
-        (free-form, to admit the un-owned platform rows), the `anyOf` is
-        satisfied by any object — so the committee response-validation gate does
-        NOT strictly validate result-row shapes; the rich `SearchResult`
-        contract is instead guarded by the `/api/v1/search` request spec.
+        The weft-search-platform `POST /v1/search` response envelope. The
+        mock backend emits the same shape and adds `_mock: true`.
       properties:
+        query_trace_id:
+          type: string
+          format: uuid
+          description: Opaque trace id for the served query, matching the platform `query_trace_id`.
+        query:
+          type: string
+        applied_filters:
+          $ref: "#/components/schemas/SearchFilterSpec"
+          description: |
+            The `FilterSpec` actually applied to recall, echoed back so the
+            caller sees exactly what constrained the results. In the current
+            contract this is the caller's `filters` verbatim (empty object when
+            none were sent).
+        decomposition_source:
+          type: string
+          enum: [CALLER, CLASSIFIER, MERGED, FALLBACK]
+          description: |
+            Origin of `applied_filters`. `CALLER` today (the mock and the B1
+            platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
+            `FALLBACK` arrive additively when the decomposer lands.
+        embedder_model:
+          type: string
+        candidates_considered:
+          type: integer
+          minimum: 0
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              cause:
+                type: string
+                nullable: true
+                description: Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.
+              context:
+                type: object
+                nullable: true
+                description: Structured context for the warning. Null when the code carries none.
         results:
           type: array
           items:
-            anyOf:
-              - $ref: "#/components/schemas/SearchResult"
-              - $ref: "#/components/schemas/PlatformSearchResult"
-        paid_usd:
-          type: string
-          nullable: true
-          description: Always `null` in v1.
-        tx_hash:
-          type: string
-          nullable: true
-          description: Always `null` in v1.
-        artifact_id:
-          type: string
-          nullable: true
-          description: Always `null` in v1.
+            $ref: "#/components/schemas/SearchResult"
         _mock:
           type: boolean
           description: Present and `true` only when served by the mock backend.
     SearchResult:
       type: object
-      required: [id, score, protocol, domain, agent_card, pricing, ranking, endpoints]
+      required: [provider, capability, endpoints, score]
       properties:
-        id:
-          type: string
-          description: Stable agent identifier (e.g. `weft:agent:agentmail`).
+        provider:
+          $ref: "#/components/schemas/SearchProviderRef"
+        capability:
+          $ref: "#/components/schemas/SearchCapabilityRef"
+        endpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchEndpointHit"
         score:
           type: number
           format: double
           minimum: 0
           maximum: 1
-          description: Cosine similarity score, clipped to [0, 1].
-        protocol:
+    SearchProviderRef:
+      type: object
+      properties:
+        provider_id:
           type: string
-          enum: [a2a, mcp, openapi, AgentNet]
-          description: Agent protocol surface.
-        domain:
+        display_name:
+          type: string
+          nullable: true
+        origin_domains:
           type: array
           items:
             type: string
-          description: Domain tags declared by the agent.
-        reseller:
+        verification_state:
           type: string
           nullable: true
-          description: Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).
-        upstream:
-          type: string
+        identity_confidence:
+          type: number
           nullable: true
-          description: Upstream provider hostname when fronted by a reseller.
-        agent_card:
-          $ref: "#/components/schemas/SearchAgentCard"
-        pricing:
-          $ref: "#/components/schemas/SearchPricing"
-        ranking:
-          $ref: "#/components/schemas/SearchRanking"
-        endpoints:
-          $ref: "#/components/schemas/SearchEndpoints"
-    PlatformSearchResult:
+    SearchCapabilityRef:
       type: object
-      description: |
-        A result row from the legacy `platform` search backend. The
-        `/api/v1/search` controller proxies the upstream search service and
-        passes its rows through verbatim, so Weft does not own or constrain
-        this shape. Documented as a free-form object purely so the canonical
-        spec stays truthful about both backends. SDK clients should prefer the
-        rich `SearchResult` shape and treat platform rows defensively.
-      additionalProperties: true
-    SearchAgentCard:
-      type: object
-      description: |
-        A2A-spec-shaped AgentCard. Free-form `capabilities` and per-skill
-        metadata follow the upstream A2A schema; documented here only at
-        the surface level Weft's index actually populates.
-      additionalProperties: true
       properties:
-        name:
+        capability_id:
           type: string
-        description:
+        capability_type:
+          type: string
+          nullable: true
+        resolution_confidence:
+          type: number
+          nullable: true
+    SearchEndpointHit:
+      type: object
+      properties:
+        endpoint_id:
           type: string
         url:
           type: string
-          format: uri
-        version:
+          nullable: true
+        resource_type:
           type: string
-        protocolVersion:
+          nullable: true
+        primary_protocol:
           type: string
-        capabilities:
-          type: object
-          additionalProperties: true
-        defaultInputModes:
-          type: array
-          items:
-            type: string
-        defaultOutputModes:
-          type: array
-          items:
-            type: string
-        skills:
-          type: array
-          items:
-            $ref: "#/components/schemas/SearchSkill"
-    SearchSkill:
-      type: object
-      additionalProperties: true
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
-        examples:
-          type: array
-          items:
-            type: string
-        inputModes:
-          type: array
-          items:
-            type: string
-        outputModes:
-          type: array
-          items:
-            type: string
-        streaming:
-          type: boolean
+          nullable: true
+        price_atomic:
+          type: integer
+          nullable: true
           description: |
-            True for skills that require streaming transport (e.g. websockets).
-            Streaming skills are filtered out of results by default so
-            non-streaming clients only see callable skills.
-        endpoint:
-          type: object
-          additionalProperties: true
-          properties:
-            method:
-              type: string
-              description: HTTP method or `WEBSOCKET` for streaming skills.
-            path:
-              type: string
+            Price in atomic units (micro-USD) for this endpoint. Use this for
+            settlement (exact, integer). Null when unpriced.
         price_usd:
           type: string
-          pattern: '^\d+(\.\d{1,6})?$'
-          description: Per-call price in USD for this individual skill.
-    SearchPricing:
-      type: object
-      description: |
-        Aggregate pricing at the agent level. `recipient_address` is
-        intentionally absent from the index — under x402 it is delivered
-        per-request in the `402 Payment Required` challenge from the agent.
-      additionalProperties: true
-      properties:
-        protocol:
+          nullable: true
+          description: |
+            Server-derived price in USD as a decimal string (= `price_atomic` /
+            1e6, e.g. "0.008" for `price_atomic` 8000) — the dollar value people
+            and agents reason in. A decimal string, never a float; trailing zeros
+            trimmed. Null when unpriced (mirrors `price_atomic`). For settlement
+            use `price_atomic`.
+        price_currency:
           type: string
-          enum: [x402, mpp, free]
-        scheme:
-          type: string
-          example: per_call
-        amount_usd:
-          type: string
-          pattern: '^\d+(\.\d{1,6})?$'
-          description: Default per-call amount; individual skills may override via `price_usd`.
-        network:
-          type: string
-          description: Settlement network (e.g. `base-sepolia`).
-    SearchRanking:
-      type: object
-      additionalProperties: true
-      properties:
-        popularity_score:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        settlement_count_30d:
+          nullable: true
+        price_decimals:
           type: integer
-          minimum: 0
-        success_rate_30d:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        p50_latency_ms:
-          type: integer
-          minimum: 0
-        first_seen_at:
+          nullable: true
+        operated_by_id:
           type: string
-          format: date-time
-    SearchEndpoints:
+          nullable: true
+        operated_by_type:
+          type: string
+          nullable: true
+        settled_via_facilitator_id:
+          type: string
+          nullable: true
+        ranking:
+          $ref: "#/components/schemas/SearchEndpointRanking"
+    SearchEndpointRanking:
       type: object
-      description: |
-        Per-protocol entry points for the agent. Any field may be `null`
-        if the agent does not expose that protocol surface.
-      additionalProperties: true
       properties:
-        a2a:
-          type: string
-          format: uri
+        similarity:
+          type: number
           nullable: true
-        mcp:
-          type: string
-          format: uri
+        price_atomic:
+          type: integer
           nullable: true
-        openapi:
+        rank_reason:
           type: string
-          format: uri
           nullable: true
-          description: URL to the agent's OpenAPI document.
-        weft_fetch_target:
+        probe_status:
           type: string
-          format: uri
           nullable: true
-          description: Base URL the `weft_fetch` MCP tool should target for this agent.
+        median_ttfb_ms:
+          type: integer
+          nullable: true
+        min_total_latency_ms:
+          type: integer
+          nullable: true
+        max_total_latency_ms:
+          type: integer
+          nullable: true
     SearchErrorResponse:
       type: object
       required: [error]
@@ -1552,6 +1585,9 @@ components:
           description: Stable error code.
           enum:
             - INVALID_QUERY
+            - INVALID_MAX_RESULTS
+            - INVALID_FILTERS
+            - UNKNOWN_PARAMETER
             - SEARCH_UPSTREAM_ERROR
             - SEARCH_BACKEND_MISCONFIGURED
         details:
@@ -1683,6 +1719,7 @@ components:
             - WALLET_ENVIRONMENT_MISMATCH
             - SETTLEMENT_FAILED
             - UNSUPPORTED_PAYMENT_METHOD
+            - UNSUPPORTED_ASSET
             - POLICY_VIOLATION_MAX_TX
             - POLICY_VIOLATION_DAILY
             - POLICY_VIOLATION_WEEKLY

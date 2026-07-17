@@ -73,18 +73,20 @@ __all__ = [
     "ResourceEnrollmentRequest",
     "ResourceEnrollmentResponse",
     "ResourceStats",
-    "SearchAgentCard",
-    "SearchEndpoints",
+    "SearchCapabilityRef",
+    "SearchEndpointHit",
+    "SearchEndpointRanking",
     "SearchErrorResponse",
-    "SearchFilters",
-    "SearchPricing",
-    "SearchRanking",
+    "SearchFilterSpec",
+    "SearchPriceAtomicFilter",
+    "SearchPriceUsdFilter",
+    "SearchProtocolFilter",
+    "SearchProviderRef",
     "SearchRequest",
+    "SearchResourceTypeFilter",
     "SearchResponse",
-    "SearchResponseResultsInner",
+    "SearchResponseWarningsInner",
     "SearchResult",
-    "SearchSkill",
-    "SearchSkillEndpoint",
     "SignInRequest",
     "SignUpRequest",
     "SpendingPolicy",
@@ -152,18 +154,20 @@ from weft_sdk.generated.models.resend_confirmation_request import ResendConfirma
 from weft_sdk.generated.models.resource_enrollment_request import ResourceEnrollmentRequest as ResourceEnrollmentRequest
 from weft_sdk.generated.models.resource_enrollment_response import ResourceEnrollmentResponse as ResourceEnrollmentResponse
 from weft_sdk.generated.models.resource_stats import ResourceStats as ResourceStats
-from weft_sdk.generated.models.search_agent_card import SearchAgentCard as SearchAgentCard
-from weft_sdk.generated.models.search_endpoints import SearchEndpoints as SearchEndpoints
+from weft_sdk.generated.models.search_capability_ref import SearchCapabilityRef as SearchCapabilityRef
+from weft_sdk.generated.models.search_endpoint_hit import SearchEndpointHit as SearchEndpointHit
+from weft_sdk.generated.models.search_endpoint_ranking import SearchEndpointRanking as SearchEndpointRanking
 from weft_sdk.generated.models.search_error_response import SearchErrorResponse as SearchErrorResponse
-from weft_sdk.generated.models.search_filters import SearchFilters as SearchFilters
-from weft_sdk.generated.models.search_pricing import SearchPricing as SearchPricing
-from weft_sdk.generated.models.search_ranking import SearchRanking as SearchRanking
+from weft_sdk.generated.models.search_filter_spec import SearchFilterSpec as SearchFilterSpec
+from weft_sdk.generated.models.search_price_atomic_filter import SearchPriceAtomicFilter as SearchPriceAtomicFilter
+from weft_sdk.generated.models.search_price_usd_filter import SearchPriceUsdFilter as SearchPriceUsdFilter
+from weft_sdk.generated.models.search_protocol_filter import SearchProtocolFilter as SearchProtocolFilter
+from weft_sdk.generated.models.search_provider_ref import SearchProviderRef as SearchProviderRef
 from weft_sdk.generated.models.search_request import SearchRequest as SearchRequest
+from weft_sdk.generated.models.search_resource_type_filter import SearchResourceTypeFilter as SearchResourceTypeFilter
 from weft_sdk.generated.models.search_response import SearchResponse as SearchResponse
-from weft_sdk.generated.models.search_response_results_inner import SearchResponseResultsInner as SearchResponseResultsInner
+from weft_sdk.generated.models.search_response_warnings_inner import SearchResponseWarningsInner as SearchResponseWarningsInner
 from weft_sdk.generated.models.search_result import SearchResult as SearchResult
-from weft_sdk.generated.models.search_skill import SearchSkill as SearchSkill
-from weft_sdk.generated.models.search_skill_endpoint import SearchSkillEndpoint as SearchSkillEndpoint
 from weft_sdk.generated.models.sign_in_request import SignInRequest as SignInRequest
 from weft_sdk.generated.models.sign_up_request import SignUpRequest as SignUpRequest
 from weft_sdk.generated.models.spending_policy import SpendingPolicy as SpendingPolicy

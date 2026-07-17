@@ -15,67 +15,21 @@ require 'time'
 
 module Weft
   class SearchResult < ApiModelBase
-    # Stable agent identifier (e.g. `weft:agent:agentmail`).
-    attr_accessor :id
+    attr_accessor :provider
 
-    # Cosine similarity score, clipped to [0, 1].
-    attr_accessor :score
-
-    # Agent protocol surface.
-    attr_accessor :protocol
-
-    # Domain tags declared by the agent.
-    attr_accessor :domain
-
-    # Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).
-    attr_accessor :reseller
-
-    # Upstream provider hostname when fronted by a reseller.
-    attr_accessor :upstream
-
-    attr_accessor :agent_card
-
-    attr_accessor :pricing
-
-    attr_accessor :ranking
+    attr_accessor :capability
 
     attr_accessor :endpoints
 
-    class EnumAttributeValidator
-      attr_reader :datatype
-      attr_reader :allowable_values
-
-      def initialize(datatype, allowable_values)
-        @allowable_values = allowable_values.map do |value|
-          case datatype.to_s
-          when /Integer/i
-            value.to_i
-          when /Float/i
-            value.to_f
-          else
-            value
-          end
-        end
-      end
-
-      def valid?(value)
-        !value || allowable_values.include?(value)
-      end
-    end
+    attr_accessor :score
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'id' => :'id',
-        :'score' => :'score',
-        :'protocol' => :'protocol',
-        :'domain' => :'domain',
-        :'reseller' => :'reseller',
-        :'upstream' => :'upstream',
-        :'agent_card' => :'agent_card',
-        :'pricing' => :'pricing',
-        :'ranking' => :'ranking',
-        :'endpoints' => :'endpoints'
+        :'provider' => :'provider',
+        :'capability' => :'capability',
+        :'endpoints' => :'endpoints',
+        :'score' => :'score'
       }
     end
 
@@ -92,16 +46,10 @@ module Weft
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'id' => :'String',
-        :'score' => :'Float',
-        :'protocol' => :'String',
-        :'domain' => :'Array<String>',
-        :'reseller' => :'String',
-        :'upstream' => :'String',
-        :'agent_card' => :'SearchAgentCard',
-        :'pricing' => :'SearchPricing',
-        :'ranking' => :'SearchRanking',
-        :'endpoints' => :'SearchEndpoints'
+        :'provider' => :'SearchProviderRef',
+        :'capability' => :'SearchCapabilityRef',
+        :'endpoints' => :'Array<SearchEndpointHit>',
+        :'score' => :'Float'
       }
     end
 
@@ -127,62 +75,30 @@ module Weft
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'id')
-        self.id = attributes[:'id']
+      if attributes.key?(:'provider')
+        self.provider = attributes[:'provider']
       else
-        self.id = nil
+        self.provider = nil
+      end
+
+      if attributes.key?(:'capability')
+        self.capability = attributes[:'capability']
+      else
+        self.capability = nil
+      end
+
+      if attributes.key?(:'endpoints')
+        if (value = attributes[:'endpoints']).is_a?(Array)
+          self.endpoints = value
+        end
+      else
+        self.endpoints = nil
       end
 
       if attributes.key?(:'score')
         self.score = attributes[:'score']
       else
         self.score = nil
-      end
-
-      if attributes.key?(:'protocol')
-        self.protocol = attributes[:'protocol']
-      else
-        self.protocol = nil
-      end
-
-      if attributes.key?(:'domain')
-        if (value = attributes[:'domain']).is_a?(Array)
-          self.domain = value
-        end
-      else
-        self.domain = nil
-      end
-
-      if attributes.key?(:'reseller')
-        self.reseller = attributes[:'reseller']
-      end
-
-      if attributes.key?(:'upstream')
-        self.upstream = attributes[:'upstream']
-      end
-
-      if attributes.key?(:'agent_card')
-        self.agent_card = attributes[:'agent_card']
-      else
-        self.agent_card = nil
-      end
-
-      if attributes.key?(:'pricing')
-        self.pricing = attributes[:'pricing']
-      else
-        self.pricing = nil
-      end
-
-      if attributes.key?(:'ranking')
-        self.ranking = attributes[:'ranking']
-      else
-        self.ranking = nil
-      end
-
-      if attributes.key?(:'endpoints')
-        self.endpoints = attributes[:'endpoints']
-      else
-        self.endpoints = nil
       end
     end
 
@@ -191,8 +107,16 @@ module Weft
     def list_invalid_properties
       warn '[DEPRECATED] the `list_invalid_properties` method is obsolete'
       invalid_properties = Array.new
-      if @id.nil?
-        invalid_properties.push('invalid value for "id", id cannot be nil.')
+      if @provider.nil?
+        invalid_properties.push('invalid value for "provider", provider cannot be nil.')
+      end
+
+      if @capability.nil?
+        invalid_properties.push('invalid value for "capability", capability cannot be nil.')
+      end
+
+      if @endpoints.nil?
+        invalid_properties.push('invalid value for "endpoints", endpoints cannot be nil.')
       end
 
       if @score.nil?
@@ -207,30 +131,6 @@ module Weft
         invalid_properties.push('invalid value for "score", must be greater than or equal to 0.')
       end
 
-      if @protocol.nil?
-        invalid_properties.push('invalid value for "protocol", protocol cannot be nil.')
-      end
-
-      if @domain.nil?
-        invalid_properties.push('invalid value for "domain", domain cannot be nil.')
-      end
-
-      if @agent_card.nil?
-        invalid_properties.push('invalid value for "agent_card", agent_card cannot be nil.')
-      end
-
-      if @pricing.nil?
-        invalid_properties.push('invalid value for "pricing", pricing cannot be nil.')
-      end
-
-      if @ranking.nil?
-        invalid_properties.push('invalid value for "ranking", ranking cannot be nil.')
-      end
-
-      if @endpoints.nil?
-        invalid_properties.push('invalid value for "endpoints", endpoints cannot be nil.')
-      end
-
       invalid_properties
     end
 
@@ -238,29 +138,43 @@ module Weft
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
-      return false if @id.nil?
+      return false if @provider.nil?
+      return false if @capability.nil?
+      return false if @endpoints.nil?
       return false if @score.nil?
       return false if @score > 1
       return false if @score < 0
-      return false if @protocol.nil?
-      protocol_validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
-      return false unless protocol_validator.valid?(@protocol)
-      return false if @domain.nil?
-      return false if @agent_card.nil?
-      return false if @pricing.nil?
-      return false if @ranking.nil?
-      return false if @endpoints.nil?
       true
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] id Value to be assigned
-    def id=(id)
-      if id.nil?
-        fail ArgumentError, 'id cannot be nil'
+    # @param [Object] provider Value to be assigned
+    def provider=(provider)
+      if provider.nil?
+        fail ArgumentError, 'provider cannot be nil'
       end
 
-      @id = id
+      @provider = provider
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] capability Value to be assigned
+    def capability=(capability)
+      if capability.nil?
+        fail ArgumentError, 'capability cannot be nil'
+      end
+
+      @capability = capability
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] endpoints Value to be assigned
+    def endpoints=(endpoints)
+      if endpoints.nil?
+        fail ArgumentError, 'endpoints cannot be nil'
+      end
+
+      @endpoints = endpoints
     end
 
     # Custom attribute writer method with validation
@@ -281,81 +195,15 @@ module Weft
       @score = score
     end
 
-    # Custom attribute writer method checking allowed values (enum).
-    # @param [Object] protocol Object to be assigned
-    def protocol=(protocol)
-      validator = EnumAttributeValidator.new('String', ["a2a", "mcp", "openapi", "AgentNet"])
-      unless validator.valid?(protocol)
-        fail ArgumentError, "invalid value for \"protocol\", must be one of #{validator.allowable_values}."
-      end
-      @protocol = protocol
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] domain Value to be assigned
-    def domain=(domain)
-      if domain.nil?
-        fail ArgumentError, 'domain cannot be nil'
-      end
-
-      @domain = domain
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] agent_card Value to be assigned
-    def agent_card=(agent_card)
-      if agent_card.nil?
-        fail ArgumentError, 'agent_card cannot be nil'
-      end
-
-      @agent_card = agent_card
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] pricing Value to be assigned
-    def pricing=(pricing)
-      if pricing.nil?
-        fail ArgumentError, 'pricing cannot be nil'
-      end
-
-      @pricing = pricing
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] ranking Value to be assigned
-    def ranking=(ranking)
-      if ranking.nil?
-        fail ArgumentError, 'ranking cannot be nil'
-      end
-
-      @ranking = ranking
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] endpoints Value to be assigned
-    def endpoints=(endpoints)
-      if endpoints.nil?
-        fail ArgumentError, 'endpoints cannot be nil'
-      end
-
-      @endpoints = endpoints
-    end
-
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          id == o.id &&
-          score == o.score &&
-          protocol == o.protocol &&
-          domain == o.domain &&
-          reseller == o.reseller &&
-          upstream == o.upstream &&
-          agent_card == o.agent_card &&
-          pricing == o.pricing &&
-          ranking == o.ranking &&
-          endpoints == o.endpoints
+          provider == o.provider &&
+          capability == o.capability &&
+          endpoints == o.endpoints &&
+          score == o.score
     end
 
     # @see the `==` method
@@ -367,7 +215,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, score, protocol, domain, reseller, upstream, agent_card, pricing, ranking, endpoints].hash
+      [provider, capability, endpoints, score].hash
     end
 
     # Builds the object from hash

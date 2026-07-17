@@ -20,7 +20,7 @@ import json
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Any, ClassVar, Dict, List, Optional
 from typing_extensions import Annotated
-from weft_sdk.generated.models.search_filters import SearchFilters
+from weft_sdk.generated.models.search_filter_spec import SearchFilterSpec
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,10 +28,10 @@ class SearchRequest(BaseModel):
     """
     SearchRequest
     """ # noqa: E501
-    query: Annotated[str, Field(min_length=1, strict=True)] = Field(description="Free-text query. Required and non-empty.")
-    limit: Optional[Annotated[int, Field(le=50, strict=True, ge=1)]] = Field(default=10, description="Max number of hits to return. Clamped to [1, 50].")
-    filters: Optional[SearchFilters] = None
-    __properties: ClassVar[List[str]] = ["query", "limit", "filters"]
+    query: Annotated[str, Field(min_length=1, strict=True, max_length=2000)] = Field(description="Free-text query. Required and non-empty.")
+    max_results: Optional[Annotated[int, Field(le=50, strict=True, ge=1)]] = Field(default=10, description="Max number of hits to return. Invalid values are rejected, not clamped.")
+    filters: Optional[SearchFilterSpec] = None
+    __properties: ClassVar[List[str]] = ["query", "max_results", "filters"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -88,8 +88,8 @@ class SearchRequest(BaseModel):
 
         _obj = cls.model_validate({
             "query": obj.get("query"),
-            "limit": obj.get("limit") if obj.get("limit") is not None else 10,
-            "filters": SearchFilters.from_dict(obj["filters"]) if obj.get("filters") is not None else None
+            "max_results": obj.get("max_results") if obj.get("max_results") is not None else 10,
+            "filters": SearchFilterSpec.from_dict(obj["filters"]) if obj.get("filters") is not None else None
         })
         return _obj
 

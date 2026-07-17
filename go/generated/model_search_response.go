@@ -19,15 +19,19 @@ import (
 // checks if the SearchResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &SearchResponse{}
 
-// SearchResponse Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend.  Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default while the real index is unshipped) emits the rich, SDK-facing `SearchResult` shape. The legacy `platform` backend proxies the upstream search service and passes its result rows through verbatim — Weft does not own or reshape that payload, so those rows are typed as a free-form object. SDK clients on v1 should treat unknown row shapes defensively until the platform backend is retrofitted to the `SearchResult` contract (specs 07 + 10).  Because the `PlatformSearchResult` branch is intentionally permissive (free-form, to admit the un-owned platform rows), the `anyOf` is satisfied by any object — so the committee response-validation gate does NOT strictly validate result-row shapes; the rich `SearchResult` contract is instead guarded by the `/api/v1/search` request spec. 
+// SearchResponse The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
 type SearchResponse struct {
-	Results []SearchResponseResultsInner `json:"results"`
-	// Always `null` in v1.
-	PaidUsd *string `json:"paid_usd,omitempty"`
-	// Always `null` in v1.
-	TxHash *string `json:"tx_hash,omitempty"`
-	// Always `null` in v1.
-	ArtifactId *string `json:"artifact_id,omitempty"`
+	// Opaque trace id for the served query, matching the platform `query_trace_id`.
+	QueryTraceId string `json:"query_trace_id"`
+	Query string `json:"query"`
+	// The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). 
+	AppliedFilters *SearchFilterSpec `json:"applied_filters,omitempty"`
+	// Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands. 
+	DecompositionSource *string `json:"decomposition_source,omitempty"`
+	EmbedderModel string `json:"embedder_model"`
+	CandidatesConsidered int32 `json:"candidates_considered"`
+	Warnings []SearchResponseWarningsInner `json:"warnings"`
+	Results []SearchResult `json:"results"`
 	// Present and `true` only when served by the mock backend.
 	Mock *bool `json:"_mock,omitempty"`
 }
@@ -38,8 +42,13 @@ type _SearchResponse SearchResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewSearchResponse(results []SearchResponseResultsInner) *SearchResponse {
+func NewSearchResponse(queryTraceId string, query string, embedderModel string, candidatesConsidered int32, warnings []SearchResponseWarningsInner, results []SearchResult) *SearchResponse {
 	this := SearchResponse{}
+	this.QueryTraceId = queryTraceId
+	this.Query = query
+	this.EmbedderModel = embedderModel
+	this.CandidatesConsidered = candidatesConsidered
+	this.Warnings = warnings
 	this.Results = results
 	return &this
 }
@@ -52,10 +61,194 @@ func NewSearchResponseWithDefaults() *SearchResponse {
 	return &this
 }
 
-// GetResults returns the Results field value
-func (o *SearchResponse) GetResults() []SearchResponseResultsInner {
+// GetQueryTraceId returns the QueryTraceId field value
+func (o *SearchResponse) GetQueryTraceId() string {
 	if o == nil {
-		var ret []SearchResponseResultsInner
+		var ret string
+		return ret
+	}
+
+	return o.QueryTraceId
+}
+
+// GetQueryTraceIdOk returns a tuple with the QueryTraceId field value
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetQueryTraceIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QueryTraceId, true
+}
+
+// SetQueryTraceId sets field value
+func (o *SearchResponse) SetQueryTraceId(v string) {
+	o.QueryTraceId = v
+}
+
+// GetQuery returns the Query field value
+func (o *SearchResponse) GetQuery() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Query
+}
+
+// GetQueryOk returns a tuple with the Query field value
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetQueryOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Query, true
+}
+
+// SetQuery sets field value
+func (o *SearchResponse) SetQuery(v string) {
+	o.Query = v
+}
+
+// GetAppliedFilters returns the AppliedFilters field value if set, zero value otherwise.
+func (o *SearchResponse) GetAppliedFilters() SearchFilterSpec {
+	if o == nil || IsNil(o.AppliedFilters) {
+		var ret SearchFilterSpec
+		return ret
+	}
+	return *o.AppliedFilters
+}
+
+// GetAppliedFiltersOk returns a tuple with the AppliedFilters field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetAppliedFiltersOk() (*SearchFilterSpec, bool) {
+	if o == nil || IsNil(o.AppliedFilters) {
+		return nil, false
+	}
+	return o.AppliedFilters, true
+}
+
+// HasAppliedFilters returns a boolean if a field has been set.
+func (o *SearchResponse) HasAppliedFilters() bool {
+	if o != nil && !IsNil(o.AppliedFilters) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppliedFilters gets a reference to the given SearchFilterSpec and assigns it to the AppliedFilters field.
+func (o *SearchResponse) SetAppliedFilters(v SearchFilterSpec) {
+	o.AppliedFilters = &v
+}
+
+// GetDecompositionSource returns the DecompositionSource field value if set, zero value otherwise.
+func (o *SearchResponse) GetDecompositionSource() string {
+	if o == nil || IsNil(o.DecompositionSource) {
+		var ret string
+		return ret
+	}
+	return *o.DecompositionSource
+}
+
+// GetDecompositionSourceOk returns a tuple with the DecompositionSource field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetDecompositionSourceOk() (*string, bool) {
+	if o == nil || IsNil(o.DecompositionSource) {
+		return nil, false
+	}
+	return o.DecompositionSource, true
+}
+
+// HasDecompositionSource returns a boolean if a field has been set.
+func (o *SearchResponse) HasDecompositionSource() bool {
+	if o != nil && !IsNil(o.DecompositionSource) {
+		return true
+	}
+
+	return false
+}
+
+// SetDecompositionSource gets a reference to the given string and assigns it to the DecompositionSource field.
+func (o *SearchResponse) SetDecompositionSource(v string) {
+	o.DecompositionSource = &v
+}
+
+// GetEmbedderModel returns the EmbedderModel field value
+func (o *SearchResponse) GetEmbedderModel() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.EmbedderModel
+}
+
+// GetEmbedderModelOk returns a tuple with the EmbedderModel field value
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetEmbedderModelOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EmbedderModel, true
+}
+
+// SetEmbedderModel sets field value
+func (o *SearchResponse) SetEmbedderModel(v string) {
+	o.EmbedderModel = v
+}
+
+// GetCandidatesConsidered returns the CandidatesConsidered field value
+func (o *SearchResponse) GetCandidatesConsidered() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.CandidatesConsidered
+}
+
+// GetCandidatesConsideredOk returns a tuple with the CandidatesConsidered field value
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetCandidatesConsideredOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.CandidatesConsidered, true
+}
+
+// SetCandidatesConsidered sets field value
+func (o *SearchResponse) SetCandidatesConsidered(v int32) {
+	o.CandidatesConsidered = v
+}
+
+// GetWarnings returns the Warnings field value
+func (o *SearchResponse) GetWarnings() []SearchResponseWarningsInner {
+	if o == nil {
+		var ret []SearchResponseWarningsInner
+		return ret
+	}
+
+	return o.Warnings
+}
+
+// GetWarningsOk returns a tuple with the Warnings field value
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetWarningsOk() ([]SearchResponseWarningsInner, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Warnings, true
+}
+
+// SetWarnings sets field value
+func (o *SearchResponse) SetWarnings(v []SearchResponseWarningsInner) {
+	o.Warnings = v
+}
+
+// GetResults returns the Results field value
+func (o *SearchResponse) GetResults() []SearchResult {
+	if o == nil {
+		var ret []SearchResult
 		return ret
 	}
 
@@ -64,7 +257,7 @@ func (o *SearchResponse) GetResults() []SearchResponseResultsInner {
 
 // GetResultsOk returns a tuple with the Results field value
 // and a boolean to check if the value has been set.
-func (o *SearchResponse) GetResultsOk() ([]SearchResponseResultsInner, bool) {
+func (o *SearchResponse) GetResultsOk() ([]SearchResult, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -72,104 +265,8 @@ func (o *SearchResponse) GetResultsOk() ([]SearchResponseResultsInner, bool) {
 }
 
 // SetResults sets field value
-func (o *SearchResponse) SetResults(v []SearchResponseResultsInner) {
+func (o *SearchResponse) SetResults(v []SearchResult) {
 	o.Results = v
-}
-
-// GetPaidUsd returns the PaidUsd field value if set, zero value otherwise.
-func (o *SearchResponse) GetPaidUsd() string {
-	if o == nil || IsNil(o.PaidUsd) {
-		var ret string
-		return ret
-	}
-	return *o.PaidUsd
-}
-
-// GetPaidUsdOk returns a tuple with the PaidUsd field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResponse) GetPaidUsdOk() (*string, bool) {
-	if o == nil || IsNil(o.PaidUsd) {
-		return nil, false
-	}
-	return o.PaidUsd, true
-}
-
-// HasPaidUsd returns a boolean if a field has been set.
-func (o *SearchResponse) HasPaidUsd() bool {
-	if o != nil && !IsNil(o.PaidUsd) {
-		return true
-	}
-
-	return false
-}
-
-// SetPaidUsd gets a reference to the given string and assigns it to the PaidUsd field.
-func (o *SearchResponse) SetPaidUsd(v string) {
-	o.PaidUsd = &v
-}
-
-// GetTxHash returns the TxHash field value if set, zero value otherwise.
-func (o *SearchResponse) GetTxHash() string {
-	if o == nil || IsNil(o.TxHash) {
-		var ret string
-		return ret
-	}
-	return *o.TxHash
-}
-
-// GetTxHashOk returns a tuple with the TxHash field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResponse) GetTxHashOk() (*string, bool) {
-	if o == nil || IsNil(o.TxHash) {
-		return nil, false
-	}
-	return o.TxHash, true
-}
-
-// HasTxHash returns a boolean if a field has been set.
-func (o *SearchResponse) HasTxHash() bool {
-	if o != nil && !IsNil(o.TxHash) {
-		return true
-	}
-
-	return false
-}
-
-// SetTxHash gets a reference to the given string and assigns it to the TxHash field.
-func (o *SearchResponse) SetTxHash(v string) {
-	o.TxHash = &v
-}
-
-// GetArtifactId returns the ArtifactId field value if set, zero value otherwise.
-func (o *SearchResponse) GetArtifactId() string {
-	if o == nil || IsNil(o.ArtifactId) {
-		var ret string
-		return ret
-	}
-	return *o.ArtifactId
-}
-
-// GetArtifactIdOk returns a tuple with the ArtifactId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResponse) GetArtifactIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ArtifactId) {
-		return nil, false
-	}
-	return o.ArtifactId, true
-}
-
-// HasArtifactId returns a boolean if a field has been set.
-func (o *SearchResponse) HasArtifactId() bool {
-	if o != nil && !IsNil(o.ArtifactId) {
-		return true
-	}
-
-	return false
-}
-
-// SetArtifactId gets a reference to the given string and assigns it to the ArtifactId field.
-func (o *SearchResponse) SetArtifactId(v string) {
-	o.ArtifactId = &v
 }
 
 // GetMock returns the Mock field value if set, zero value otherwise.
@@ -214,16 +311,18 @@ func (o SearchResponse) MarshalJSON() ([]byte, error) {
 
 func (o SearchResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["query_trace_id"] = o.QueryTraceId
+	toSerialize["query"] = o.Query
+	if !IsNil(o.AppliedFilters) {
+		toSerialize["applied_filters"] = o.AppliedFilters
+	}
+	if !IsNil(o.DecompositionSource) {
+		toSerialize["decomposition_source"] = o.DecompositionSource
+	}
+	toSerialize["embedder_model"] = o.EmbedderModel
+	toSerialize["candidates_considered"] = o.CandidatesConsidered
+	toSerialize["warnings"] = o.Warnings
 	toSerialize["results"] = o.Results
-	if !IsNil(o.PaidUsd) {
-		toSerialize["paid_usd"] = o.PaidUsd
-	}
-	if !IsNil(o.TxHash) {
-		toSerialize["tx_hash"] = o.TxHash
-	}
-	if !IsNil(o.ArtifactId) {
-		toSerialize["artifact_id"] = o.ArtifactId
-	}
 	if !IsNil(o.Mock) {
 		toSerialize["_mock"] = o.Mock
 	}
@@ -235,6 +334,11 @@ func (o *SearchResponse) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"query_trace_id",
+		"query",
+		"embedder_model",
+		"candidates_considered",
+		"warnings",
 		"results",
 	}
 

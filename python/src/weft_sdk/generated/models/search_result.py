@@ -17,13 +17,12 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, ClassVar, Dict, List, Union
 from typing_extensions import Annotated
-from weft_sdk.generated.models.search_agent_card import SearchAgentCard
-from weft_sdk.generated.models.search_endpoints import SearchEndpoints
-from weft_sdk.generated.models.search_pricing import SearchPricing
-from weft_sdk.generated.models.search_ranking import SearchRanking
+from weft_sdk.generated.models.search_capability_ref import SearchCapabilityRef
+from weft_sdk.generated.models.search_endpoint_hit import SearchEndpointHit
+from weft_sdk.generated.models.search_provider_ref import SearchProviderRef
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -31,24 +30,11 @@ class SearchResult(BaseModel):
     """
     SearchResult
     """ # noqa: E501
-    id: StrictStr = Field(description="Stable agent identifier (e.g. `weft:agent:agentmail`).")
-    score: Union[Annotated[float, Field(le=1, strict=True, ge=0)], Annotated[int, Field(le=1, strict=True, ge=0)]] = Field(description="Cosine similarity score, clipped to [0, 1].")
-    protocol: StrictStr = Field(description="Agent protocol surface.")
-    domain: List[StrictStr] = Field(description="Domain tags declared by the agent.")
-    reseller: Optional[StrictStr] = Field(default=None, description="Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).")
-    upstream: Optional[StrictStr] = Field(default=None, description="Upstream provider hostname when fronted by a reseller.")
-    agent_card: SearchAgentCard
-    pricing: SearchPricing
-    ranking: SearchRanking
-    endpoints: SearchEndpoints
-    __properties: ClassVar[List[str]] = ["id", "score", "protocol", "domain", "reseller", "upstream", "agent_card", "pricing", "ranking", "endpoints"]
-
-    @field_validator('protocol')
-    def protocol_validate_enum(cls, value):
-        """Validates the enum"""
-        if value not in set(['a2a', 'mcp', 'openapi', 'AgentNet']):
-            raise ValueError("must be one of enum values ('a2a', 'mcp', 'openapi', 'AgentNet')")
-        return value
+    provider: SearchProviderRef
+    capability: SearchCapabilityRef
+    endpoints: List[SearchEndpointHit]
+    score: Union[Annotated[float, Field(le=1, strict=True, ge=0)], Annotated[int, Field(le=1, strict=True, ge=0)]]
+    __properties: ClassVar[List[str]] = ["provider", "capability", "endpoints", "score"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -89,18 +75,19 @@ class SearchResult(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of agent_card
-        if self.agent_card:
-            _dict['agent_card'] = self.agent_card.to_dict()
-        # override the default output from pydantic by calling `to_dict()` of pricing
-        if self.pricing:
-            _dict['pricing'] = self.pricing.to_dict()
-        # override the default output from pydantic by calling `to_dict()` of ranking
-        if self.ranking:
-            _dict['ranking'] = self.ranking.to_dict()
-        # override the default output from pydantic by calling `to_dict()` of endpoints
+        # override the default output from pydantic by calling `to_dict()` of provider
+        if self.provider:
+            _dict['provider'] = self.provider.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of capability
+        if self.capability:
+            _dict['capability'] = self.capability.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in endpoints (list)
+        _items = []
         if self.endpoints:
-            _dict['endpoints'] = self.endpoints.to_dict()
+            for _item_endpoints in self.endpoints:
+                if _item_endpoints:
+                    _items.append(_item_endpoints.to_dict())
+            _dict['endpoints'] = _items
         return _dict
 
     @classmethod
@@ -113,16 +100,10 @@ class SearchResult(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "id": obj.get("id"),
-            "score": obj.get("score"),
-            "protocol": obj.get("protocol"),
-            "domain": obj.get("domain"),
-            "reseller": obj.get("reseller"),
-            "upstream": obj.get("upstream"),
-            "agent_card": SearchAgentCard.from_dict(obj["agent_card"]) if obj.get("agent_card") is not None else None,
-            "pricing": SearchPricing.from_dict(obj["pricing"]) if obj.get("pricing") is not None else None,
-            "ranking": SearchRanking.from_dict(obj["ranking"]) if obj.get("ranking") is not None else None,
-            "endpoints": SearchEndpoints.from_dict(obj["endpoints"]) if obj.get("endpoints") is not None else None
+            "provider": SearchProviderRef.from_dict(obj["provider"]) if obj.get("provider") is not None else None,
+            "capability": SearchCapabilityRef.from_dict(obj["capability"]) if obj.get("capability") is not None else None,
+            "endpoints": [SearchEndpointHit.from_dict(_item) for _item in obj["endpoints"]] if obj.get("endpoints") is not None else None,
+            "score": obj.get("score")
         })
         return _obj
 

@@ -432,15 +432,18 @@ paths:
     post:
       description: |
         Semantic search over the Weft index of paid agent resources. The
-        request body carries a free-text `query`, an optional `limit`, and
-        an optional `filters` object that narrows by price band, payment
-        protocol, agent protocol, or domain tag. Filters are applied as a
-        post-filter after the embedding score is computed.
+        request body is the weft-search-platform `/v1/search` contract:
+        a free-text `query`, optional `max_results`, and optional structured
+        `filters` (price / price_atomic / type / protocol — the canonical
+        FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is
+        a dual representation of one constraint: `price` in USD decimal strings
+        (the reasoning form) XOR `price_atomic` in integer micro-USD (the
+        settlement form) — mutually exclusive, set at most one.
 
         Backend selection is server-side via the `SEARCH_BACKEND` env var:
         `mock` (default, reads YAML fixtures and sets `_mock: true` in the
         response) or `platform` (proxies to the upstream search service).
-        Both backends return the same envelope.
+        Both backends return the platform `SearchResponse` envelope.
 
         Account-scoped: the bearer token must be a buyer-scoped API key.
         Free for authenticated buyers in v1; billing is planned for a later
@@ -489,7 +492,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchErrorResponse"
-          description: Invalid query (empty/missing)
+          description: |
+            Invalid request — empty/missing `query`, out-of-range
+            `max_results`, an unknown top-level parameter, or invalid
+            `filters` (unknown filter key/operator, bad enum value, or a
+            sub-filter without exactly one operator). See the `error` code.
         "502":
           content:
             application/json:
@@ -595,8 +602,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
-          description: "Invalid request URL, or the merchant advertised a payment\
-            \ method Weft cannot sign."
+          description: |
+            Invalid request URL, a merchant payment method Weft cannot sign
+            (`UNSUPPORTED_PAYMENT_METHOD`), or a merchant settlement token Weft
+            cannot convert into (`UNSUPPORTED_ASSET` — the token's on-chain
+            `currency()` is not USD; terminal for this merchant, funds
+            untouched, `details.asset` names it).
         "424":
           content:
             application/json:
@@ -1575,657 +1586,616 @@ components:
       - max_tx_usd
       - weekly_limit_usd
     SearchRequest:
+      additionalProperties: false
       example:
         query: send email from an agent
-        limit: 4
+        max_results: 4
         filters:
-          agent_protocol: a2a
-          payment_protocol: x402
-          domain: domain
-          max_price_usd: "0.10"
-          min_price_usd: "0.01"
+          protocol:
+            in:
+            - x402
+            - x402
+            eq: x402
+          price:
+            range_lte: range_lte
+            gte: gte
+            lte: lte
+            eq: eq
+            range_gte: range_gte
+          price_atomic:
+            range_lte: 0
+            gte: 0
+            lte: 0
+            eq: 0
+            range_gte: 0
+          type:
+            in:
+            - api
+            - api
+            eq: api
       properties:
         query:
           description: Free-text query. Required and non-empty.
           example: send email from an agent
+          maxLength: 2000
           minLength: 1
           type: string
-        limit:
+        max_results:
           default: 10
-          description: "Max number of hits to return. Clamped to [1, 50]."
+          description: "Max number of hits to return. Invalid values are rejected,\
+            \ not clamped."
           maximum: 50
           minimum: 1
           type: integer
         filters:
-          $ref: "#/components/schemas/SearchFilters"
+          $ref: "#/components/schemas/SearchFilterSpec"
       required:
       - query
-    SearchFilters:
+    SearchFilterSpec:
       additionalProperties: false
       description: |
-        Optional narrowing applied after the embedding score is computed.
-        Unknown keys are rejected. Price filters use the agent's cheapest
-        skill for `max_price_usd` and the most-expensive skill for
-        `min_price_usd`, so an agent stays in results as long as any one
-        of its skills satisfies the band.
+        Structured hard constraints on the query — the weft-search-platform
+        `FilterSpec` v1 typed subset, vendored verbatim (D1 contract). Every
+        field is optional; an empty object is the no-filter query. Set fields
+        are ANDed. Each sub-filter takes exactly one operator; unknown filter
+        keys and unknown operators are rejected (`422 INVALID_FILTERS`).
+
+        `price` (USD decimal strings) and `price_atomic` (integer micro-USD) are
+        two representations of ONE price constraint — the reasoning form and the
+        settlement form. They are MUTUALLY EXCLUSIVE: setting both is
+        `422 INVALID_FILTERS`. A JSON number in `price` is rejected (only decimal
+        strings), so `{lte: 5}` can never be mis-read as 5 micro-dollars.
+
+        The canonical enum value sets are pinned to the platform spec by the CI
+        drift gate (`docs/contracts/search-platform.openapi.yaml`).
       example:
-        agent_protocol: a2a
-        payment_protocol: x402
-        domain: domain
-        max_price_usd: "0.10"
-        min_price_usd: "0.01"
+        protocol:
+          in:
+          - x402
+          - x402
+          eq: x402
+        price:
+          range_lte: range_lte
+          gte: gte
+          lte: lte
+          eq: eq
+          range_gte: range_gte
+        price_atomic:
+          range_lte: 0
+          gte: 0
+          lte: 0
+          eq: 0
+          range_gte: 0
+        type:
+          in:
+          - api
+          - api
+          eq: api
       properties:
-        min_price_usd:
-          description: Decimal USD floor; agent must have at least one skill priced
-            at or above this.
-          example: "0.01"
+        price:
+          $ref: "#/components/schemas/SearchPriceUsdFilter"
+        price_atomic:
+          $ref: "#/components/schemas/SearchPriceAtomicFilter"
+        type:
+          $ref: "#/components/schemas/SearchResourceTypeFilter"
+        protocol:
+          $ref: "#/components/schemas/SearchProtocolFilter"
+    SearchPriceUsdFilter:
+      additionalProperties: false
+      description: |
+        Price constraint in USD, as decimal STRINGS (the reasoning form). Set
+        exactly one operator: a scalar (`lte` / `gte` / `eq`) OR a range
+        (`range_gte` + `range_lte` together, lower ≤ upper). Each value is a
+        string matching `^\d+(\.\d{1,6})?$` (≤ 6 decimals, ≥ 0); a JSON number is
+        rejected. Mutually exclusive with `price_atomic`. An unpriced resource is
+        excluded from any price-filtered query.
+      example:
+        range_lte: range_lte
+        gte: gte
+        lte: lte
+        eq: eq
+        range_gte: range_gte
+      properties:
+        lte:
+          description: "Price ≤ this many USD (inclusive ceiling), e.g. \"0.009\"."
           pattern: "^\\d+(\\.\\d{1,6})?$"
           type: string
-        max_price_usd:
-          description: Decimal USD ceiling; agent must have at least one skill priced
-            at or below this.
-          example: "0.10"
+        gte:
+          description: "Price ≥ this many USD (inclusive floor), e.g. \"0.001\"."
           pattern: "^\\d+(\\.\\d{1,6})?$"
           type: string
-        payment_protocol:
-          description: Payment protocol the agent settles on.
+        eq:
+          description: "Price exactly this many USD, e.g. \"1.5\"."
+          pattern: "^\\d+(\\.\\d{1,6})?$"
+          type: string
+        range_gte:
+          description: "Range lower bound (inclusive), USD. Set with range_lte."
+          pattern: "^\\d+(\\.\\d{1,6})?$"
+          type: string
+        range_lte:
+          description: "Range upper bound (inclusive), USD. Set with range_gte."
+          pattern: "^\\d+(\\.\\d{1,6})?$"
+          type: string
+    SearchPriceAtomicFilter:
+      additionalProperties: false
+      description: |
+        The same price constraint in integer micro-USD (1 USDC = 1_000_000
+        micro-USD) — the settlement form. Set exactly one operator: a scalar
+        (`lte` / `gte` / `eq`) OR a range (`range_gte` + `range_lte` together,
+        lower ≤ upper). Mutually exclusive with `price`. An unpriced resource is
+        excluded from any price-filtered query.
+      example:
+        range_lte: 0
+        gte: 0
+        lte: 0
+        eq: 0
+        range_gte: 0
+      properties:
+        lte:
+          description: Price ≤ this many micro-USD (inclusive ceiling).
+          minimum: 0
+          type: integer
+        gte:
+          description: Price ≥ this many micro-USD (inclusive floor).
+          minimum: 0
+          type: integer
+        eq:
+          description: Price exactly this many micro-USD.
+          minimum: 0
+          type: integer
+        range_gte:
+          description: "Range lower bound (inclusive), micro-USD. Set with range_lte."
+          minimum: 0
+          type: integer
+        range_lte:
+          description: "Range upper bound (inclusive), micro-USD. Set with range_gte."
+          minimum: 0
+          type: integer
+    SearchResourceTypeFilter:
+      additionalProperties: false
+      description: Resource-type constraint. Set exactly one of `eq` / `in`.
+      example:
+        in:
+        - api
+        - api
+        eq: api
+      properties:
+        eq:
+          description: Resource type is exactly this value.
+          enum:
+          - api
+          - agent
+          - mcp_tool
+          - webpage
+          - feed
+          - document
+          - dataset
+          type: string
+        in:
+          description: Resource type is one of these values.
+          items:
+            enum:
+            - api
+            - agent
+            - mcp_tool
+            - webpage
+            - feed
+            - document
+            - dataset
+            type: string
+          minItems: 1
+          type: array
+    SearchProtocolFilter:
+      additionalProperties: false
+      description: Payment-protocol constraint. Set exactly one of `eq` / `in`.
+      example:
+        in:
+        - x402
+        - x402
+        eq: x402
+      properties:
+        eq:
+          description: Primary protocol is exactly this value.
           enum:
           - x402
-          - mpp
-          - free
-          type: string
-        agent_protocol:
-          description: "Agent protocol surface (Agent-to-Agent, MCP, raw OpenAPI,\
-            \ or AgentNet)."
-          enum:
           - a2a
-          - mcp
-          - openapi
-          - AgentNet
+          - mpp
+          - erc_8004
           type: string
-        domain:
-          description: |
-            Substring match against any of the agent's declared domain tags
-            (e.g. `email`, `sales`, `enrichment`).
-          type: string
+        in:
+          description: Primary protocol is one of these values.
+          items:
+            enum:
+            - x402
+            - a2a
+            - mpp
+            - erc_8004
+            type: string
+          minItems: 1
+          type: array
     SearchResponse:
       description: |
-        Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id`
-        are reserved for a later release that adds per-call billing and
-        artifact persistence; they are always `null` in v1. `_mock: true`
-        is set only by the mock backend.
-
-        Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default
-        while the real index is unshipped) emits the rich, SDK-facing
-        `SearchResult` shape. The legacy `platform` backend proxies the
-        upstream search service and passes its result rows through verbatim —
-        Weft does not own or reshape that payload, so those rows are typed as
-        a free-form object. SDK clients on v1 should treat unknown row shapes
-        defensively until the platform backend is retrofitted to the
-        `SearchResult` contract (specs 07 + 10).
-
-        Because the `PlatformSearchResult` branch is intentionally permissive
-        (free-form, to admit the un-owned platform rows), the `anyOf` is
-        satisfied by any object — so the committee response-validation gate does
-        NOT strictly validate result-row shapes; the rich `SearchResult`
-        contract is instead guarded by the `/api/v1/search` request spec.
+        The weft-search-platform `POST /v1/search` response envelope. The
+        mock backend emits the same shape and adds `_mock: true`.
       example:
+        query_trace_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
         _mock: true
-        paid_usd: paid_usd
-        tx_hash: tx_hash
-        artifact_id: artifact_id
+        query: query
+        candidates_considered: 0
+        warnings:
+        - code: code
+          context: "{}"
+          cause: cause
+          message: message
+        - code: code
+          context: "{}"
+          cause: cause
+          message: message
+        applied_filters: ""
+        decomposition_source: CALLER
+        embedder_model: embedder_model
         results:
-        - score: 0.08008281904610115
-          protocol: a2a
+        - score: 0.4145608029883936
+          capability:
+            capability_id: capability_id
+            resolution_confidence: 1.4658129805029452
+            capability_type: capability_type
           endpoints:
-            a2a: https://openapi-generator.tech
-            openapi: https://openapi-generator.tech
-            mcp: https://openapi-generator.tech
-            weft_fetch_target: https://openapi-generator.tech
-          upstream: upstream
-          agent_card:
-            skills:
-            - price_usd: price_usd
-              inputModes:
-              - inputModes
-              - inputModes
-              streaming: true
-              endpoint:
-                path: path
-                method: method
-              outputModes:
-              - outputModes
-              - outputModes
-              examples:
-              - examples
-              - examples
-              name: name
-              description: description
-              id: id
-              tags:
-              - tags
-              - tags
-            - price_usd: price_usd
-              inputModes:
-              - inputModes
-              - inputModes
-              streaming: true
-              endpoint:
-                path: path
-                method: method
-              outputModes:
-              - outputModes
-              - outputModes
-              examples:
-              - examples
-              - examples
-              name: name
-              description: description
-              id: id
-              tags:
-              - tags
-              - tags
-            capabilities:
-              key: ""
-            defaultOutputModes:
-            - defaultOutputModes
-            - defaultOutputModes
-            name: name
-            description: description
-            protocolVersion: protocolVersion
-            version: version
-            defaultInputModes:
-            - defaultInputModes
-            - defaultInputModes
-            url: https://openapi-generator.tech
-          domain:
-          - domain
-          - domain
-          reseller: reseller
-          ranking:
-            success_rate_30d: 0.5962133916683182
-            p50_latency_ms: 0
-            settlement_count_30d: 0
-            first_seen_at: 2000-01-23T04:56:07.000+00:00
-            popularity_score: 0.6027456183070403
-          id: id
-          pricing:
-            protocol: x402
-            scheme: per_call
-            amount_usd: amount_usd
-            network: network
-        - score: 0.08008281904610115
-          protocol: a2a
+          - primary_protocol: primary_protocol
+            price_usd: price_usd
+            operated_by_id: operated_by_id
+            resource_type: resource_type
+            price_atomic: 5
+            endpoint_id: endpoint_id
+            operated_by_type: operated_by_type
+            ranking:
+              rank_reason: rank_reason
+              min_total_latency_ms: 3
+              similarity: 2.3021358869347655
+              max_total_latency_ms: 2
+              price_atomic: 7
+              median_ttfb_ms: 9
+              probe_status: probe_status
+            price_decimals: 5
+            settled_via_facilitator_id: settled_via_facilitator_id
+            url: url
+            price_currency: price_currency
+          - primary_protocol: primary_protocol
+            price_usd: price_usd
+            operated_by_id: operated_by_id
+            resource_type: resource_type
+            price_atomic: 5
+            endpoint_id: endpoint_id
+            operated_by_type: operated_by_type
+            ranking:
+              rank_reason: rank_reason
+              min_total_latency_ms: 3
+              similarity: 2.3021358869347655
+              max_total_latency_ms: 2
+              price_atomic: 7
+              median_ttfb_ms: 9
+              probe_status: probe_status
+            price_decimals: 5
+            settled_via_facilitator_id: settled_via_facilitator_id
+            url: url
+            price_currency: price_currency
+          provider:
+            verification_state: verification_state
+            origin_domains:
+            - origin_domains
+            - origin_domains
+            provider_id: provider_id
+            display_name: display_name
+            identity_confidence: 6.027456183070403
+        - score: 0.4145608029883936
+          capability:
+            capability_id: capability_id
+            resolution_confidence: 1.4658129805029452
+            capability_type: capability_type
           endpoints:
-            a2a: https://openapi-generator.tech
-            openapi: https://openapi-generator.tech
-            mcp: https://openapi-generator.tech
-            weft_fetch_target: https://openapi-generator.tech
-          upstream: upstream
-          agent_card:
-            skills:
-            - price_usd: price_usd
-              inputModes:
-              - inputModes
-              - inputModes
-              streaming: true
-              endpoint:
-                path: path
-                method: method
-              outputModes:
-              - outputModes
-              - outputModes
-              examples:
-              - examples
-              - examples
-              name: name
-              description: description
-              id: id
-              tags:
-              - tags
-              - tags
-            - price_usd: price_usd
-              inputModes:
-              - inputModes
-              - inputModes
-              streaming: true
-              endpoint:
-                path: path
-                method: method
-              outputModes:
-              - outputModes
-              - outputModes
-              examples:
-              - examples
-              - examples
-              name: name
-              description: description
-              id: id
-              tags:
-              - tags
-              - tags
-            capabilities:
-              key: ""
-            defaultOutputModes:
-            - defaultOutputModes
-            - defaultOutputModes
-            name: name
-            description: description
-            protocolVersion: protocolVersion
-            version: version
-            defaultInputModes:
-            - defaultInputModes
-            - defaultInputModes
-            url: https://openapi-generator.tech
-          domain:
-          - domain
-          - domain
-          reseller: reseller
-          ranking:
-            success_rate_30d: 0.5962133916683182
-            p50_latency_ms: 0
-            settlement_count_30d: 0
-            first_seen_at: 2000-01-23T04:56:07.000+00:00
-            popularity_score: 0.6027456183070403
-          id: id
-          pricing:
-            protocol: x402
-            scheme: per_call
-            amount_usd: amount_usd
-            network: network
+          - primary_protocol: primary_protocol
+            price_usd: price_usd
+            operated_by_id: operated_by_id
+            resource_type: resource_type
+            price_atomic: 5
+            endpoint_id: endpoint_id
+            operated_by_type: operated_by_type
+            ranking:
+              rank_reason: rank_reason
+              min_total_latency_ms: 3
+              similarity: 2.3021358869347655
+              max_total_latency_ms: 2
+              price_atomic: 7
+              median_ttfb_ms: 9
+              probe_status: probe_status
+            price_decimals: 5
+            settled_via_facilitator_id: settled_via_facilitator_id
+            url: url
+            price_currency: price_currency
+          - primary_protocol: primary_protocol
+            price_usd: price_usd
+            operated_by_id: operated_by_id
+            resource_type: resource_type
+            price_atomic: 5
+            endpoint_id: endpoint_id
+            operated_by_type: operated_by_type
+            ranking:
+              rank_reason: rank_reason
+              min_total_latency_ms: 3
+              similarity: 2.3021358869347655
+              max_total_latency_ms: 2
+              price_atomic: 7
+              median_ttfb_ms: 9
+              probe_status: probe_status
+            price_decimals: 5
+            settled_via_facilitator_id: settled_via_facilitator_id
+            url: url
+            price_currency: price_currency
+          provider:
+            verification_state: verification_state
+            origin_domains:
+            - origin_domains
+            - origin_domains
+            provider_id: provider_id
+            display_name: display_name
+            identity_confidence: 6.027456183070403
       properties:
+        query_trace_id:
+          description: "Opaque trace id for the served query, matching the platform\
+            \ `query_trace_id`."
+          format: uuid
+          type: string
+        query:
+          type: string
+        applied_filters:
+          allOf:
+          - $ref: "#/components/schemas/SearchFilterSpec"
+          description: |
+            The `FilterSpec` actually applied to recall, echoed back so the
+            caller sees exactly what constrained the results. In the current
+            contract this is the caller's `filters` verbatim (empty object when
+            none were sent).
+        decomposition_source:
+          description: |
+            Origin of `applied_filters`. `CALLER` today (the mock and the B1
+            platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
+            `FALLBACK` arrive additively when the decomposer lands.
+          enum:
+          - CALLER
+          - CLASSIFIER
+          - MERGED
+          - FALLBACK
+          type: string
+        embedder_model:
+          type: string
+        candidates_considered:
+          minimum: 0
+          type: integer
+        warnings:
+          items:
+            $ref: "#/components/schemas/SearchResponse_warnings_inner"
+          type: array
         results:
           items:
-            $ref: "#/components/schemas/SearchResponse_results_inner"
+            $ref: "#/components/schemas/SearchResult"
           type: array
-        paid_usd:
-          description: Always `null` in v1.
-          type: string
-          nullable: true
-        tx_hash:
-          description: Always `null` in v1.
-          type: string
-          nullable: true
-        artifact_id:
-          description: Always `null` in v1.
-          type: string
-          nullable: true
         _mock:
           description: Present and `true` only when served by the mock backend.
           type: boolean
       required:
+      - candidates_considered
+      - embedder_model
+      - query
+      - query_trace_id
       - results
+      - warnings
     SearchResult:
       example:
-        score: 0.08008281904610115
-        protocol: a2a
+        score: 0.4145608029883936
+        capability:
+          capability_id: capability_id
+          resolution_confidence: 1.4658129805029452
+          capability_type: capability_type
         endpoints:
-          a2a: https://openapi-generator.tech
-          openapi: https://openapi-generator.tech
-          mcp: https://openapi-generator.tech
-          weft_fetch_target: https://openapi-generator.tech
-        upstream: upstream
-        agent_card:
-          skills:
-          - price_usd: price_usd
-            inputModes:
-            - inputModes
-            - inputModes
-            streaming: true
-            endpoint:
-              path: path
-              method: method
-            outputModes:
-            - outputModes
-            - outputModes
-            examples:
-            - examples
-            - examples
-            name: name
-            description: description
-            id: id
-            tags:
-            - tags
-            - tags
-          - price_usd: price_usd
-            inputModes:
-            - inputModes
-            - inputModes
-            streaming: true
-            endpoint:
-              path: path
-              method: method
-            outputModes:
-            - outputModes
-            - outputModes
-            examples:
-            - examples
-            - examples
-            name: name
-            description: description
-            id: id
-            tags:
-            - tags
-            - tags
-          capabilities:
-            key: ""
-          defaultOutputModes:
-          - defaultOutputModes
-          - defaultOutputModes
-          name: name
-          description: description
-          protocolVersion: protocolVersion
-          version: version
-          defaultInputModes:
-          - defaultInputModes
-          - defaultInputModes
-          url: https://openapi-generator.tech
-        domain:
-        - domain
-        - domain
-        reseller: reseller
-        ranking:
-          success_rate_30d: 0.5962133916683182
-          p50_latency_ms: 0
-          settlement_count_30d: 0
-          first_seen_at: 2000-01-23T04:56:07.000+00:00
-          popularity_score: 0.6027456183070403
-        id: id
-        pricing:
-          protocol: x402
-          scheme: per_call
-          amount_usd: amount_usd
-          network: network
+        - primary_protocol: primary_protocol
+          price_usd: price_usd
+          operated_by_id: operated_by_id
+          resource_type: resource_type
+          price_atomic: 5
+          endpoint_id: endpoint_id
+          operated_by_type: operated_by_type
+          ranking:
+            rank_reason: rank_reason
+            min_total_latency_ms: 3
+            similarity: 2.3021358869347655
+            max_total_latency_ms: 2
+            price_atomic: 7
+            median_ttfb_ms: 9
+            probe_status: probe_status
+          price_decimals: 5
+          settled_via_facilitator_id: settled_via_facilitator_id
+          url: url
+          price_currency: price_currency
+        - primary_protocol: primary_protocol
+          price_usd: price_usd
+          operated_by_id: operated_by_id
+          resource_type: resource_type
+          price_atomic: 5
+          endpoint_id: endpoint_id
+          operated_by_type: operated_by_type
+          ranking:
+            rank_reason: rank_reason
+            min_total_latency_ms: 3
+            similarity: 2.3021358869347655
+            max_total_latency_ms: 2
+            price_atomic: 7
+            median_ttfb_ms: 9
+            probe_status: probe_status
+          price_decimals: 5
+          settled_via_facilitator_id: settled_via_facilitator_id
+          url: url
+          price_currency: price_currency
+        provider:
+          verification_state: verification_state
+          origin_domains:
+          - origin_domains
+          - origin_domains
+          provider_id: provider_id
+          display_name: display_name
+          identity_confidence: 6.027456183070403
       properties:
-        id:
-          description: Stable agent identifier (e.g. `weft:agent:agentmail`).
-          type: string
+        provider:
+          $ref: "#/components/schemas/SearchProviderRef"
+        capability:
+          $ref: "#/components/schemas/SearchCapabilityRef"
+        endpoints:
+          items:
+            $ref: "#/components/schemas/SearchEndpointHit"
+          type: array
         score:
-          description: "Cosine similarity score, clipped to [0, 1]."
           format: double
           maximum: 1
           minimum: 0
           type: number
-        protocol:
-          description: Agent protocol surface.
-          enum:
-          - a2a
-          - mcp
-          - openapi
-          - AgentNet
+      required:
+      - capability
+      - endpoints
+      - provider
+      - score
+    SearchProviderRef:
+      example:
+        verification_state: verification_state
+        origin_domains:
+        - origin_domains
+        - origin_domains
+        provider_id: provider_id
+        display_name: display_name
+        identity_confidence: 6.027456183070403
+      properties:
+        provider_id:
           type: string
-        domain:
-          description: Domain tags declared by the agent.
+        display_name:
+          type: string
+          nullable: true
+        origin_domains:
           items:
             type: string
           type: array
-        reseller:
-          description: Reseller slug if this agent is fronted by an aggregator (e.g.
-            `locus`).
+        verification_state:
           type: string
           nullable: true
-        upstream:
-          description: Upstream provider hostname when fronted by a reseller.
-          type: string
+        identity_confidence:
+          type: number
           nullable: true
-        agent_card:
-          $ref: "#/components/schemas/SearchAgentCard"
-        pricing:
-          $ref: "#/components/schemas/SearchPricing"
-        ranking:
-          $ref: "#/components/schemas/SearchRanking"
-        endpoints:
-          $ref: "#/components/schemas/SearchEndpoints"
-      required:
-      - agent_card
-      - domain
-      - endpoints
-      - id
-      - pricing
-      - protocol
-      - ranking
-      - score
-    PlatformSearchResult:
-      additionalProperties: true
-      description: |
-        A result row from the legacy `platform` search backend. The
-        `/api/v1/search` controller proxies the upstream search service and
-        passes its rows through verbatim, so Weft does not own or constrain
-        this shape. Documented as a free-form object purely so the canonical
-        spec stays truthful about both backends. SDK clients should prefer the
-        rich `SearchResult` shape and treat platform rows defensively.
-      type: object
-    SearchAgentCard:
-      additionalProperties: {}
-      description: |
-        A2A-spec-shaped AgentCard. Free-form `capabilities` and per-skill
-        metadata follow the upstream A2A schema; documented here only at
-        the surface level Weft's index actually populates.
+    SearchCapabilityRef:
       example:
-        skills:
-        - price_usd: price_usd
-          inputModes:
-          - inputModes
-          - inputModes
-          streaming: true
-          endpoint:
-            path: path
-            method: method
-          outputModes:
-          - outputModes
-          - outputModes
-          examples:
-          - examples
-          - examples
-          name: name
-          description: description
-          id: id
-          tags:
-          - tags
-          - tags
-        - price_usd: price_usd
-          inputModes:
-          - inputModes
-          - inputModes
-          streaming: true
-          endpoint:
-            path: path
-            method: method
-          outputModes:
-          - outputModes
-          - outputModes
-          examples:
-          - examples
-          - examples
-          name: name
-          description: description
-          id: id
-          tags:
-          - tags
-          - tags
-        capabilities:
-          key: ""
-        defaultOutputModes:
-        - defaultOutputModes
-        - defaultOutputModes
-        name: name
-        description: description
-        protocolVersion: protocolVersion
-        version: version
-        defaultInputModes:
-        - defaultInputModes
-        - defaultInputModes
-        url: https://openapi-generator.tech
+        capability_id: capability_id
+        resolution_confidence: 1.4658129805029452
+        capability_type: capability_type
       properties:
-        name:
+        capability_id:
           type: string
-        description:
+        capability_type:
+          type: string
+          nullable: true
+        resolution_confidence:
+          type: number
+          nullable: true
+    SearchEndpointHit:
+      example:
+        primary_protocol: primary_protocol
+        price_usd: price_usd
+        operated_by_id: operated_by_id
+        resource_type: resource_type
+        price_atomic: 5
+        endpoint_id: endpoint_id
+        operated_by_type: operated_by_type
+        ranking:
+          rank_reason: rank_reason
+          min_total_latency_ms: 3
+          similarity: 2.3021358869347655
+          max_total_latency_ms: 2
+          price_atomic: 7
+          median_ttfb_ms: 9
+          probe_status: probe_status
+        price_decimals: 5
+        settled_via_facilitator_id: settled_via_facilitator_id
+        url: url
+        price_currency: price_currency
+      properties:
+        endpoint_id:
           type: string
         url:
-          format: uri
           type: string
-        version:
+          nullable: true
+        resource_type:
           type: string
-        protocolVersion:
+          nullable: true
+        primary_protocol:
           type: string
-        capabilities:
-          additionalProperties: true
-          type: object
-        defaultInputModes:
-          items:
-            type: string
-          type: array
-        defaultOutputModes:
-          items:
-            type: string
-          type: array
-        skills:
-          items:
-            $ref: "#/components/schemas/SearchSkill"
-          type: array
-    SearchSkill:
-      additionalProperties: {}
-      example:
-        price_usd: price_usd
-        inputModes:
-        - inputModes
-        - inputModes
-        streaming: true
-        endpoint:
-          path: path
-          method: method
-        outputModes:
-        - outputModes
-        - outputModes
-        examples:
-        - examples
-        - examples
-        name: name
-        description: description
-        id: id
-        tags:
-        - tags
-        - tags
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        tags:
-          items:
-            type: string
-          type: array
-        examples:
-          items:
-            type: string
-          type: array
-        inputModes:
-          items:
-            type: string
-          type: array
-        outputModes:
-          items:
-            type: string
-          type: array
-        streaming:
+          nullable: true
+        price_atomic:
           description: |
-            True for skills that require streaming transport (e.g. websockets).
-            Streaming skills are filtered out of results by default so
-            non-streaming clients only see callable skills.
-          type: boolean
-        endpoint:
-          $ref: "#/components/schemas/SearchSkill_endpoint"
+            Price in atomic units (micro-USD) for this endpoint. Use this for
+            settlement (exact, integer). Null when unpriced.
+          type: integer
+          nullable: true
         price_usd:
-          description: Per-call price in USD for this individual skill.
-          pattern: "^\\d+(\\.\\d{1,6})?$"
+          description: |
+            Server-derived price in USD as a decimal string (= `price_atomic` /
+            1e6, e.g. "0.008" for `price_atomic` 8000) — the dollar value people
+            and agents reason in. A decimal string, never a float; trailing zeros
+            trimmed. Null when unpriced (mirrors `price_atomic`). For settlement
+            use `price_atomic`.
           type: string
-    SearchPricing:
-      additionalProperties: true
-      description: |
-        Aggregate pricing at the agent level. `recipient_address` is
-        intentionally absent from the index — under x402 it is delivered
-        per-request in the `402 Payment Required` challenge from the agent.
-      example:
-        protocol: x402
-        scheme: per_call
-        amount_usd: amount_usd
-        network: network
-      properties:
-        protocol:
-          enum:
-          - x402
-          - mpp
-          - free
+          nullable: true
+        price_currency:
           type: string
-        scheme:
-          example: per_call
-          type: string
-        amount_usd:
-          description: Default per-call amount; individual skills may override via
-            `price_usd`.
-          pattern: "^\\d+(\\.\\d{1,6})?$"
-          type: string
-        network:
-          description: Settlement network (e.g. `base-sepolia`).
-          type: string
-    SearchRanking:
-      additionalProperties: true
-      example:
-        success_rate_30d: 0.5962133916683182
-        p50_latency_ms: 0
-        settlement_count_30d: 0
-        first_seen_at: 2000-01-23T04:56:07.000+00:00
-        popularity_score: 0.6027456183070403
-      properties:
-        popularity_score:
-          format: double
-          maximum: 1
-          minimum: 0
-          type: number
-        settlement_count_30d:
-          minimum: 0
+          nullable: true
+        price_decimals:
           type: integer
-        success_rate_30d:
-          format: double
-          maximum: 1
-          minimum: 0
-          type: number
-        p50_latency_ms:
-          minimum: 0
-          type: integer
-        first_seen_at:
-          format: date-time
+          nullable: true
+        operated_by_id:
           type: string
-    SearchEndpoints:
-      additionalProperties: true
-      description: |
-        Per-protocol entry points for the agent. Any field may be `null`
-        if the agent does not expose that protocol surface.
+          nullable: true
+        operated_by_type:
+          type: string
+          nullable: true
+        settled_via_facilitator_id:
+          type: string
+          nullable: true
+        ranking:
+          $ref: "#/components/schemas/SearchEndpointRanking"
+    SearchEndpointRanking:
       example:
-        a2a: https://openapi-generator.tech
-        openapi: https://openapi-generator.tech
-        mcp: https://openapi-generator.tech
-        weft_fetch_target: https://openapi-generator.tech
+        rank_reason: rank_reason
+        min_total_latency_ms: 3
+        similarity: 2.3021358869347655
+        max_total_latency_ms: 2
+        price_atomic: 7
+        median_ttfb_ms: 9
+        probe_status: probe_status
       properties:
-        a2a:
-          format: uri
+        similarity:
+          type: number
+          nullable: true
+        price_atomic:
+          type: integer
+          nullable: true
+        rank_reason:
           type: string
           nullable: true
-        mcp:
-          format: uri
+        probe_status:
           type: string
           nullable: true
-        openapi:
-          description: URL to the agent's OpenAPI document.
-          format: uri
-          type: string
+        median_ttfb_ms:
+          type: integer
           nullable: true
-        weft_fetch_target:
-          description: Base URL the `weft_fetch` MCP tool should target for this agent.
-          format: uri
-          type: string
+        min_total_latency_ms:
+          type: integer
+          nullable: true
+        max_total_latency_ms:
+          type: integer
           nullable: true
     SearchErrorResponse:
       description: |
@@ -2243,6 +2213,9 @@ components:
           description: Stable error code.
           enum:
           - INVALID_QUERY
+          - INVALID_MAX_RESULTS
+          - INVALID_FILTERS
+          - UNKNOWN_PARAMETER
           - SEARCH_UPSTREAM_ERROR
           - SEARCH_BACKEND_MISCONFIGURED
           type: string
@@ -2416,6 +2389,7 @@ components:
           - WALLET_ENVIRONMENT_MISMATCH
           - SETTLEMENT_FAILED
           - UNSUPPORTED_PAYMENT_METHOD
+          - UNSUPPORTED_ASSET
           - POLICY_VIOLATION_MAX_TX
           - POLICY_VIOLATION_DAILY
           - POLICY_VIOLATION_WEEKLY
@@ -2510,21 +2484,30 @@ components:
       required:
       - confirmation_required
       - user
-    SearchResponse_results_inner:
-      anyOf:
-      - $ref: "#/components/schemas/SearchResult"
-      - $ref: "#/components/schemas/PlatformSearchResult"
-    SearchSkill_endpoint:
-      additionalProperties: true
+    SearchResponse_warnings_inner:
       example:
-        path: path
-        method: method
+        code: code
+        context: "{}"
+        cause: cause
+        message: message
       properties:
-        method:
-          description: HTTP method or `WEBSOCKET` for streaming skills.
+        code:
           type: string
-        path:
+        message:
           type: string
+        cause:
+          description: Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`).
+            Null otherwise.
+          type: string
+          nullable: true
+        context:
+          description: Structured context for the warning. Null when the code carries
+            none.
+          type: object
+          nullable: true
+      required:
+      - code
+      - message
     FetchRequest_body:
       description: Request body forwarded to the upstream. Pass `null` for GET.
       nullable: true

@@ -41,15 +41,18 @@ func (r ApiSearchRequest) Execute() (*SearchResponse, *http.Response, error) {
 Search Search the Weft index
 
 Semantic search over the Weft index of paid agent resources. The
-request body carries a free-text `query`, an optional `limit`, and
-an optional `filters` object that narrows by price band, payment
-protocol, agent protocol, or domain tag. Filters are applied as a
-post-filter after the embedding score is computed.
+request body is the weft-search-platform `/v1/search` contract:
+a free-text `query`, optional `max_results`, and optional structured
+`filters` (price / price_atomic / type / protocol — the canonical
+FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is
+a dual representation of one constraint: `price` in USD decimal strings
+(the reasoning form) XOR `price_atomic` in integer micro-USD (the
+settlement form) — mutually exclusive, set at most one.
 
 Backend selection is server-side via the `SEARCH_BACKEND` env var:
 `mock` (default, reads YAML fixtures and sets `_mock: true` in the
 response) or `platform` (proxies to the upstream search service).
-Both backends return the same envelope.
+Both backends return the platform `SearchResponse` envelope.
 
 Account-scoped: the bearer token must be a buyer-scoped API key.
 Free for authenticated buyers in v1; billing is planned for a later

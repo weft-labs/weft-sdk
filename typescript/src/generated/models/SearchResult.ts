@@ -13,34 +13,27 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SearchPricing } from './SearchPricing';
+import type { SearchEndpointHit } from './SearchEndpointHit';
 import {
-    SearchPricingFromJSON,
-    SearchPricingFromJSONTyped,
-    SearchPricingToJSON,
-    SearchPricingToJSONTyped,
-} from './SearchPricing';
-import type { SearchRanking } from './SearchRanking';
+    SearchEndpointHitFromJSON,
+    SearchEndpointHitFromJSONTyped,
+    SearchEndpointHitToJSON,
+    SearchEndpointHitToJSONTyped,
+} from './SearchEndpointHit';
+import type { SearchCapabilityRef } from './SearchCapabilityRef';
 import {
-    SearchRankingFromJSON,
-    SearchRankingFromJSONTyped,
-    SearchRankingToJSON,
-    SearchRankingToJSONTyped,
-} from './SearchRanking';
-import type { SearchEndpoints } from './SearchEndpoints';
+    SearchCapabilityRefFromJSON,
+    SearchCapabilityRefFromJSONTyped,
+    SearchCapabilityRefToJSON,
+    SearchCapabilityRefToJSONTyped,
+} from './SearchCapabilityRef';
+import type { SearchProviderRef } from './SearchProviderRef';
 import {
-    SearchEndpointsFromJSON,
-    SearchEndpointsFromJSONTyped,
-    SearchEndpointsToJSON,
-    SearchEndpointsToJSONTyped,
-} from './SearchEndpoints';
-import type { SearchAgentCard } from './SearchAgentCard';
-import {
-    SearchAgentCardFromJSON,
-    SearchAgentCardFromJSONTyped,
-    SearchAgentCardToJSON,
-    SearchAgentCardToJSONTyped,
-} from './SearchAgentCard';
+    SearchProviderRefFromJSON,
+    SearchProviderRefFromJSONTyped,
+    SearchProviderRefToJSON,
+    SearchProviderRefToJSONTyped,
+} from './SearchProviderRef';
 
 /**
  * 
@@ -49,92 +42,39 @@ import {
  */
 export interface SearchResult {
     /**
-     * Stable agent identifier (e.g. `weft:agent:agentmail`).
-     * @type {string}
+     * 
+     * @type {SearchProviderRef}
      * @memberof SearchResult
      */
-    id: string;
+    provider: SearchProviderRef;
     /**
-     * Cosine similarity score, clipped to [0, 1].
+     * 
+     * @type {SearchCapabilityRef}
+     * @memberof SearchResult
+     */
+    capability: SearchCapabilityRef;
+    /**
+     * 
+     * @type {Array<SearchEndpointHit>}
+     * @memberof SearchResult
+     */
+    endpoints: Array<SearchEndpointHit>;
+    /**
+     * 
      * @type {number}
      * @memberof SearchResult
      */
     score: number;
-    /**
-     * Agent protocol surface.
-     * @type {string}
-     * @memberof SearchResult
-     */
-    protocol: SearchResultProtocolEnum;
-    /**
-     * Domain tags declared by the agent.
-     * @type {Array<string>}
-     * @memberof SearchResult
-     */
-    domain: Array<string>;
-    /**
-     * Reseller slug if this agent is fronted by an aggregator (e.g. `locus`).
-     * @type {string}
-     * @memberof SearchResult
-     */
-    reseller?: string;
-    /**
-     * Upstream provider hostname when fronted by a reseller.
-     * @type {string}
-     * @memberof SearchResult
-     */
-    upstream?: string;
-    /**
-     * 
-     * @type {SearchAgentCard}
-     * @memberof SearchResult
-     */
-    agentCard: SearchAgentCard;
-    /**
-     * 
-     * @type {SearchPricing}
-     * @memberof SearchResult
-     */
-    pricing: SearchPricing;
-    /**
-     * 
-     * @type {SearchRanking}
-     * @memberof SearchResult
-     */
-    ranking: SearchRanking;
-    /**
-     * 
-     * @type {SearchEndpoints}
-     * @memberof SearchResult
-     */
-    endpoints: SearchEndpoints;
 }
-
-
-/**
- * @export
- */
-export const SearchResultProtocolEnum = {
-    A2a: 'a2a',
-    Mcp: 'mcp',
-    Openapi: 'openapi',
-    AgentNet: 'AgentNet'
-} as const;
-export type SearchResultProtocolEnum = typeof SearchResultProtocolEnum[keyof typeof SearchResultProtocolEnum];
-
 
 /**
  * Check if a given object implements the SearchResult interface.
  */
 export function instanceOfSearchResult(value: object): value is SearchResult {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('score' in value) || value['score'] === undefined) return false;
-    if (!('protocol' in value) || value['protocol'] === undefined) return false;
-    if (!('domain' in value) || value['domain'] === undefined) return false;
-    if (!('agentCard' in value) || value['agentCard'] === undefined) return false;
-    if (!('pricing' in value) || value['pricing'] === undefined) return false;
-    if (!('ranking' in value) || value['ranking'] === undefined) return false;
+    if (!('provider' in value) || value['provider'] === undefined) return false;
+    if (!('capability' in value) || value['capability'] === undefined) return false;
     if (!('endpoints' in value) || value['endpoints'] === undefined) return false;
+    if (!('score' in value) || value['score'] === undefined) return false;
     return true;
 }
 
@@ -148,16 +88,10 @@ export function SearchResultFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'id': json['id'],
+        'provider': SearchProviderRefFromJSON(json['provider']),
+        'capability': SearchCapabilityRefFromJSON(json['capability']),
+        'endpoints': ((json['endpoints'] as Array<any>).map(SearchEndpointHitFromJSON)),
         'score': json['score'],
-        'protocol': json['protocol'],
-        'domain': json['domain'],
-        'reseller': json['reseller'] == null ? undefined : json['reseller'],
-        'upstream': json['upstream'] == null ? undefined : json['upstream'],
-        'agentCard': SearchAgentCardFromJSON(json['agent_card']),
-        'pricing': SearchPricingFromJSON(json['pricing']),
-        'ranking': SearchRankingFromJSON(json['ranking']),
-        'endpoints': SearchEndpointsFromJSON(json['endpoints']),
     };
 }
 
@@ -172,16 +106,10 @@ export function SearchResultToJSONTyped(value?: SearchResult | null, ignoreDiscr
 
     return {
         
-        'id': value['id'],
+        'provider': SearchProviderRefToJSON(value['provider']),
+        'capability': SearchCapabilityRefToJSON(value['capability']),
+        'endpoints': ((value['endpoints'] as Array<any>).map(SearchEndpointHitToJSON)),
         'score': value['score'],
-        'protocol': value['protocol'],
-        'domain': value['domain'],
-        'reseller': value['reseller'],
-        'upstream': value['upstream'],
-        'agent_card': SearchAgentCardToJSON(value['agentCard']),
-        'pricing': SearchPricingToJSON(value['pricing']),
-        'ranking': SearchRankingToJSON(value['ranking']),
-        'endpoints': SearchEndpointsToJSON(value['endpoints']),
     };
 }
 

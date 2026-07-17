@@ -14,29 +14,63 @@ require 'date'
 require 'time'
 
 module Weft
-  # Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend.  Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default while the real index is unshipped) emits the rich, SDK-facing `SearchResult` shape. The legacy `platform` backend proxies the upstream search service and passes its result rows through verbatim — Weft does not own or reshape that payload, so those rows are typed as a free-form object. SDK clients on v1 should treat unknown row shapes defensively until the platform backend is retrofitted to the `SearchResult` contract (specs 07 + 10).  Because the `PlatformSearchResult` branch is intentionally permissive (free-form, to admit the un-owned platform rows), the `anyOf` is satisfied by any object — so the committee response-validation gate does NOT strictly validate result-row shapes; the rich `SearchResult` contract is instead guarded by the `/api/v1/search` request spec. 
+  # The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
   class SearchResponse < ApiModelBase
+    # Opaque trace id for the served query, matching the platform `query_trace_id`.
+    attr_accessor :query_trace_id
+
+    attr_accessor :query
+
+    # The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). 
+    attr_accessor :applied_filters
+
+    # Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands. 
+    attr_accessor :decomposition_source
+
+    attr_accessor :embedder_model
+
+    attr_accessor :candidates_considered
+
+    attr_accessor :warnings
+
     attr_accessor :results
-
-    # Always `null` in v1.
-    attr_accessor :paid_usd
-
-    # Always `null` in v1.
-    attr_accessor :tx_hash
-
-    # Always `null` in v1.
-    attr_accessor :artifact_id
 
     # Present and `true` only when served by the mock backend.
     attr_accessor :_mock
 
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
+        :'query_trace_id' => :'query_trace_id',
+        :'query' => :'query',
+        :'applied_filters' => :'applied_filters',
+        :'decomposition_source' => :'decomposition_source',
+        :'embedder_model' => :'embedder_model',
+        :'candidates_considered' => :'candidates_considered',
+        :'warnings' => :'warnings',
         :'results' => :'results',
-        :'paid_usd' => :'paid_usd',
-        :'tx_hash' => :'tx_hash',
-        :'artifact_id' => :'artifact_id',
         :'_mock' => :'_mock'
       }
     end
@@ -54,10 +88,14 @@ module Weft
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'results' => :'Array<SearchResponseResultsInner>',
-        :'paid_usd' => :'String',
-        :'tx_hash' => :'String',
-        :'artifact_id' => :'String',
+        :'query_trace_id' => :'String',
+        :'query' => :'String',
+        :'applied_filters' => :'SearchFilterSpec',
+        :'decomposition_source' => :'String',
+        :'embedder_model' => :'String',
+        :'candidates_considered' => :'Integer',
+        :'warnings' => :'Array<SearchResponseWarningsInner>',
+        :'results' => :'Array<SearchResult>',
         :'_mock' => :'Boolean'
       }
     end
@@ -84,24 +122,52 @@ module Weft
         h[k.to_sym] = v
       }
 
+      if attributes.key?(:'query_trace_id')
+        self.query_trace_id = attributes[:'query_trace_id']
+      else
+        self.query_trace_id = nil
+      end
+
+      if attributes.key?(:'query')
+        self.query = attributes[:'query']
+      else
+        self.query = nil
+      end
+
+      if attributes.key?(:'applied_filters')
+        self.applied_filters = attributes[:'applied_filters']
+      end
+
+      if attributes.key?(:'decomposition_source')
+        self.decomposition_source = attributes[:'decomposition_source']
+      end
+
+      if attributes.key?(:'embedder_model')
+        self.embedder_model = attributes[:'embedder_model']
+      else
+        self.embedder_model = nil
+      end
+
+      if attributes.key?(:'candidates_considered')
+        self.candidates_considered = attributes[:'candidates_considered']
+      else
+        self.candidates_considered = nil
+      end
+
+      if attributes.key?(:'warnings')
+        if (value = attributes[:'warnings']).is_a?(Array)
+          self.warnings = value
+        end
+      else
+        self.warnings = nil
+      end
+
       if attributes.key?(:'results')
         if (value = attributes[:'results']).is_a?(Array)
           self.results = value
         end
       else
         self.results = nil
-      end
-
-      if attributes.key?(:'paid_usd')
-        self.paid_usd = attributes[:'paid_usd']
-      end
-
-      if attributes.key?(:'tx_hash')
-        self.tx_hash = attributes[:'tx_hash']
-      end
-
-      if attributes.key?(:'artifact_id')
-        self.artifact_id = attributes[:'artifact_id']
       end
 
       if attributes.key?(:'_mock')
@@ -114,6 +180,30 @@ module Weft
     def list_invalid_properties
       warn '[DEPRECATED] the `list_invalid_properties` method is obsolete'
       invalid_properties = Array.new
+      if @query_trace_id.nil?
+        invalid_properties.push('invalid value for "query_trace_id", query_trace_id cannot be nil.')
+      end
+
+      if @query.nil?
+        invalid_properties.push('invalid value for "query", query cannot be nil.')
+      end
+
+      if @embedder_model.nil?
+        invalid_properties.push('invalid value for "embedder_model", embedder_model cannot be nil.')
+      end
+
+      if @candidates_considered.nil?
+        invalid_properties.push('invalid value for "candidates_considered", candidates_considered cannot be nil.')
+      end
+
+      if @candidates_considered < 0
+        invalid_properties.push('invalid value for "candidates_considered", must be greater than or equal to 0.')
+      end
+
+      if @warnings.nil?
+        invalid_properties.push('invalid value for "warnings", warnings cannot be nil.')
+      end
+
       if @results.nil?
         invalid_properties.push('invalid value for "results", results cannot be nil.')
       end
@@ -125,8 +215,80 @@ module Weft
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
+      return false if @query_trace_id.nil?
+      return false if @query.nil?
+      decomposition_source_validator = EnumAttributeValidator.new('String', ["CALLER", "CLASSIFIER", "MERGED", "FALLBACK"])
+      return false unless decomposition_source_validator.valid?(@decomposition_source)
+      return false if @embedder_model.nil?
+      return false if @candidates_considered.nil?
+      return false if @candidates_considered < 0
+      return false if @warnings.nil?
       return false if @results.nil?
       true
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] query_trace_id Value to be assigned
+    def query_trace_id=(query_trace_id)
+      if query_trace_id.nil?
+        fail ArgumentError, 'query_trace_id cannot be nil'
+      end
+
+      @query_trace_id = query_trace_id
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] query Value to be assigned
+    def query=(query)
+      if query.nil?
+        fail ArgumentError, 'query cannot be nil'
+      end
+
+      @query = query
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] decomposition_source Object to be assigned
+    def decomposition_source=(decomposition_source)
+      validator = EnumAttributeValidator.new('String', ["CALLER", "CLASSIFIER", "MERGED", "FALLBACK"])
+      unless validator.valid?(decomposition_source)
+        fail ArgumentError, "invalid value for \"decomposition_source\", must be one of #{validator.allowable_values}."
+      end
+      @decomposition_source = decomposition_source
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] embedder_model Value to be assigned
+    def embedder_model=(embedder_model)
+      if embedder_model.nil?
+        fail ArgumentError, 'embedder_model cannot be nil'
+      end
+
+      @embedder_model = embedder_model
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] candidates_considered Value to be assigned
+    def candidates_considered=(candidates_considered)
+      if candidates_considered.nil?
+        fail ArgumentError, 'candidates_considered cannot be nil'
+      end
+
+      if candidates_considered < 0
+        fail ArgumentError, 'invalid value for "candidates_considered", must be greater than or equal to 0.'
+      end
+
+      @candidates_considered = candidates_considered
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] warnings Value to be assigned
+    def warnings=(warnings)
+      if warnings.nil?
+        fail ArgumentError, 'warnings cannot be nil'
+      end
+
+      @warnings = warnings
     end
 
     # Custom attribute writer method with validation
@@ -144,10 +306,14 @@ module Weft
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
+          query_trace_id == o.query_trace_id &&
+          query == o.query &&
+          applied_filters == o.applied_filters &&
+          decomposition_source == o.decomposition_source &&
+          embedder_model == o.embedder_model &&
+          candidates_considered == o.candidates_considered &&
+          warnings == o.warnings &&
           results == o.results &&
-          paid_usd == o.paid_usd &&
-          tx_hash == o.tx_hash &&
-          artifact_id == o.artifact_id &&
           _mock == o._mock
     end
 
@@ -160,7 +326,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [results, paid_usd, tx_hash, artifact_id, _mock].hash
+      [query_trace_id, query, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, results, _mock].hash
     end
 
     # Builds the object from hash
