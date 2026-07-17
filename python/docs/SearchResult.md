@@ -5,16 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **str** | Stable agent identifier (e.g. &#x60;weft:agent:agentmail&#x60;). | 
-**score** | **float** | Cosine similarity score, clipped to [0, 1]. | 
-**protocol** | **str** | Agent protocol surface. | 
-**domain** | **List[str]** | Domain tags declared by the agent. | 
-**reseller** | **str** | Reseller slug if this agent is fronted by an aggregator (e.g. &#x60;locus&#x60;). | [optional] 
-**upstream** | **str** | Upstream provider hostname when fronted by a reseller. | [optional] 
-**agent_card** | [**SearchAgentCard**](SearchAgentCard.md) |  | 
-**pricing** | [**SearchPricing**](SearchPricing.md) |  | 
-**ranking** | [**SearchRanking**](SearchRanking.md) |  | 
-**endpoints** | [**SearchEndpoints**](SearchEndpoints.md) |  | 
+**provider** | [**SearchProviderRef**](SearchProviderRef.md) |  | 
+**capability** | [**SearchCapabilityRef**](SearchCapabilityRef.md) |  | 
+**endpoints** | [**List[SearchEndpointHit]**](SearchEndpointHit.md) |  | 
+**score** | **float** |  | 
 
 ## Example
 

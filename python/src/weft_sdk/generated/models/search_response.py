@@ -17,22 +17,40 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
-from weft_sdk.generated.models.search_response_results_inner import SearchResponseResultsInner
+from typing_extensions import Annotated
+from uuid import UUID
+from weft_sdk.generated.models.search_filter_spec import SearchFilterSpec
+from weft_sdk.generated.models.search_response_warnings_inner import SearchResponseWarningsInner
+from weft_sdk.generated.models.search_result import SearchResult
 from typing import Optional, Set
 from typing_extensions import Self
 
 class SearchResponse(BaseModel):
     """
-    Spec-11 search envelope. `paid_usd`, `tx_hash`, and `artifact_id` are reserved for a later release that adds per-call billing and artifact persistence; they are always `null` in v1. `_mock: true` is set only by the mock backend.  Result rows: the mock backend (`SEARCH_BACKEND=mock`, the default while the real index is unshipped) emits the rich, SDK-facing `SearchResult` shape. The legacy `platform` backend proxies the upstream search service and passes its result rows through verbatim — Weft does not own or reshape that payload, so those rows are typed as a free-form object. SDK clients on v1 should treat unknown row shapes defensively until the platform backend is retrofitted to the `SearchResult` contract (specs 07 + 10).  Because the `PlatformSearchResult` branch is intentionally permissive (free-form, to admit the un-owned platform rows), the `anyOf` is satisfied by any object — so the committee response-validation gate does NOT strictly validate result-row shapes; the rich `SearchResult` contract is instead guarded by the `/api/v1/search` request spec. 
+    The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
     """ # noqa: E501
-    results: List[SearchResponseResultsInner]
-    paid_usd: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
-    tx_hash: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
-    artifact_id: Optional[StrictStr] = Field(default=None, description="Always `null` in v1.")
+    query_trace_id: UUID = Field(description="Opaque trace id for the served query, matching the platform `query_trace_id`.")
+    query: StrictStr
+    applied_filters: Optional[SearchFilterSpec] = Field(default=None, description="The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). ")
+    decomposition_source: Optional[StrictStr] = Field(default=None, description="Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands. ")
+    embedder_model: StrictStr
+    candidates_considered: Annotated[int, Field(strict=True, ge=0)]
+    warnings: List[SearchResponseWarningsInner]
+    results: List[SearchResult]
     mock: Optional[StrictBool] = Field(default=None, description="Present and `true` only when served by the mock backend.", alias="_mock")
-    __properties: ClassVar[List[str]] = ["results", "paid_usd", "tx_hash", "artifact_id", "_mock"]
+    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "results", "_mock"]
+
+    @field_validator('decomposition_source')
+    def decomposition_source_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK']):
+            raise ValueError("must be one of enum values ('CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK')")
+        return value
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -73,6 +91,16 @@ class SearchResponse(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of applied_filters
+        if self.applied_filters:
+            _dict['applied_filters'] = self.applied_filters.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in warnings (list)
+        _items = []
+        if self.warnings:
+            for _item_warnings in self.warnings:
+                if _item_warnings:
+                    _items.append(_item_warnings.to_dict())
+            _dict['warnings'] = _items
         # override the default output from pydantic by calling `to_dict()` of each item in results (list)
         _items = []
         if self.results:
@@ -92,10 +120,14 @@ class SearchResponse(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "results": [SearchResponseResultsInner.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
-            "paid_usd": obj.get("paid_usd"),
-            "tx_hash": obj.get("tx_hash"),
-            "artifact_id": obj.get("artifact_id"),
+            "query_trace_id": obj.get("query_trace_id"),
+            "query": obj.get("query"),
+            "applied_filters": SearchFilterSpec.from_dict(obj["applied_filters"]) if obj.get("applied_filters") is not None else None,
+            "decomposition_source": obj.get("decomposition_source"),
+            "embedder_model": obj.get("embedder_model"),
+            "candidates_considered": obj.get("candidates_considered"),
+            "warnings": [SearchResponseWarningsInner.from_dict(_item) for _item in obj["warnings"]] if obj.get("warnings") is not None else None,
+            "results": [SearchResult.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
             "_mock": obj.get("_mock")
         })
         return _obj

@@ -6,16 +6,10 @@
 
 Name | Type
 ------------ | -------------
-`id` | string
+`provider` | [SearchProviderRef](SearchProviderRef.md)
+`capability` | [SearchCapabilityRef](SearchCapabilityRef.md)
+`endpoints` | [Array&lt;SearchEndpointHit&gt;](SearchEndpointHit.md)
 `score` | number
-`protocol` | string
-`domain` | Array&lt;string&gt;
-`reseller` | string
-`upstream` | string
-`agentCard` | [SearchAgentCard](SearchAgentCard.md)
-`pricing` | [SearchPricing](SearchPricing.md)
-`ranking` | [SearchRanking](SearchRanking.md)
-`endpoints` | [SearchEndpoints](SearchEndpoints.md)
 
 ## Example
 
@@ -24,16 +18,10 @@ import type { SearchResult } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {
-  "id": null,
-  "score": null,
-  "protocol": null,
-  "domain": null,
-  "reseller": null,
-  "upstream": null,
-  "agentCard": null,
-  "pricing": null,
-  "ranking": null,
+  "provider": null,
+  "capability": null,
   "endpoints": null,
+  "score": null,
 } satisfies SearchResult
 
 console.log(example)

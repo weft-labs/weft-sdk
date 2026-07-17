@@ -23,9 +23,9 @@ var _ MappedNullable = &SearchRequest{}
 type SearchRequest struct {
 	// Free-text query. Required and non-empty.
 	Query string `json:"query"`
-	// Max number of hits to return. Clamped to [1, 50].
-	Limit *int32 `json:"limit,omitempty"`
-	Filters *SearchFilters `json:"filters,omitempty"`
+	// Max number of hits to return. Invalid values are rejected, not clamped.
+	MaxResults *int32 `json:"max_results,omitempty"`
+	Filters *SearchFilterSpec `json:"filters,omitempty"`
 }
 
 type _SearchRequest SearchRequest
@@ -37,8 +37,8 @@ type _SearchRequest SearchRequest
 func NewSearchRequest(query string) *SearchRequest {
 	this := SearchRequest{}
 	this.Query = query
-	var limit int32 = 10
-	this.Limit = &limit
+	var maxResults int32 = 10
+	this.MaxResults = &maxResults
 	return &this
 }
 
@@ -47,8 +47,8 @@ func NewSearchRequest(query string) *SearchRequest {
 // but it doesn't guarantee that properties required by API are set
 func NewSearchRequestWithDefaults() *SearchRequest {
 	this := SearchRequest{}
-	var limit int32 = 10
-	this.Limit = &limit
+	var maxResults int32 = 10
+	this.MaxResults = &maxResults
 	return &this
 }
 
@@ -76,42 +76,42 @@ func (o *SearchRequest) SetQuery(v string) {
 	o.Query = v
 }
 
-// GetLimit returns the Limit field value if set, zero value otherwise.
-func (o *SearchRequest) GetLimit() int32 {
-	if o == nil || IsNil(o.Limit) {
+// GetMaxResults returns the MaxResults field value if set, zero value otherwise.
+func (o *SearchRequest) GetMaxResults() int32 {
+	if o == nil || IsNil(o.MaxResults) {
 		var ret int32
 		return ret
 	}
-	return *o.Limit
+	return *o.MaxResults
 }
 
-// GetLimitOk returns a tuple with the Limit field value if set, nil otherwise
+// GetMaxResultsOk returns a tuple with the MaxResults field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SearchRequest) GetLimitOk() (*int32, bool) {
-	if o == nil || IsNil(o.Limit) {
+func (o *SearchRequest) GetMaxResultsOk() (*int32, bool) {
+	if o == nil || IsNil(o.MaxResults) {
 		return nil, false
 	}
-	return o.Limit, true
+	return o.MaxResults, true
 }
 
-// HasLimit returns a boolean if a field has been set.
-func (o *SearchRequest) HasLimit() bool {
-	if o != nil && !IsNil(o.Limit) {
+// HasMaxResults returns a boolean if a field has been set.
+func (o *SearchRequest) HasMaxResults() bool {
+	if o != nil && !IsNil(o.MaxResults) {
 		return true
 	}
 
 	return false
 }
 
-// SetLimit gets a reference to the given int32 and assigns it to the Limit field.
-func (o *SearchRequest) SetLimit(v int32) {
-	o.Limit = &v
+// SetMaxResults gets a reference to the given int32 and assigns it to the MaxResults field.
+func (o *SearchRequest) SetMaxResults(v int32) {
+	o.MaxResults = &v
 }
 
 // GetFilters returns the Filters field value if set, zero value otherwise.
-func (o *SearchRequest) GetFilters() SearchFilters {
+func (o *SearchRequest) GetFilters() SearchFilterSpec {
 	if o == nil || IsNil(o.Filters) {
-		var ret SearchFilters
+		var ret SearchFilterSpec
 		return ret
 	}
 	return *o.Filters
@@ -119,7 +119,7 @@ func (o *SearchRequest) GetFilters() SearchFilters {
 
 // GetFiltersOk returns a tuple with the Filters field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SearchRequest) GetFiltersOk() (*SearchFilters, bool) {
+func (o *SearchRequest) GetFiltersOk() (*SearchFilterSpec, bool) {
 	if o == nil || IsNil(o.Filters) {
 		return nil, false
 	}
@@ -135,8 +135,8 @@ func (o *SearchRequest) HasFilters() bool {
 	return false
 }
 
-// SetFilters gets a reference to the given SearchFilters and assigns it to the Filters field.
-func (o *SearchRequest) SetFilters(v SearchFilters) {
+// SetFilters gets a reference to the given SearchFilterSpec and assigns it to the Filters field.
+func (o *SearchRequest) SetFilters(v SearchFilterSpec) {
 	o.Filters = &v
 }
 
@@ -151,8 +151,8 @@ func (o SearchRequest) MarshalJSON() ([]byte, error) {
 func (o SearchRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["query"] = o.Query
-	if !IsNil(o.Limit) {
-		toSerialize["limit"] = o.Limit
+	if !IsNil(o.MaxResults) {
+		toSerialize["max_results"] = o.MaxResults
 	}
 	if !IsNil(o.Filters) {
 		toSerialize["filters"] = o.Filters

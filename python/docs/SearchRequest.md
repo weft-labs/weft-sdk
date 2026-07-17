@@ -6,8 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **query** | **str** | Free-text query. Required and non-empty. | 
-**limit** | **int** | Max number of hits to return. Clamped to [1, 50]. | [optional] [default to 10]
-**filters** | [**SearchFilters**](SearchFilters.md) |  | [optional] 
+**max_results** | **int** | Max number of hits to return. Invalid values are rejected, not clamped. | [optional] [default to 10]
+**filters** | [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional] 
 
 ## Example
 

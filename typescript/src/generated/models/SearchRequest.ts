@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SearchFilters } from './SearchFilters';
+import type { SearchFilterSpec } from './SearchFilterSpec';
 import {
-    SearchFiltersFromJSON,
-    SearchFiltersFromJSONTyped,
-    SearchFiltersToJSON,
-    SearchFiltersToJSONTyped,
-} from './SearchFilters';
+    SearchFilterSpecFromJSON,
+    SearchFilterSpecFromJSONTyped,
+    SearchFilterSpecToJSON,
+    SearchFilterSpecToJSONTyped,
+} from './SearchFilterSpec';
 
 /**
  * 
@@ -34,17 +34,17 @@ export interface SearchRequest {
      */
     query: string;
     /**
-     * Max number of hits to return. Clamped to [1, 50].
+     * Max number of hits to return. Invalid values are rejected, not clamped.
      * @type {number}
      * @memberof SearchRequest
      */
-    limit?: number;
+    maxResults?: number;
     /**
      * 
-     * @type {SearchFilters}
+     * @type {SearchFilterSpec}
      * @memberof SearchRequest
      */
-    filters?: SearchFilters;
+    filters?: SearchFilterSpec;
 }
 
 /**
@@ -66,8 +66,8 @@ export function SearchRequestFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'query': json['query'],
-        'limit': json['limit'] == null ? undefined : json['limit'],
-        'filters': json['filters'] == null ? undefined : SearchFiltersFromJSON(json['filters']),
+        'maxResults': json['max_results'] == null ? undefined : json['max_results'],
+        'filters': json['filters'] == null ? undefined : SearchFilterSpecFromJSON(json['filters']),
     };
 }
 
@@ -83,8 +83,8 @@ export function SearchRequestToJSONTyped(value?: SearchRequest | null, ignoreDis
     return {
         
         'query': value['query'],
-        'limit': value['limit'],
-        'filters': SearchFiltersToJSON(value['filters']),
+        'max_results': value['maxResults'],
+        'filters': SearchFilterSpecToJSON(value['filters']),
     };
 }
 
