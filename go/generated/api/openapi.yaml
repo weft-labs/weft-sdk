@@ -1470,7 +1470,7 @@ components:
           balance_usdc: "12.34"
           tempo_usd: "3.00"
           network: network
-        spent_today_usd: "0.42"
+        spent_today_usd: "0.0005"
         spent_week_usd: "3.10"
         policy:
           weekly_limit_usd: "50.00"
@@ -1482,12 +1482,15 @@ components:
         wallet:
           $ref: "#/components/schemas/Wallet"
         spent_today_usd:
-          description: "USD spent in the current calendar day (UTC), 2dp."
-          example: "0.42"
+          description: "USD spent in the current calendar day (UTC). Up to 6 decimals\
+            \ with trailing zeros trimmed so sub-cent micro-payments survive (\"0.0005\"\
+            , \"0.42\"); a zero total renders as \"0\"."
+          example: "0.0005"
           type: string
         spent_week_usd:
-          description: "USD spent in the current calendar week (UTC, Monday start),\
-            \ 2dp."
+          description: "USD spent in the current calendar week (UTC, Monday start).\
+            \ Up to 6 decimals with trailing zeros trimmed (\"0.0005\", \"3.10\");\
+            \ a zero total renders as \"0\"."
           example: "3.10"
           type: string
         policy:

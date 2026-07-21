@@ -22,7 +22,7 @@ import type { BalanceResponse } from '@weft-labs/sdk'
 const example = {
   "promo": null,
   "wallet": null,
-  "spentTodayUsd": 0.42,
+  "spentTodayUsd": 0.0005,
   "spentWeekUsd": 3.10,
   "policy": null,
 } satisfies BalanceResponse

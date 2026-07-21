@@ -57,13 +57,13 @@ export interface BalanceResponse {
      */
     wallet: Wallet;
     /**
-     * USD spent in the current calendar day (UTC), 2dp.
+     * USD spent in the current calendar day (UTC). Up to 6 decimals with trailing zeros trimmed so sub-cent micro-payments survive ("0.0005", "0.42"); a zero total renders as "0".
      * @type {string}
      * @memberof BalanceResponse
      */
     spentTodayUsd: string;
     /**
-     * USD spent in the current calendar week (UTC, Monday start), 2dp.
+     * USD spent in the current calendar week (UTC, Monday start). Up to 6 decimals with trailing zeros trimmed ("0.0005", "3.10"); a zero total renders as "0".
      * @type {string}
      * @memberof BalanceResponse
      */

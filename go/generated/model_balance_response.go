@@ -23,9 +23,9 @@ var _ MappedNullable = &BalanceResponse{}
 type BalanceResponse struct {
 	Promo PromoBalance `json:"promo"`
 	Wallet Wallet `json:"wallet"`
-	// USD spent in the current calendar day (UTC), 2dp.
+	// USD spent in the current calendar day (UTC). Up to 6 decimals with trailing zeros trimmed so sub-cent micro-payments survive (\"0.0005\", \"0.42\"); a zero total renders as \"0\".
 	SpentTodayUsd string `json:"spent_today_usd"`
-	// USD spent in the current calendar week (UTC, Monday start), 2dp.
+	// USD spent in the current calendar week (UTC, Monday start). Up to 6 decimals with trailing zeros trimmed (\"0.0005\", \"3.10\"); a zero total renders as \"0\".
 	SpentWeekUsd string `json:"spent_week_usd"`
 	Policy SpendingPolicy `json:"policy"`
 }
