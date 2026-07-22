@@ -7,7 +7,9 @@ Name | Type | Description | Notes
 **Status** | **int32** | HTTP status returned by the upstream after the paid replay. | 
 **Headers** | **map[string]string** | Response headers from the upstream. | 
 **BodyBase64** | **string** | Base64-encoded response body. Empty string for empty bodies. | 
-**PaidUsd** | **string** | USD amount actually settled. Null for free upstreams. | 
+**PaidUsd** | **string** | USD amount actually settled on-chain. \&quot;0\&quot; for free upstreams AND for any charge that hasn&#39;t (yet, or ever) settled — a signed hold is not yet spend. See &#x60;held_usd&#x60; for the nominal amount in that case.  | 
+**HeldUsd** | **string** | The nominal charge amount when &#x60;paid_usd&#x60; is \&quot;0\&quot; — a hold awaiting settlement, or a charge that failed/expired without ever settling. &#x60;null&#x60; once &#x60;paid_usd&#x60; reflects the real settlement (or for a free upstream, where nothing was ever charged).  | 
+**PaymentStatus** | **string** | Agent-facing settlement status. &#x60;pending&#x60; &#x3D; signed, no refusal signal yet (settlement may still land, e.g. x402&#39;s async facilitator webhook). &#x60;declined-pending&#x60; &#x3D; the merchant refused but the authorization isn&#39;t provably dead yet. &#x60;declined&#x60; / &#x60;expired&#x60; / &#x60;reverted&#x60; are terminal — the money never moved (or, for &#x60;reverted&#x60;, moved and then reversed on-chain) and never will for this charge.  | 
 **TxHash** | **string** | Settlement transaction hash. Null for free upstreams. | 
 **ArtifactId** | **int32** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. | 
 **Merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. Null for free upstreams. | 
@@ -16,7 +18,7 @@ Name | Type | Description | Notes
 
 ### NewFetchResponse
 
-`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId int32, merchant Merchant, ) *FetchResponse`
+`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, artifactId int32, merchant Merchant, ) *FetchResponse`
 
 NewFetchResponse instantiates a new FetchResponse object
 This constructor will assign default values to properties that have it defined,
@@ -109,6 +111,46 @@ and a boolean to check if the value has been set.
 `func (o *FetchResponse) SetPaidUsd(v string)`
 
 SetPaidUsd sets PaidUsd field to given value.
+
+
+### GetHeldUsd
+
+`func (o *FetchResponse) GetHeldUsd() string`
+
+GetHeldUsd returns the HeldUsd field if non-nil, zero value otherwise.
+
+### GetHeldUsdOk
+
+`func (o *FetchResponse) GetHeldUsdOk() (*string, bool)`
+
+GetHeldUsdOk returns a tuple with the HeldUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetHeldUsd
+
+`func (o *FetchResponse) SetHeldUsd(v string)`
+
+SetHeldUsd sets HeldUsd field to given value.
+
+
+### GetPaymentStatus
+
+`func (o *FetchResponse) GetPaymentStatus() string`
+
+GetPaymentStatus returns the PaymentStatus field if non-nil, zero value otherwise.
+
+### GetPaymentStatusOk
+
+`func (o *FetchResponse) GetPaymentStatusOk() (*string, bool)`
+
+GetPaymentStatusOk returns a tuple with the PaymentStatus field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPaymentStatus
+
+`func (o *FetchResponse) SetPaymentStatus(v string)`
+
+SetPaymentStatus sets PaymentStatus field to given value.
 
 
 ### GetTxHash

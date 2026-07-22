@@ -51,8 +51,12 @@ a hard `max_cost_usd` ceiling, and optional `method` / `body` /
   4. Signs an EIP-3009 transfer from the buyer's wallet.
   5. Replays the request with the `X-Payment` header.
   6. Streams the upstream artifact back, base64-encoded under
-     `body_base64`, with `paid_usd`, `tx_hash`, and the
-     merchant's reputation snapshot.
+     `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
+     `tx_hash`, and the merchant's reputation snapshot. `paid_usd`
+     is "0" until the charge is CONFIRMED settled — a signed-but-
+     unsettled hold (the common case for x402, which settles
+     asynchronously) reports its amount in `held_usd` instead, never
+     in `paid_usd`.
 
 Errors are structured with a stable `error` code, and each error
 response carries the buyer's `policy`, `balance`, and a

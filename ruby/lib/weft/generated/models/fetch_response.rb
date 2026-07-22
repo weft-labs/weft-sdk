@@ -14,7 +14,7 @@ require 'date'
 require 'time'
 
 module Weft
-  # Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response. 
+  # Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled. 
   class FetchResponse < ApiModelBase
     # HTTP status returned by the upstream after the paid replay.
     attr_accessor :status
@@ -25,8 +25,14 @@ module Weft
     # Base64-encoded response body. Empty string for empty bodies.
     attr_accessor :body_base64
 
-    # USD amount actually settled. Null for free upstreams.
+    # USD amount actually settled on-chain. \"0\" for free upstreams AND for any charge that hasn't (yet, or ever) settled — a signed hold is not yet spend. See `held_usd` for the nominal amount in that case. 
     attr_accessor :paid_usd
+
+    # The nominal charge amount when `paid_usd` is \"0\" — a hold awaiting settlement, or a charge that failed/expired without ever settling. `null` once `paid_usd` reflects the real settlement (or for a free upstream, where nothing was ever charged). 
+    attr_accessor :held_usd
+
+    # Agent-facing settlement status. `pending` = signed, no refusal signal yet (settlement may still land, e.g. x402's async facilitator webhook). `declined-pending` = the merchant refused but the authorization isn't provably dead yet. `declined` / `expired` / `reverted` are terminal — the money never moved (or, for `reverted`, moved and then reversed on-chain) and never will for this charge. 
+    attr_accessor :payment_status
 
     # Settlement transaction hash. Null for free upstreams.
     attr_accessor :tx_hash
@@ -37,6 +43,28 @@ module Weft
     # Merchant reputation snapshot. Null for free upstreams.
     attr_accessor :merchant
 
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
@@ -44,6 +72,8 @@ module Weft
         :'headers' => :'headers',
         :'body_base64' => :'body_base64',
         :'paid_usd' => :'paid_usd',
+        :'held_usd' => :'held_usd',
+        :'payment_status' => :'payment_status',
         :'tx_hash' => :'tx_hash',
         :'artifact_id' => :'artifact_id',
         :'merchant' => :'merchant'
@@ -67,6 +97,8 @@ module Weft
         :'headers' => :'Hash<String, String>',
         :'body_base64' => :'String',
         :'paid_usd' => :'String',
+        :'held_usd' => :'String',
+        :'payment_status' => :'String',
         :'tx_hash' => :'String',
         :'artifact_id' => :'Integer',
         :'merchant' => :'Merchant'
@@ -121,6 +153,18 @@ module Weft
         self.paid_usd = nil
       end
 
+      if attributes.key?(:'held_usd')
+        self.held_usd = attributes[:'held_usd']
+      else
+        self.held_usd = nil
+      end
+
+      if attributes.key?(:'payment_status')
+        self.payment_status = attributes[:'payment_status']
+      else
+        self.payment_status = nil
+      end
+
       if attributes.key?(:'tx_hash')
         self.tx_hash = attributes[:'tx_hash']
       else
@@ -161,6 +205,14 @@ module Weft
         invalid_properties.push('invalid value for "paid_usd", paid_usd cannot be nil.')
       end
 
+      if @held_usd.nil?
+        invalid_properties.push('invalid value for "held_usd", held_usd cannot be nil.')
+      end
+
+      if @payment_status.nil?
+        invalid_properties.push('invalid value for "payment_status", payment_status cannot be nil.')
+      end
+
       if @tx_hash.nil?
         invalid_properties.push('invalid value for "tx_hash", tx_hash cannot be nil.')
       end
@@ -184,6 +236,10 @@ module Weft
       return false if @headers.nil?
       return false if @body_base64.nil?
       return false if @paid_usd.nil?
+      return false if @held_usd.nil?
+      return false if @payment_status.nil?
+      payment_status_validator = EnumAttributeValidator.new('String', ["settled", "pending", "declined-pending", "declined", "expired", "reverted"])
+      return false unless payment_status_validator.valid?(@payment_status)
       return false if @tx_hash.nil?
       return false if @artifact_id.nil?
       return false if @merchant.nil?
@@ -231,6 +287,26 @@ module Weft
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] held_usd Value to be assigned
+    def held_usd=(held_usd)
+      if held_usd.nil?
+        fail ArgumentError, 'held_usd cannot be nil'
+      end
+
+      @held_usd = held_usd
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] payment_status Object to be assigned
+    def payment_status=(payment_status)
+      validator = EnumAttributeValidator.new('String', ["settled", "pending", "declined-pending", "declined", "expired", "reverted"])
+      unless validator.valid?(payment_status)
+        fail ArgumentError, "invalid value for \"payment_status\", must be one of #{validator.allowable_values}."
+      end
+      @payment_status = payment_status
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] tx_hash Value to be assigned
     def tx_hash=(tx_hash)
       if tx_hash.nil?
@@ -269,6 +345,8 @@ module Weft
           headers == o.headers &&
           body_base64 == o.body_base64 &&
           paid_usd == o.paid_usd &&
+          held_usd == o.held_usd &&
+          payment_status == o.payment_status &&
           tx_hash == o.tx_hash &&
           artifact_id == o.artifact_id &&
           merchant == o.merchant
@@ -283,7 +361,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [status, headers, body_base64, paid_usd, tx_hash, artifact_id, merchant].hash
+      [status, headers, body_base64, paid_usd, held_usd, payment_status, tx_hash, artifact_id, merchant].hash
     end
 
     # Builds the object from hash
