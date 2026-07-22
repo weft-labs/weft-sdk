@@ -1,6 +1,6 @@
 # FetchResponse
 
-Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response. 
+Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled. 
 
 ## Properties
 
@@ -9,7 +9,9 @@ Name | Type | Description | Notes
 **status** | **int** | HTTP status returned by the upstream after the paid replay. | 
 **headers** | **Dict[str, str]** | Response headers from the upstream. | 
 **body_base64** | **str** | Base64-encoded response body. Empty string for empty bodies. | 
-**paid_usd** | **str** | USD amount actually settled. Null for free upstreams. | 
+**paid_usd** | **str** | USD amount actually settled on-chain. \&quot;0\&quot; for free upstreams AND for any charge that hasn&#39;t (yet, or ever) settled — a signed hold is not yet spend. See &#x60;held_usd&#x60; for the nominal amount in that case.  | 
+**held_usd** | **str** | The nominal charge amount when &#x60;paid_usd&#x60; is \&quot;0\&quot; — a hold awaiting settlement, or a charge that failed/expired without ever settling. &#x60;null&#x60; once &#x60;paid_usd&#x60; reflects the real settlement (or for a free upstream, where nothing was ever charged).  | 
+**payment_status** | **str** | Agent-facing settlement status. &#x60;pending&#x60; &#x3D; signed, no refusal signal yet (settlement may still land, e.g. x402&#39;s async facilitator webhook). &#x60;declined-pending&#x60; &#x3D; the merchant refused but the authorization isn&#39;t provably dead yet. &#x60;declined&#x60; / &#x60;expired&#x60; / &#x60;reverted&#x60; are terminal — the money never moved (or, for &#x60;reverted&#x60;, moved and then reversed on-chain) and never will for this charge.  | 
 **tx_hash** | **str** | Settlement transaction hash. Null for free upstreams. | 
 **artifact_id** | **int** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. | 
 **merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. Null for free upstreams. | 

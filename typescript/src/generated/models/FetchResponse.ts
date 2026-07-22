@@ -23,8 +23,15 @@ import {
 
 /**
  * Successful fetch envelope. `body_base64` is the upstream artifact
- * bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are
- * populated only when the upstream charged for the response.
+ * bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
+ * `tx_hash`, and `merchant` are populated only when the upstream
+ * charged for the response.
+ * 
+ * `paid_usd` is "0" (never the nominal charge amount) until the charge
+ * is CONFIRMED settled on-chain — a signed-but-unsettled hold reports
+ * its amount in `held_usd` instead. This is a deliberate honesty fix:
+ * earlier versions of this endpoint returned the nominal amount in
+ * `paid_usd` unconditionally, even when the charge never settled.
  * 
  * @export
  * @interface FetchResponse
@@ -49,11 +56,37 @@ export interface FetchResponse {
      */
     bodyBase64: string;
     /**
-     * USD amount actually settled. Null for free upstreams.
+     * USD amount actually settled on-chain. "0" for free upstreams AND
+     * for any charge that hasn't (yet, or ever) settled — a signed hold
+     * is not yet spend. See `held_usd` for the nominal amount in that case.
+     * 
      * @type {string}
      * @memberof FetchResponse
      */
     paidUsd: string;
+    /**
+     * The nominal charge amount when `paid_usd` is "0" — a hold awaiting
+     * settlement, or a charge that failed/expired without ever settling.
+     * `null` once `paid_usd` reflects the real settlement (or for a free
+     * upstream, where nothing was ever charged).
+     * 
+     * @type {string}
+     * @memberof FetchResponse
+     */
+    heldUsd: string;
+    /**
+     * Agent-facing settlement status. `pending` = signed, no refusal
+     * signal yet (settlement may still land, e.g. x402's async
+     * facilitator webhook). `declined-pending` = the merchant refused
+     * but the authorization isn't provably dead yet. `declined` /
+     * `expired` / `reverted` are terminal — the money never moved (or,
+     * for `reverted`, moved and then reversed on-chain) and never will
+     * for this charge.
+     * 
+     * @type {string}
+     * @memberof FetchResponse
+     */
+    paymentStatus: FetchResponsePaymentStatusEnum;
     /**
      * Settlement transaction hash. Null for free upstreams.
      * @type {string}
@@ -74,6 +107,21 @@ export interface FetchResponse {
     merchant: Merchant;
 }
 
+
+/**
+ * @export
+ */
+export const FetchResponsePaymentStatusEnum = {
+    Settled: 'settled',
+    Pending: 'pending',
+    DeclinedPending: 'declined-pending',
+    Declined: 'declined',
+    Expired: 'expired',
+    Reverted: 'reverted'
+} as const;
+export type FetchResponsePaymentStatusEnum = typeof FetchResponsePaymentStatusEnum[keyof typeof FetchResponsePaymentStatusEnum];
+
+
 /**
  * Check if a given object implements the FetchResponse interface.
  */
@@ -82,6 +130,8 @@ export function instanceOfFetchResponse(value: object): value is FetchResponse {
     if (!('headers' in value) || value['headers'] === undefined) return false;
     if (!('bodyBase64' in value) || value['bodyBase64'] === undefined) return false;
     if (!('paidUsd' in value) || value['paidUsd'] === undefined) return false;
+    if (!('heldUsd' in value) || value['heldUsd'] === undefined) return false;
+    if (!('paymentStatus' in value) || value['paymentStatus'] === undefined) return false;
     if (!('txHash' in value) || value['txHash'] === undefined) return false;
     if (!('artifactId' in value) || value['artifactId'] === undefined) return false;
     if (!('merchant' in value) || value['merchant'] === undefined) return false;
@@ -102,6 +152,8 @@ export function FetchResponseFromJSONTyped(json: any, ignoreDiscriminator: boole
         'headers': json['headers'],
         'bodyBase64': json['body_base64'],
         'paidUsd': json['paid_usd'],
+        'heldUsd': json['held_usd'],
+        'paymentStatus': json['payment_status'],
         'txHash': json['tx_hash'],
         'artifactId': json['artifact_id'],
         'merchant': MerchantFromJSON(json['merchant']),
@@ -123,6 +175,8 @@ export function FetchResponseToJSONTyped(value?: FetchResponse | null, ignoreDis
         'headers': value['headers'],
         'body_base64': value['bodyBase64'],
         'paid_usd': value['paidUsd'],
+        'held_usd': value['heldUsd'],
+        'payment_status': value['paymentStatus'],
         'tx_hash': value['txHash'],
         'artifact_id': value['artifactId'],
         'merchant': MerchantToJSON(value['merchant']),

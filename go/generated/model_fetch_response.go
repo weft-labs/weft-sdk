@@ -19,7 +19,7 @@ import (
 // checks if the FetchResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &FetchResponse{}
 
-// FetchResponse Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response. 
+// FetchResponse Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled. 
 type FetchResponse struct {
 	// HTTP status returned by the upstream after the paid replay.
 	Status int32 `json:"status"`
@@ -27,8 +27,12 @@ type FetchResponse struct {
 	Headers map[string]string `json:"headers"`
 	// Base64-encoded response body. Empty string for empty bodies.
 	BodyBase64 string `json:"body_base64"`
-	// USD amount actually settled. Null for free upstreams.
+	// USD amount actually settled on-chain. \"0\" for free upstreams AND for any charge that hasn't (yet, or ever) settled — a signed hold is not yet spend. See `held_usd` for the nominal amount in that case. 
 	PaidUsd string `json:"paid_usd"`
+	// The nominal charge amount when `paid_usd` is \"0\" — a hold awaiting settlement, or a charge that failed/expired without ever settling. `null` once `paid_usd` reflects the real settlement (or for a free upstream, where nothing was ever charged). 
+	HeldUsd string `json:"held_usd"`
+	// Agent-facing settlement status. `pending` = signed, no refusal signal yet (settlement may still land, e.g. x402's async facilitator webhook). `declined-pending` = the merchant refused but the authorization isn't provably dead yet. `declined` / `expired` / `reverted` are terminal — the money never moved (or, for `reverted`, moved and then reversed on-chain) and never will for this charge. 
+	PaymentStatus string `json:"payment_status"`
 	// Settlement transaction hash. Null for free upstreams.
 	TxHash string `json:"tx_hash"`
 	// Internal artifact identifier if the response was persisted; `null` otherwise.
@@ -43,12 +47,14 @@ type _FetchResponse FetchResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, txHash string, artifactId int32, merchant Merchant) *FetchResponse {
+func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, artifactId int32, merchant Merchant) *FetchResponse {
 	this := FetchResponse{}
 	this.Status = status
 	this.Headers = headers
 	this.BodyBase64 = bodyBase64
 	this.PaidUsd = paidUsd
+	this.HeldUsd = heldUsd
+	this.PaymentStatus = paymentStatus
 	this.TxHash = txHash
 	this.ArtifactId = artifactId
 	this.Merchant = merchant
@@ -159,6 +165,54 @@ func (o *FetchResponse) SetPaidUsd(v string) {
 	o.PaidUsd = v
 }
 
+// GetHeldUsd returns the HeldUsd field value
+func (o *FetchResponse) GetHeldUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.HeldUsd
+}
+
+// GetHeldUsdOk returns a tuple with the HeldUsd field value
+// and a boolean to check if the value has been set.
+func (o *FetchResponse) GetHeldUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.HeldUsd, true
+}
+
+// SetHeldUsd sets field value
+func (o *FetchResponse) SetHeldUsd(v string) {
+	o.HeldUsd = v
+}
+
+// GetPaymentStatus returns the PaymentStatus field value
+func (o *FetchResponse) GetPaymentStatus() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PaymentStatus
+}
+
+// GetPaymentStatusOk returns a tuple with the PaymentStatus field value
+// and a boolean to check if the value has been set.
+func (o *FetchResponse) GetPaymentStatusOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PaymentStatus, true
+}
+
+// SetPaymentStatus sets field value
+func (o *FetchResponse) SetPaymentStatus(v string) {
+	o.PaymentStatus = v
+}
+
 // GetTxHash returns the TxHash field value
 func (o *FetchResponse) GetTxHash() string {
 	if o == nil {
@@ -245,6 +299,8 @@ func (o FetchResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["headers"] = o.Headers
 	toSerialize["body_base64"] = o.BodyBase64
 	toSerialize["paid_usd"] = o.PaidUsd
+	toSerialize["held_usd"] = o.HeldUsd
+	toSerialize["payment_status"] = o.PaymentStatus
 	toSerialize["tx_hash"] = o.TxHash
 	toSerialize["artifact_id"] = o.ArtifactId
 	toSerialize["merchant"] = o.Merchant
@@ -260,6 +316,8 @@ func (o *FetchResponse) UnmarshalJSON(data []byte) (err error) {
 		"headers",
 		"body_base64",
 		"paid_usd",
+		"held_usd",
+		"payment_status",
 		"tx_hash",
 		"artifact_id",
 		"merchant",

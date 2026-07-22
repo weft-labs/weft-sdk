@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List
 from weft_sdk.generated.models.merchant import Merchant
 from typing import Optional, Set
@@ -25,16 +25,25 @@ from typing_extensions import Self
 
 class FetchResponse(BaseModel):
     """
-    Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response. 
+    Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled. 
     """ # noqa: E501
     status: StrictInt = Field(description="HTTP status returned by the upstream after the paid replay.")
     headers: Dict[str, StrictStr] = Field(description="Response headers from the upstream.")
     body_base64: StrictStr = Field(description="Base64-encoded response body. Empty string for empty bodies.")
-    paid_usd: StrictStr = Field(description="USD amount actually settled. Null for free upstreams.")
+    paid_usd: StrictStr = Field(description="USD amount actually settled on-chain. \"0\" for free upstreams AND for any charge that hasn't (yet, or ever) settled — a signed hold is not yet spend. See `held_usd` for the nominal amount in that case. ")
+    held_usd: StrictStr = Field(description="The nominal charge amount when `paid_usd` is \"0\" — a hold awaiting settlement, or a charge that failed/expired without ever settling. `null` once `paid_usd` reflects the real settlement (or for a free upstream, where nothing was ever charged). ")
+    payment_status: StrictStr = Field(description="Agent-facing settlement status. `pending` = signed, no refusal signal yet (settlement may still land, e.g. x402's async facilitator webhook). `declined-pending` = the merchant refused but the authorization isn't provably dead yet. `declined` / `expired` / `reverted` are terminal — the money never moved (or, for `reverted`, moved and then reversed on-chain) and never will for this charge. ")
     tx_hash: StrictStr = Field(description="Settlement transaction hash. Null for free upstreams.")
     artifact_id: StrictInt = Field(description="Internal artifact identifier if the response was persisted; `null` otherwise.")
     merchant: Merchant = Field(description="Merchant reputation snapshot. Null for free upstreams.")
-    __properties: ClassVar[List[str]] = ["status", "headers", "body_base64", "paid_usd", "tx_hash", "artifact_id", "merchant"]
+    __properties: ClassVar[List[str]] = ["status", "headers", "body_base64", "paid_usd", "held_usd", "payment_status", "tx_hash", "artifact_id", "merchant"]
+
+    @field_validator('payment_status')
+    def payment_status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value not in set(['settled', 'pending', 'declined-pending', 'declined', 'expired', 'reverted']):
+            raise ValueError("must be one of enum values ('settled', 'pending', 'declined-pending', 'declined', 'expired', 'reverted')")
+        return value
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -94,6 +103,8 @@ class FetchResponse(BaseModel):
             "headers": obj.get("headers"),
             "body_base64": obj.get("body_base64"),
             "paid_usd": obj.get("paid_usd"),
+            "held_usd": obj.get("held_usd"),
+            "payment_status": obj.get("payment_status"),
             "tx_hash": obj.get("tx_hash"),
             "artifact_id": obj.get("artifact_id"),
             "merchant": Merchant.from_dict(obj["merchant"]) if obj.get("merchant") is not None else None
