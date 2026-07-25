@@ -34,11 +34,28 @@ export interface SearchEndpointHit {
      */
     endpointId?: string;
     /**
+     * URL-level endpoint grouping id shared by method variants of the
+     * same URL. `endpoint_id` remains the per-operation id. Null on rows
+     * the platform has not grouped.
+     * 
+     * @type {string}
+     * @memberof SearchEndpointHit
+     */
+    sharedEndpointId?: string;
+    /**
      * 
      * @type {string}
      * @memberof SearchEndpointHit
      */
     url?: string;
+    /**
+     * Normalized HTTP method for this callable operation (e.g. `GET`,
+     * `POST`). Empty string for rows the platform carries no method for.
+     * 
+     * @type {string}
+     * @memberof SearchEndpointHit
+     */
+    method?: string;
     /**
      * 
      * @type {string}
@@ -126,7 +143,9 @@ export function SearchEndpointHitFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'endpointId': json['endpoint_id'] == null ? undefined : json['endpoint_id'],
+        'sharedEndpointId': json['shared_endpoint_id'] == null ? undefined : json['shared_endpoint_id'],
         'url': json['url'] == null ? undefined : json['url'],
+        'method': json['method'] == null ? undefined : json['method'],
         'resourceType': json['resource_type'] == null ? undefined : json['resource_type'],
         'primaryProtocol': json['primary_protocol'] == null ? undefined : json['primary_protocol'],
         'priceAtomic': json['price_atomic'] == null ? undefined : json['price_atomic'],
@@ -152,7 +171,9 @@ export function SearchEndpointHitToJSONTyped(value?: SearchEndpointHit | null, i
     return {
         
         'endpoint_id': value['endpointId'],
+        'shared_endpoint_id': value['sharedEndpointId'],
         'url': value['url'],
+        'method': value['method'],
         'resource_type': value['resourceType'],
         'primary_protocol': value['primaryProtocol'],
         'price_atomic': value['priceAtomic'],

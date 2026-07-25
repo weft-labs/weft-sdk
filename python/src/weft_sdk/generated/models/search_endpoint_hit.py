@@ -28,7 +28,9 @@ class SearchEndpointHit(BaseModel):
     SearchEndpointHit
     """ # noqa: E501
     endpoint_id: Optional[StrictStr] = None
+    shared_endpoint_id: Optional[StrictStr] = Field(default=None, description="URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. ")
     url: Optional[StrictStr] = None
+    method: Optional[StrictStr] = Field(default=None, description="Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. ")
     resource_type: Optional[StrictStr] = None
     primary_protocol: Optional[StrictStr] = None
     price_atomic: Optional[StrictInt] = Field(default=None, description="Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced. ")
@@ -39,7 +41,7 @@ class SearchEndpointHit(BaseModel):
     operated_by_type: Optional[StrictStr] = None
     settled_via_facilitator_id: Optional[StrictStr] = None
     ranking: Optional[SearchEndpointRanking] = None
-    __properties: ClassVar[List[str]] = ["endpoint_id", "url", "resource_type", "primary_protocol", "price_atomic", "price_usd", "price_currency", "price_decimals", "operated_by_id", "operated_by_type", "settled_via_facilitator_id", "ranking"]
+    __properties: ClassVar[List[str]] = ["endpoint_id", "shared_endpoint_id", "url", "method", "resource_type", "primary_protocol", "price_atomic", "price_usd", "price_currency", "price_decimals", "operated_by_id", "operated_by_type", "settled_via_facilitator_id", "ranking"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -96,7 +98,9 @@ class SearchEndpointHit(BaseModel):
 
         _obj = cls.model_validate({
             "endpoint_id": obj.get("endpoint_id"),
+            "shared_endpoint_id": obj.get("shared_endpoint_id"),
             "url": obj.get("url"),
+            "method": obj.get("method"),
             "resource_type": obj.get("resource_type"),
             "primary_protocol": obj.get("primary_protocol"),
             "price_atomic": obj.get("price_atomic"),

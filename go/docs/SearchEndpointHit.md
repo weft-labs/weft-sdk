@@ -5,7 +5,9 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **EndpointId** | Pointer to **string** |  | [optional] 
+**SharedEndpointId** | Pointer to **string** | URL-level endpoint grouping id shared by method variants of the same URL. &#x60;endpoint_id&#x60; remains the per-operation id. Null on rows the platform has not grouped.  | [optional] 
 **Url** | Pointer to **string** |  | [optional] 
+**Method** | Pointer to **string** | Normalized HTTP method for this callable operation (e.g. &#x60;GET&#x60;, &#x60;POST&#x60;). Empty string for rows the platform carries no method for.  | [optional] 
 **ResourceType** | Pointer to **string** |  | [optional] 
 **PrimaryProtocol** | Pointer to **string** |  | [optional] 
 **PriceAtomic** | Pointer to **int32** | Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced.  | [optional] 
@@ -61,6 +63,31 @@ SetEndpointId sets EndpointId field to given value.
 
 HasEndpointId returns a boolean if a field has been set.
 
+### GetSharedEndpointId
+
+`func (o *SearchEndpointHit) GetSharedEndpointId() string`
+
+GetSharedEndpointId returns the SharedEndpointId field if non-nil, zero value otherwise.
+
+### GetSharedEndpointIdOk
+
+`func (o *SearchEndpointHit) GetSharedEndpointIdOk() (*string, bool)`
+
+GetSharedEndpointIdOk returns a tuple with the SharedEndpointId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSharedEndpointId
+
+`func (o *SearchEndpointHit) SetSharedEndpointId(v string)`
+
+SetSharedEndpointId sets SharedEndpointId field to given value.
+
+### HasSharedEndpointId
+
+`func (o *SearchEndpointHit) HasSharedEndpointId() bool`
+
+HasSharedEndpointId returns a boolean if a field has been set.
+
 ### GetUrl
 
 `func (o *SearchEndpointHit) GetUrl() string`
@@ -85,6 +112,31 @@ SetUrl sets Url field to given value.
 `func (o *SearchEndpointHit) HasUrl() bool`
 
 HasUrl returns a boolean if a field has been set.
+
+### GetMethod
+
+`func (o *SearchEndpointHit) GetMethod() string`
+
+GetMethod returns the Method field if non-nil, zero value otherwise.
+
+### GetMethodOk
+
+`func (o *SearchEndpointHit) GetMethodOk() (*string, bool)`
+
+GetMethodOk returns a tuple with the Method field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMethod
+
+`func (o *SearchEndpointHit) SetMethod(v string)`
+
+SetMethod sets Method field to given value.
+
+### HasMethod
+
+`func (o *SearchEndpointHit) HasMethod() bool`
+
+HasMethod returns a boolean if a field has been set.
 
 ### GetResourceType
 

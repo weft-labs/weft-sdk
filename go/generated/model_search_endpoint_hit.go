@@ -20,7 +20,11 @@ var _ MappedNullable = &SearchEndpointHit{}
 // SearchEndpointHit struct for SearchEndpointHit
 type SearchEndpointHit struct {
 	EndpointId *string `json:"endpoint_id,omitempty"`
+	// URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. 
+	SharedEndpointId *string `json:"shared_endpoint_id,omitempty"`
 	Url *string `json:"url,omitempty"`
+	// Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. 
+	Method *string `json:"method,omitempty"`
 	ResourceType *string `json:"resource_type,omitempty"`
 	PrimaryProtocol *string `json:"primary_protocol,omitempty"`
 	// Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced. 
@@ -84,6 +88,38 @@ func (o *SearchEndpointHit) SetEndpointId(v string) {
 	o.EndpointId = &v
 }
 
+// GetSharedEndpointId returns the SharedEndpointId field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetSharedEndpointId() string {
+	if o == nil || IsNil(o.SharedEndpointId) {
+		var ret string
+		return ret
+	}
+	return *o.SharedEndpointId
+}
+
+// GetSharedEndpointIdOk returns a tuple with the SharedEndpointId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetSharedEndpointIdOk() (*string, bool) {
+	if o == nil || IsNil(o.SharedEndpointId) {
+		return nil, false
+	}
+	return o.SharedEndpointId, true
+}
+
+// HasSharedEndpointId returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasSharedEndpointId() bool {
+	if o != nil && !IsNil(o.SharedEndpointId) {
+		return true
+	}
+
+	return false
+}
+
+// SetSharedEndpointId gets a reference to the given string and assigns it to the SharedEndpointId field.
+func (o *SearchEndpointHit) SetSharedEndpointId(v string) {
+	o.SharedEndpointId = &v
+}
+
 // GetUrl returns the Url field value if set, zero value otherwise.
 func (o *SearchEndpointHit) GetUrl() string {
 	if o == nil || IsNil(o.Url) {
@@ -114,6 +150,38 @@ func (o *SearchEndpointHit) HasUrl() bool {
 // SetUrl gets a reference to the given string and assigns it to the Url field.
 func (o *SearchEndpointHit) SetUrl(v string) {
 	o.Url = &v
+}
+
+// GetMethod returns the Method field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetMethod() string {
+	if o == nil || IsNil(o.Method) {
+		var ret string
+		return ret
+	}
+	return *o.Method
+}
+
+// GetMethodOk returns a tuple with the Method field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetMethodOk() (*string, bool) {
+	if o == nil || IsNil(o.Method) {
+		return nil, false
+	}
+	return o.Method, true
+}
+
+// HasMethod returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasMethod() bool {
+	if o != nil && !IsNil(o.Method) {
+		return true
+	}
+
+	return false
+}
+
+// SetMethod gets a reference to the given string and assigns it to the Method field.
+func (o *SearchEndpointHit) SetMethod(v string) {
+	o.Method = &v
 }
 
 // GetResourceType returns the ResourceType field value if set, zero value otherwise.
@@ -449,8 +517,14 @@ func (o SearchEndpointHit) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.EndpointId) {
 		toSerialize["endpoint_id"] = o.EndpointId
 	}
+	if !IsNil(o.SharedEndpointId) {
+		toSerialize["shared_endpoint_id"] = o.SharedEndpointId
+	}
 	if !IsNil(o.Url) {
 		toSerialize["url"] = o.Url
+	}
+	if !IsNil(o.Method) {
+		toSerialize["method"] = o.Method
 	}
 	if !IsNil(o.ResourceType) {
 		toSerialize["resource_type"] = o.ResourceType

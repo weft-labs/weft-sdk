@@ -17,7 +17,13 @@ module Weft
   class SearchEndpointHit < ApiModelBase
     attr_accessor :endpoint_id
 
+    # URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. 
+    attr_accessor :shared_endpoint_id
+
     attr_accessor :url
+
+    # Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. 
+    attr_accessor :method
 
     attr_accessor :resource_type
 
@@ -45,7 +51,9 @@ module Weft
     def self.attribute_map
       {
         :'endpoint_id' => :'endpoint_id',
+        :'shared_endpoint_id' => :'shared_endpoint_id',
         :'url' => :'url',
+        :'method' => :'method',
         :'resource_type' => :'resource_type',
         :'primary_protocol' => :'primary_protocol',
         :'price_atomic' => :'price_atomic',
@@ -73,7 +81,9 @@ module Weft
     def self.openapi_types
       {
         :'endpoint_id' => :'String',
+        :'shared_endpoint_id' => :'String',
         :'url' => :'String',
+        :'method' => :'String',
         :'resource_type' => :'String',
         :'primary_protocol' => :'String',
         :'price_atomic' => :'Integer',
@@ -113,8 +123,16 @@ module Weft
         self.endpoint_id = attributes[:'endpoint_id']
       end
 
+      if attributes.key?(:'shared_endpoint_id')
+        self.shared_endpoint_id = attributes[:'shared_endpoint_id']
+      end
+
       if attributes.key?(:'url')
         self.url = attributes[:'url']
+      end
+
+      if attributes.key?(:'method')
+        self.method = attributes[:'method']
       end
 
       if attributes.key?(:'resource_type')
@@ -179,7 +197,9 @@ module Weft
       return true if self.equal?(o)
       self.class == o.class &&
           endpoint_id == o.endpoint_id &&
+          shared_endpoint_id == o.shared_endpoint_id &&
           url == o.url &&
+          method == o.method &&
           resource_type == o.resource_type &&
           primary_protocol == o.primary_protocol &&
           price_atomic == o.price_atomic &&
@@ -201,7 +221,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [endpoint_id, url, resource_type, primary_protocol, price_atomic, price_usd, price_currency, price_decimals, operated_by_id, operated_by_type, settled_via_facilitator_id, ranking].hash
+      [endpoint_id, shared_endpoint_id, url, method, resource_type, primary_protocol, price_atomic, price_usd, price_currency, price_decimals, operated_by_id, operated_by_type, settled_via_facilitator_id, ranking].hash
     end
 
     # Builds the object from hash
