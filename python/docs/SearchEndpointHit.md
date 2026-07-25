@@ -6,7 +6,9 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **endpoint_id** | **str** |  | [optional] 
+**shared_endpoint_id** | **str** | URL-level endpoint grouping id shared by method variants of the same URL. &#x60;endpoint_id&#x60; remains the per-operation id. Null on rows the platform has not grouped.  | [optional] 
 **url** | **str** |  | [optional] 
+**method** | **str** | Normalized HTTP method for this callable operation (e.g. &#x60;GET&#x60;, &#x60;POST&#x60;). Empty string for rows the platform carries no method for.  | [optional] 
 **resource_type** | **str** |  | [optional] 
 **primary_protocol** | **str** |  | [optional] 
 **price_atomic** | **int** | Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced.  | [optional] 

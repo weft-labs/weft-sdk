@@ -7,7 +7,9 @@
 Name | Type
 ------------ | -------------
 `endpointId` | string
+`sharedEndpointId` | string
 `url` | string
+`method` | string
 `resourceType` | string
 `primaryProtocol` | string
 `priceAtomic` | number
@@ -27,7 +29,9 @@ import type { SearchEndpointHit } from '@weft-labs/sdk'
 // TODO: Update the object below with actual values
 const example = {
   "endpointId": null,
+  "sharedEndpointId": null,
   "url": null,
+  "method": null,
   "resourceType": null,
   "primaryProtocol": null,
   "priceAtomic": null,
