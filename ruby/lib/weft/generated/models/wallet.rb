@@ -18,13 +18,13 @@ module Weft
     # EVM address of the buyer's Privy-managed wallet. Null if no wallet provisioned.
     attr_accessor :address
 
-    # Live Base USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.
+    # Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Returns \"0.00\" if the upstream wallet provider is unreachable.
     attr_accessor :balance_usdc
 
-    # Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. 
+    # Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. 
     attr_accessor :tempo_usd
 
-    # Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. 
+    # Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. 
     attr_accessor :total_usd
 
     # Wallet network (e.g. `base-sepolia`).
