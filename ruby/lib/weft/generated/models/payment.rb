@@ -38,8 +38,6 @@ module Weft
 
     attr_accessor :resource_host
 
-    attr_accessor :fee_amount
-
     attr_accessor :settlement_latency_ms
 
     attr_accessor :settled_at
@@ -59,7 +57,6 @@ module Weft
         :'network' => :'network',
         :'resource_url' => :'resource_url',
         :'resource_host' => :'resource_host',
-        :'fee_amount' => :'fee_amount',
         :'settlement_latency_ms' => :'settlement_latency_ms',
         :'settled_at' => :'settled_at',
         :'api_key_name' => :'api_key_name'
@@ -89,7 +86,6 @@ module Weft
         :'network' => :'String',
         :'resource_url' => :'String',
         :'resource_host' => :'String',
-        :'fee_amount' => :'Integer',
         :'settlement_latency_ms' => :'Integer',
         :'settled_at' => :'Time',
         :'api_key_name' => :'String'
@@ -172,10 +168,6 @@ module Weft
 
       if attributes.key?(:'resource_host')
         self.resource_host = attributes[:'resource_host']
-      end
-
-      if attributes.key?(:'fee_amount')
-        self.fee_amount = attributes[:'fee_amount']
       end
 
       if attributes.key?(:'settlement_latency_ms')
@@ -375,7 +367,6 @@ module Weft
           network == o.network &&
           resource_url == o.resource_url &&
           resource_host == o.resource_host &&
-          fee_amount == o.fee_amount &&
           settlement_latency_ms == o.settlement_latency_ms &&
           settled_at == o.settled_at &&
           api_key_name == o.api_key_name
@@ -390,7 +381,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, tx_hash, payer_address, recipient_address, amount, amount_formatted, currency, network, resource_url, resource_host, fee_amount, settlement_latency_ms, settled_at, api_key_name].hash
+      [id, tx_hash, payer_address, recipient_address, amount, amount_formatted, currency, network, resource_url, resource_host, settlement_latency_ms, settled_at, api_key_name].hash
     end
 
     # Builds the object from hash

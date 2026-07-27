@@ -37,11 +37,10 @@ class Payment(BaseModel):
     network: StrictStr = Field(description="CAIP-2 chain identifier")
     resource_url: Optional[StrictStr] = None
     resource_host: Optional[StrictStr] = None
-    fee_amount: Optional[StrictInt] = None
     settlement_latency_ms: Optional[StrictInt] = None
     settled_at: datetime
     api_key_name: StrictStr
-    __properties: ClassVar[List[str]] = ["id", "tx_hash", "payer_address", "recipient_address", "amount", "amount_formatted", "currency", "network", "resource_url", "resource_host", "fee_amount", "settlement_latency_ms", "settled_at", "api_key_name"]
+    __properties: ClassVar[List[str]] = ["id", "tx_hash", "payer_address", "recipient_address", "amount", "amount_formatted", "currency", "network", "resource_url", "resource_host", "settlement_latency_ms", "settled_at", "api_key_name"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -104,7 +103,6 @@ class Payment(BaseModel):
             "network": obj.get("network"),
             "resource_url": obj.get("resource_url"),
             "resource_host": obj.get("resource_host"),
-            "fee_amount": obj.get("fee_amount"),
             "settlement_latency_ms": obj.get("settlement_latency_ms"),
             "settled_at": obj.get("settled_at"),
             "api_key_name": obj.get("api_key_name")

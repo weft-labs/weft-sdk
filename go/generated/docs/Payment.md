@@ -14,7 +14,6 @@ Name | Type | Description | Notes
 **Network** | **string** | CAIP-2 chain identifier | 
 **ResourceUrl** | Pointer to **string** |  | [optional] 
 **ResourceHost** | Pointer to **string** |  | [optional] 
-**FeeAmount** | Pointer to **int32** |  | [optional] 
 **SettlementLatencyMs** | Pointer to **int32** |  | [optional] 
 **SettledAt** | **time.Time** |  | 
 **ApiKeyName** | **string** |  | 
@@ -247,31 +246,6 @@ SetResourceHost sets ResourceHost field to given value.
 `func (o *Payment) HasResourceHost() bool`
 
 HasResourceHost returns a boolean if a field has been set.
-
-### GetFeeAmount
-
-`func (o *Payment) GetFeeAmount() int32`
-
-GetFeeAmount returns the FeeAmount field if non-nil, zero value otherwise.
-
-### GetFeeAmountOk
-
-`func (o *Payment) GetFeeAmountOk() (*int32, bool)`
-
-GetFeeAmountOk returns a tuple with the FeeAmount field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetFeeAmount
-
-`func (o *Payment) SetFeeAmount(v int32)`
-
-SetFeeAmount sets FeeAmount field to given value.
-
-### HasFeeAmount
-
-`func (o *Payment) HasFeeAmount() bool`
-
-HasFeeAmount returns a boolean if a field has been set.
 
 ### GetSettlementLatencyMs
 

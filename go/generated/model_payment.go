@@ -35,7 +35,6 @@ type Payment struct {
 	Network string `json:"network"`
 	ResourceUrl *string `json:"resource_url,omitempty"`
 	ResourceHost *string `json:"resource_host,omitempty"`
-	FeeAmount *int32 `json:"fee_amount,omitempty"`
 	SettlementLatencyMs *int32 `json:"settlement_latency_ms,omitempty"`
 	SettledAt time.Time `json:"settled_at"`
 	ApiKeyName string `json:"api_key_name"`
@@ -326,38 +325,6 @@ func (o *Payment) SetResourceHost(v string) {
 	o.ResourceHost = &v
 }
 
-// GetFeeAmount returns the FeeAmount field value if set, zero value otherwise.
-func (o *Payment) GetFeeAmount() int32 {
-	if o == nil || IsNil(o.FeeAmount) {
-		var ret int32
-		return ret
-	}
-	return *o.FeeAmount
-}
-
-// GetFeeAmountOk returns a tuple with the FeeAmount field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Payment) GetFeeAmountOk() (*int32, bool) {
-	if o == nil || IsNil(o.FeeAmount) {
-		return nil, false
-	}
-	return o.FeeAmount, true
-}
-
-// HasFeeAmount returns a boolean if a field has been set.
-func (o *Payment) HasFeeAmount() bool {
-	if o != nil && !IsNil(o.FeeAmount) {
-		return true
-	}
-
-	return false
-}
-
-// SetFeeAmount gets a reference to the given int32 and assigns it to the FeeAmount field.
-func (o *Payment) SetFeeAmount(v int32) {
-	o.FeeAmount = &v
-}
-
 // GetSettlementLatencyMs returns the SettlementLatencyMs field value if set, zero value otherwise.
 func (o *Payment) GetSettlementLatencyMs() int32 {
 	if o == nil || IsNil(o.SettlementLatencyMs) {
@@ -461,9 +428,6 @@ func (o Payment) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ResourceHost) {
 		toSerialize["resource_host"] = o.ResourceHost
-	}
-	if !IsNil(o.FeeAmount) {
-		toSerialize["fee_amount"] = o.FeeAmount
 	}
 	if !IsNil(o.SettlementLatencyMs) {
 		toSerialize["settlement_latency_ms"] = o.SettlementLatencyMs

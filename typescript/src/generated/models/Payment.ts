@@ -84,12 +84,6 @@ export interface Payment {
      * @type {number}
      * @memberof Payment
      */
-    feeAmount?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Payment
-     */
     settlementLatencyMs?: number;
     /**
      * 
@@ -142,7 +136,6 @@ export function PaymentFromJSONTyped(json: any, ignoreDiscriminator: boolean): P
         'network': json['network'],
         'resourceUrl': json['resource_url'] == null ? undefined : json['resource_url'],
         'resourceHost': json['resource_host'] == null ? undefined : json['resource_host'],
-        'feeAmount': json['fee_amount'] == null ? undefined : json['fee_amount'],
         'settlementLatencyMs': json['settlement_latency_ms'] == null ? undefined : json['settlement_latency_ms'],
         'settledAt': (new Date(json['settled_at'])),
         'apiKeyName': json['api_key_name'],
@@ -170,7 +163,6 @@ export function PaymentToJSONTyped(value?: Payment | null, ignoreDiscriminator: 
         'network': value['network'],
         'resource_url': value['resourceUrl'],
         'resource_host': value['resourceHost'],
-        'fee_amount': value['feeAmount'],
         'settlement_latency_ms': value['settlementLatencyMs'],
         'settled_at': value['settledAt'].toISOString(),
         'api_key_name': value['apiKeyName'],
