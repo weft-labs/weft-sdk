@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.7.0
+  version: 0.8.0
   description: |
     The Weft API is the buyer-runtime surface that powers the `weft` CLI,
     the hosted MCP server (`weft.network/mcp`), and any third-party agent
@@ -1575,6 +1575,20 @@ components:
         price_atomic:
           type: integer
           nullable: true
+          description: |
+            Price tie-breaker in atomic units — the probe-observed price when
+            one exists, else the pipeline-inferred price. `price_source` says
+            which. Null when no price is recorded; nulls sort last.
+        price_source:
+          type: string
+          nullable: true
+          enum: [probe, inferred]
+          description: |
+            Where `price_atomic` came from. `probe` = observed live in the
+            endpoint's own 402 payment-required challenge — authoritative, and
+            refreshed on every probe. `inferred` = derived from a spec (OpenAPI)
+            or a resale edge by the extraction pipeline, so it can lag a
+            provider's re-pricing. Null when the endpoint carries no price.
         rank_reason:
           type: string
           nullable: true

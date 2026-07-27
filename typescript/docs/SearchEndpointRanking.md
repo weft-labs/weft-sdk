@@ -8,6 +8,7 @@ Name | Type
 ------------ | -------------
 `similarity` | number
 `priceAtomic` | number
+`priceSource` | string
 `rankReason` | string
 `probeStatus` | string
 `medianTtfbMs` | number
@@ -23,6 +24,7 @@ import type { SearchEndpointRanking } from '@weft-labs/sdk'
 const example = {
   "similarity": null,
   "priceAtomic": null,
+  "priceSource": null,
   "rankReason": null,
   "probeStatus": null,
   "medianTtfbMs": null,

@@ -5,7 +5,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Similarity** | Pointer to **float32** |  | [optional] 
-**PriceAtomic** | Pointer to **int32** |  | [optional] 
+**PriceAtomic** | Pointer to **int32** | Price tie-breaker in atomic units — the probe-observed price when one exists, else the pipeline-inferred price. &#x60;price_source&#x60; says which. Null when no price is recorded; nulls sort last.  | [optional] 
+**PriceSource** | Pointer to **string** | Where &#x60;price_atomic&#x60; came from. &#x60;probe&#x60; &#x3D; observed live in the endpoint&#39;s own 402 payment-required challenge — authoritative, and refreshed on every probe. &#x60;inferred&#x60; &#x3D; derived from a spec (OpenAPI) or a resale edge by the extraction pipeline, so it can lag a provider&#39;s re-pricing. Null when the endpoint carries no price.  | [optional] 
 **RankReason** | Pointer to **string** |  | [optional] 
 **ProbeStatus** | Pointer to **string** |  | [optional] 
 **MedianTtfbMs** | Pointer to **int32** |  | [optional] 
@@ -80,6 +81,31 @@ SetPriceAtomic sets PriceAtomic field to given value.
 `func (o *SearchEndpointRanking) HasPriceAtomic() bool`
 
 HasPriceAtomic returns a boolean if a field has been set.
+
+### GetPriceSource
+
+`func (o *SearchEndpointRanking) GetPriceSource() string`
+
+GetPriceSource returns the PriceSource field if non-nil, zero value otherwise.
+
+### GetPriceSourceOk
+
+`func (o *SearchEndpointRanking) GetPriceSourceOk() (*string, bool)`
+
+GetPriceSourceOk returns a tuple with the PriceSource field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPriceSource
+
+`func (o *SearchEndpointRanking) SetPriceSource(v string)`
+
+SetPriceSource sets PriceSource field to given value.
+
+### HasPriceSource
+
+`func (o *SearchEndpointRanking) HasPriceSource() bool`
+
+HasPriceSource returns a boolean if a field has been set.
 
 ### GetRankReason
 
