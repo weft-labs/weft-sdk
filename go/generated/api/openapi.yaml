@@ -576,11 +576,9 @@ paths:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: |
             Payment refused. `EXCEEDED_MAX_COST` (over the caller cap) or
-            `INSUFFICIENT_BALANCE` (the buyer is genuinely short). Also
-            `CONVERSION_UNAVAILABLE` — a cross-chain provision route is down
-            while the buyer's funds are intact (`details.venue`,
-            `details.retryable: true`); retry later, do NOT top up. All use
-            `FetchErrorResponse`.
+            `INSUFFICIENT_BALANCE` (the buyer is genuinely short —
+            `details.asset`, when present, names the exact token the failed
+            check read). Both use `FetchErrorResponse`.
         "403":
           content:
             application/json:
@@ -609,9 +607,9 @@ paths:
           description: |
             Invalid request URL, a merchant payment method Weft cannot sign
             (`UNSUPPORTED_PAYMENT_METHOD`), or a merchant settlement token Weft
-            cannot convert into (`UNSUPPORTED_ASSET` — the token's on-chain
-            `currency()` is not USD; terminal for this merchant, funds
-            untouched, `details.asset` names it).
+            can never settle (`UNSUPPORTED_ASSET` — settlement is exact-asset
+            and the token's on-chain `currency()` is not USD; terminal for
+            this merchant, funds untouched, `details.asset` names it).
         "424":
           content:
             application/json:
@@ -2475,7 +2473,6 @@ components:
           - INVALID_URL
           - EXCEEDED_MAX_COST
           - INSUFFICIENT_BALANCE
-          - CONVERSION_UNAVAILABLE
           - MERCHANT_RETURNED_NON_402
           - ARTIFACT_TOO_LARGE
           - DENYLISTED_RECIPIENT
