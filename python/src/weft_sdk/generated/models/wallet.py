@@ -27,9 +27,9 @@ class Wallet(BaseModel):
     Wallet
     """ # noqa: E501
     address: StrictStr = Field(description="EVM address of the buyer's Privy-managed wallet. Null if no wallet provisioned.")
-    balance_usdc: StrictStr = Field(description="Live Base USDC balance, 2dp. Returns \"0.00\" if the upstream wallet provider is unreachable.")
-    tempo_usd: StrictStr = Field(description="Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, 2dp. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. ")
-    total_usd: StrictStr = Field(description="Single aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. ")
+    balance_usdc: StrictStr = Field(description="Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Returns \"0.00\" if the upstream wallet provider is unreachable.")
+    tempo_usd: StrictStr = Field(description="Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only. ")
+    total_usd: StrictStr = Field(description="Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read. ")
     network: StrictStr = Field(description="Wallet network (e.g. `base-sepolia`).")
     __properties: ClassVar[List[str]] = ["address", "balance_usdc", "tempo_usd", "total_usd", "network"]
 

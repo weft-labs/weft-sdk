@@ -28,8 +28,8 @@ class FetchBalanceSnapshot(BaseModel):
     """ # noqa: E501
     promo_usd: StrictStr
     wallet_usdc: StrictStr = Field(description="Live Base USDC balance.")
-    tempo_usd: StrictStr = Field(description="Aggregated USD of allowlisted Tempo dollar tokens, 2dp. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. ")
-    total_usd: StrictStr = Field(description="Aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. ")
+    tempo_usd: StrictStr = Field(description="Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. ")
+    total_usd: StrictStr = Field(description="Aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. ")
     spent_today_usd: StrictStr
     __properties: ClassVar[List[str]] = ["promo_usd", "wallet_usdc", "tempo_usd", "total_usd", "spent_today_usd"]
 

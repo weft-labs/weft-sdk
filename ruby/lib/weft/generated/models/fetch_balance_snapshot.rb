@@ -21,10 +21,10 @@ module Weft
     # Live Base USDC balance.
     attr_accessor :wallet_usdc
 
-    # Aggregated USD of allowlisted Tempo dollar tokens, 2dp. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. 
+    # Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. 
     attr_accessor :tempo_usd
 
-    # Aggregated USD balance = Base USDC + Tempo dollar tokens, 2dp. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. 
+    # Aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. 
     attr_accessor :total_usd
 
     attr_accessor :spent_today_usd
