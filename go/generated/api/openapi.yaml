@@ -1334,10 +1334,9 @@ components:
         resource_host: resource_host
         tx_hash: tx_hash
         recipient_address: recipient_address
-        settlement_latency_ms: 5
+        settlement_latency_ms: 1
         api_key_name: api_key_name
         network: network
-        fee_amount: 1
         amount_formatted: amount_formatted
         currency: currency
         id: 0
@@ -1369,8 +1368,6 @@ components:
         resource_host:
           type: string
           nullable: true
-        fee_amount:
-          type: integer
         settlement_latency_ms:
           type: integer
           nullable: true
@@ -1403,10 +1400,9 @@ components:
           resource_host: resource_host
           tx_hash: tx_hash
           recipient_address: recipient_address
-          settlement_latency_ms: 5
+          settlement_latency_ms: 1
           api_key_name: api_key_name
           network: network
-          fee_amount: 1
           amount_formatted: amount_formatted
           currency: currency
           id: 0
@@ -1417,10 +1413,9 @@ components:
           resource_host: resource_host
           tx_hash: tx_hash
           recipient_address: recipient_address
-          settlement_latency_ms: 5
+          settlement_latency_ms: 1
           api_key_name: api_key_name
           network: network
-          fee_amount: 1
           amount_formatted: amount_formatted
           currency: currency
           id: 0
@@ -1444,10 +1439,9 @@ components:
           resource_host: resource_host
           tx_hash: tx_hash
           recipient_address: recipient_address
-          settlement_latency_ms: 5
+          settlement_latency_ms: 1
           api_key_name: api_key_name
           network: network
-          fee_amount: 1
           amount_formatted: amount_formatted
           currency: currency
           id: 0

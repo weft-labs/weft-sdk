@@ -16,7 +16,6 @@ Name | Type
 `network` | string
 `resourceUrl` | string
 `resourceHost` | string
-`feeAmount` | number
 `settlementLatencyMs` | number
 `settledAt` | Date
 `apiKeyName` | string
@@ -38,7 +37,6 @@ const example = {
   "network": null,
   "resourceUrl": null,
   "resourceHost": null,
-  "feeAmount": null,
   "settlementLatencyMs": null,
   "settledAt": null,
   "apiKeyName": null,

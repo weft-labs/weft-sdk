@@ -14,7 +14,6 @@
 | **network** | **String** | CAIP-2 chain identifier |  |
 | **resource_url** | **String** |  | [optional] |
 | **resource_host** | **String** |  | [optional] |
-| **fee_amount** | **Integer** |  | [optional] |
 | **settlement_latency_ms** | **Integer** |  | [optional] |
 | **settled_at** | **Time** |  |  |
 | **api_key_name** | **String** |  |  |
@@ -35,7 +34,6 @@ instance = Weft::Payment.new(
   network: null,
   resource_url: null,
   resource_host: null,
-  fee_amount: null,
   settlement_latency_ms: null,
   settled_at: null,
   api_key_name: null

@@ -1141,8 +1141,6 @@ components:
         resource_host:
           type: string
           nullable: true
-        fee_amount:
-          type: integer
         settlement_latency_ms:
           type: integer
           nullable: true

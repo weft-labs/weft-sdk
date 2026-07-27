@@ -15,7 +15,6 @@ Name | Type | Description | Notes
 **network** | **str** | CAIP-2 chain identifier | 
 **resource_url** | **str** |  | [optional] 
 **resource_host** | **str** |  | [optional] 
-**fee_amount** | **int** |  | [optional] 
 **settlement_latency_ms** | **int** |  | [optional] 
 **settled_at** | **datetime** |  | 
 **api_key_name** | **str** |  | 
