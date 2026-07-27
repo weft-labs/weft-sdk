@@ -82,7 +82,6 @@ export const FetchErrorResponseErrorEnum = {
     InvalidUrl: 'INVALID_URL',
     ExceededMaxCost: 'EXCEEDED_MAX_COST',
     InsufficientBalance: 'INSUFFICIENT_BALANCE',
-    ConversionUnavailable: 'CONVERSION_UNAVAILABLE',
     MerchantReturnedNon402: 'MERCHANT_RETURNED_NON_402',
     ArtifactTooLarge: 'ARTIFACT_TOO_LARGE',
     DenylistedRecipient: 'DENYLISTED_RECIPIENT',
