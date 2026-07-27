@@ -9,18 +9,24 @@ Weft Account is a self-custodial wallet for paying x402-protected endpoints from
 
 ## Setup
 
-If `weft_*` tools are not available, run:
+If `weft_*` tools are not available, add the Weft MCP server:
 
 ```sh
-bash <(curl -sSL https://weftlabs.com/skill/install.sh)
+claude mcp add --transport http weft https://weft.network/mcp
 ```
 
-This installs the Weft MCP server (`https://weft.network/mcp`) into Claude Code and walks the user through the browser OAuth flow.
+Then open Claude Code — on first tool use it redirects you to Weft to sign in
+once. Nothing to paste; the grant shows up under Connections and is revocable.
 
-Direct equivalent:
+The server URL is a **positional** argument. `claude mcp add` has no `--url`
+flag and no `--remote` flag — check `claude mcp add --help` before rewriting
+this command.
 
-```sh
-claude mcp add weft --remote https://weft.network/mcp
+Editing `~/.claude/mcp.json` by hand instead, the server is declared with
+`type`, not `transport` (Claude Code ignores a `transport` key entirely):
+
+```json
+{ "mcpServers": { "weft": { "type": "http", "url": "https://weft.network/mcp" } } }
 ```
 
 ## Usage
