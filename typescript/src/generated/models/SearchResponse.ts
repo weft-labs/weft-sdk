@@ -93,6 +93,49 @@ export interface SearchResponse {
      */
     warnings: Array<SearchResponseWarningsInner>;
     /**
+     * Calibrated confidence in this result set — read this instead of
+     * thresholding a raw similarity score. `strong`: the top match is
+     * confidently on-intent, proceed. `weak`: above the relevance floor
+     * but inside the band where plausible-but-wrong matches live, verify
+     * the result before paying. `none`: nothing cleared the floor —
+     * `results` is empty and `reason` / `suggestion` say why. Results
+     * below the floor are never returned as near-misses.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    matchQuality?: SearchResponseMatchQualityEnum;
+    /**
+     * Machine-readable cause of an empty result set, non-null exactly when
+     * `match_quality` is `none`. `below_relevance_floor`: candidates ranked
+     * but the best scored under the floor. `filter_collapsed_pool`: a caller
+     * filter cut the pool before ranking and nothing relevant survived —
+     * relax the filter. `no_catalog_coverage`: recall returned no candidates
+     * at all on an unfiltered query. `unsupported_filter_value`: a filter
+     * value matches zero stored values, so it could never have matched.
+     * `index_unavailable`: no active index — an operational fault, paired
+     * with the `EMPTY_INDEX` warning.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    reason?: SearchResponseReasonEnum;
+    /**
+     * Human/agent-readable explanation of `reason`, carrying the concrete
+     * numbers behind it (pool sizes, the best discarded score against the
+     * floor, the values actually stored for a filter). Non-null exactly
+     * when `reason` is.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    suggestion?: string;
+    /**
+     * Ranked `(Provider + Capability)` results; empty when the index is
+     * empty or nothing cleared the relevance floor. Results BELOW the floor
+     * are never returned — an empty list plus a `reason` is the honest
+     * answer, not a list of near-misses in the same shape as a genuine
+     * match.
      * 
      * @type {Array<SearchResult>}
      * @memberof SearchResponse
@@ -117,6 +160,28 @@ export const SearchResponseDecompositionSourceEnum = {
     Fallback: 'FALLBACK'
 } as const;
 export type SearchResponseDecompositionSourceEnum = typeof SearchResponseDecompositionSourceEnum[keyof typeof SearchResponseDecompositionSourceEnum];
+
+/**
+ * @export
+ */
+export const SearchResponseMatchQualityEnum = {
+    Strong: 'strong',
+    Weak: 'weak',
+    None: 'none'
+} as const;
+export type SearchResponseMatchQualityEnum = typeof SearchResponseMatchQualityEnum[keyof typeof SearchResponseMatchQualityEnum];
+
+/**
+ * @export
+ */
+export const SearchResponseReasonEnum = {
+    BelowRelevanceFloor: 'below_relevance_floor',
+    FilterCollapsedPool: 'filter_collapsed_pool',
+    NoCatalogCoverage: 'no_catalog_coverage',
+    UnsupportedFilterValue: 'unsupported_filter_value',
+    IndexUnavailable: 'index_unavailable'
+} as const;
+export type SearchResponseReasonEnum = typeof SearchResponseReasonEnum[keyof typeof SearchResponseReasonEnum];
 
 
 /**
@@ -149,6 +214,9 @@ export function SearchResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
         'embedderModel': json['embedder_model'],
         'candidatesConsidered': json['candidates_considered'],
         'warnings': ((json['warnings'] as Array<any>).map(SearchResponseWarningsInnerFromJSON)),
+        'matchQuality': json['match_quality'] == null ? undefined : json['match_quality'],
+        'reason': json['reason'] == null ? undefined : json['reason'],
+        'suggestion': json['suggestion'] == null ? undefined : json['suggestion'],
         'results': ((json['results'] as Array<any>).map(SearchResultFromJSON)),
         'mock': json['_mock'] == null ? undefined : json['_mock'],
     };
@@ -172,6 +240,9 @@ export function SearchResponseToJSONTyped(value?: SearchResponse | null, ignoreD
         'embedder_model': value['embedderModel'],
         'candidates_considered': value['candidatesConsidered'],
         'warnings': ((value['warnings'] as Array<any>).map(SearchResponseWarningsInnerToJSON)),
+        'match_quality': value['matchQuality'],
+        'reason': value['reason'],
+        'suggestion': value['suggestion'],
         'results': ((value['results'] as Array<any>).map(SearchResultToJSON)),
         '_mock': value['mock'],
     };

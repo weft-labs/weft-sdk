@@ -33,6 +33,16 @@ module Weft
 
     attr_accessor :warnings
 
+    # Calibrated confidence in this result set — read this instead of thresholding a raw similarity score. `strong`: the top match is confidently on-intent, proceed. `weak`: above the relevance floor but inside the band where plausible-but-wrong matches live, verify the result before paying. `none`: nothing cleared the floor — `results` is empty and `reason` / `suggestion` say why. Results below the floor are never returned as near-misses. 
+    attr_accessor :match_quality
+
+    # Machine-readable cause of an empty result set, non-null exactly when `match_quality` is `none`. `below_relevance_floor`: candidates ranked but the best scored under the floor. `filter_collapsed_pool`: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. `no_catalog_coverage`: recall returned no candidates at all on an unfiltered query. `unsupported_filter_value`: a filter value matches zero stored values, so it could never have matched. `index_unavailable`: no active index — an operational fault, paired with the `EMPTY_INDEX` warning. 
+    attr_accessor :reason
+
+    # Human/agent-readable explanation of `reason`, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when `reason` is. 
+    attr_accessor :suggestion
+
+    # Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match. 
     attr_accessor :results
 
     # Present and `true` only when served by the mock backend.
@@ -70,6 +80,9 @@ module Weft
         :'embedder_model' => :'embedder_model',
         :'candidates_considered' => :'candidates_considered',
         :'warnings' => :'warnings',
+        :'match_quality' => :'match_quality',
+        :'reason' => :'reason',
+        :'suggestion' => :'suggestion',
         :'results' => :'results',
         :'_mock' => :'_mock'
       }
@@ -95,6 +108,9 @@ module Weft
         :'embedder_model' => :'String',
         :'candidates_considered' => :'Integer',
         :'warnings' => :'Array<SearchResponseWarningsInner>',
+        :'match_quality' => :'String',
+        :'reason' => :'String',
+        :'suggestion' => :'String',
         :'results' => :'Array<SearchResult>',
         :'_mock' => :'Boolean'
       }
@@ -162,6 +178,20 @@ module Weft
         self.warnings = nil
       end
 
+      if attributes.key?(:'match_quality')
+        self.match_quality = attributes[:'match_quality']
+      else
+        self.match_quality = 'none'
+      end
+
+      if attributes.key?(:'reason')
+        self.reason = attributes[:'reason']
+      end
+
+      if attributes.key?(:'suggestion')
+        self.suggestion = attributes[:'suggestion']
+      end
+
       if attributes.key?(:'results')
         if (value = attributes[:'results']).is_a?(Array)
           self.results = value
@@ -223,6 +253,10 @@ module Weft
       return false if @candidates_considered.nil?
       return false if @candidates_considered < 0
       return false if @warnings.nil?
+      match_quality_validator = EnumAttributeValidator.new('String', ["strong", "weak", "none"])
+      return false unless match_quality_validator.valid?(@match_quality)
+      reason_validator = EnumAttributeValidator.new('String', ["below_relevance_floor", "filter_collapsed_pool", "no_catalog_coverage", "unsupported_filter_value", "index_unavailable"])
+      return false unless reason_validator.valid?(@reason)
       return false if @results.nil?
       true
     end
@@ -291,6 +325,26 @@ module Weft
       @warnings = warnings
     end
 
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] match_quality Object to be assigned
+    def match_quality=(match_quality)
+      validator = EnumAttributeValidator.new('String', ["strong", "weak", "none"])
+      unless validator.valid?(match_quality)
+        fail ArgumentError, "invalid value for \"match_quality\", must be one of #{validator.allowable_values}."
+      end
+      @match_quality = match_quality
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] reason Object to be assigned
+    def reason=(reason)
+      validator = EnumAttributeValidator.new('String', ["below_relevance_floor", "filter_collapsed_pool", "no_catalog_coverage", "unsupported_filter_value", "index_unavailable"])
+      unless validator.valid?(reason)
+        fail ArgumentError, "invalid value for \"reason\", must be one of #{validator.allowable_values}."
+      end
+      @reason = reason
+    end
+
     # Custom attribute writer method with validation
     # @param [Object] results Value to be assigned
     def results=(results)
@@ -313,6 +367,9 @@ module Weft
           embedder_model == o.embedder_model &&
           candidates_considered == o.candidates_considered &&
           warnings == o.warnings &&
+          match_quality == o.match_quality &&
+          reason == o.reason &&
+          suggestion == o.suggestion &&
           results == o.results &&
           _mock == o._mock
     end
@@ -326,7 +383,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [query_trace_id, query, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, results, _mock].hash
+      [query_trace_id, query, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, match_quality, reason, suggestion, results, _mock].hash
     end
 
     # Builds the object from hash
