@@ -38,9 +38,12 @@ class SearchResponse(BaseModel):
     embedder_model: StrictStr
     candidates_considered: Annotated[int, Field(strict=True, ge=0)]
     warnings: List[SearchResponseWarningsInner]
-    results: List[SearchResult]
+    match_quality: Optional[StrictStr] = Field(default='none', description="Calibrated confidence in this result set — read this instead of thresholding a raw similarity score. `strong`: the top match is confidently on-intent, proceed. `weak`: above the relevance floor but inside the band where plausible-but-wrong matches live, verify the result before paying. `none`: nothing cleared the floor — `results` is empty and `reason` / `suggestion` say why. Results below the floor are never returned as near-misses. ")
+    reason: Optional[StrictStr] = Field(default=None, description="Machine-readable cause of an empty result set, non-null exactly when `match_quality` is `none`. `below_relevance_floor`: candidates ranked but the best scored under the floor. `filter_collapsed_pool`: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. `no_catalog_coverage`: recall returned no candidates at all on an unfiltered query. `unsupported_filter_value`: a filter value matches zero stored values, so it could never have matched. `index_unavailable`: no active index — an operational fault, paired with the `EMPTY_INDEX` warning. ")
+    suggestion: Optional[StrictStr] = Field(default=None, description="Human/agent-readable explanation of `reason`, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when `reason` is. ")
+    results: List[SearchResult] = Field(description="Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match. ")
     mock: Optional[StrictBool] = Field(default=None, description="Present and `true` only when served by the mock backend.", alias="_mock")
-    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "results", "_mock"]
+    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "match_quality", "reason", "suggestion", "results", "_mock"]
 
     @field_validator('decomposition_source')
     def decomposition_source_validate_enum(cls, value):
@@ -50,6 +53,26 @@ class SearchResponse(BaseModel):
 
         if value not in set(['CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK']):
             raise ValueError("must be one of enum values ('CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK')")
+        return value
+
+    @field_validator('match_quality')
+    def match_quality_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['strong', 'weak', 'none']):
+            raise ValueError("must be one of enum values ('strong', 'weak', 'none')")
+        return value
+
+    @field_validator('reason')
+    def reason_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['below_relevance_floor', 'filter_collapsed_pool', 'no_catalog_coverage', 'unsupported_filter_value', 'index_unavailable']):
+            raise ValueError("must be one of enum values ('below_relevance_floor', 'filter_collapsed_pool', 'no_catalog_coverage', 'unsupported_filter_value', 'index_unavailable')")
         return value
 
     model_config = ConfigDict(
@@ -127,6 +150,9 @@ class SearchResponse(BaseModel):
             "embedder_model": obj.get("embedder_model"),
             "candidates_considered": obj.get("candidates_considered"),
             "warnings": [SearchResponseWarningsInner.from_dict(_item) for _item in obj["warnings"]] if obj.get("warnings") is not None else None,
+            "match_quality": obj.get("match_quality") if obj.get("match_quality") is not None else 'none',
+            "reason": obj.get("reason"),
+            "suggestion": obj.get("suggestion"),
             "results": [SearchResult.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
             "_mock": obj.get("_mock")
         })

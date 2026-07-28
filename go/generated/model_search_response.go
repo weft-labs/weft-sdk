@@ -31,6 +31,13 @@ type SearchResponse struct {
 	EmbedderModel string `json:"embedder_model"`
 	CandidatesConsidered int32 `json:"candidates_considered"`
 	Warnings []SearchResponseWarningsInner `json:"warnings"`
+	// Calibrated confidence in this result set — read this instead of thresholding a raw similarity score. `strong`: the top match is confidently on-intent, proceed. `weak`: above the relevance floor but inside the band where plausible-but-wrong matches live, verify the result before paying. `none`: nothing cleared the floor — `results` is empty and `reason` / `suggestion` say why. Results below the floor are never returned as near-misses. 
+	MatchQuality *string `json:"match_quality,omitempty"`
+	// Machine-readable cause of an empty result set, non-null exactly when `match_quality` is `none`. `below_relevance_floor`: candidates ranked but the best scored under the floor. `filter_collapsed_pool`: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. `no_catalog_coverage`: recall returned no candidates at all on an unfiltered query. `unsupported_filter_value`: a filter value matches zero stored values, so it could never have matched. `index_unavailable`: no active index — an operational fault, paired with the `EMPTY_INDEX` warning. 
+	Reason *string `json:"reason,omitempty"`
+	// Human/agent-readable explanation of `reason`, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when `reason` is. 
+	Suggestion *string `json:"suggestion,omitempty"`
+	// Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match. 
 	Results []SearchResult `json:"results"`
 	// Present and `true` only when served by the mock backend.
 	Mock *bool `json:"_mock,omitempty"`
@@ -49,6 +56,8 @@ func NewSearchResponse(queryTraceId string, query string, embedderModel string, 
 	this.EmbedderModel = embedderModel
 	this.CandidatesConsidered = candidatesConsidered
 	this.Warnings = warnings
+	var matchQuality string = "none"
+	this.MatchQuality = &matchQuality
 	this.Results = results
 	return &this
 }
@@ -58,6 +67,8 @@ func NewSearchResponse(queryTraceId string, query string, embedderModel string, 
 // but it doesn't guarantee that properties required by API are set
 func NewSearchResponseWithDefaults() *SearchResponse {
 	this := SearchResponse{}
+	var matchQuality string = "none"
+	this.MatchQuality = &matchQuality
 	return &this
 }
 
@@ -245,6 +256,102 @@ func (o *SearchResponse) SetWarnings(v []SearchResponseWarningsInner) {
 	o.Warnings = v
 }
 
+// GetMatchQuality returns the MatchQuality field value if set, zero value otherwise.
+func (o *SearchResponse) GetMatchQuality() string {
+	if o == nil || IsNil(o.MatchQuality) {
+		var ret string
+		return ret
+	}
+	return *o.MatchQuality
+}
+
+// GetMatchQualityOk returns a tuple with the MatchQuality field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetMatchQualityOk() (*string, bool) {
+	if o == nil || IsNil(o.MatchQuality) {
+		return nil, false
+	}
+	return o.MatchQuality, true
+}
+
+// HasMatchQuality returns a boolean if a field has been set.
+func (o *SearchResponse) HasMatchQuality() bool {
+	if o != nil && !IsNil(o.MatchQuality) {
+		return true
+	}
+
+	return false
+}
+
+// SetMatchQuality gets a reference to the given string and assigns it to the MatchQuality field.
+func (o *SearchResponse) SetMatchQuality(v string) {
+	o.MatchQuality = &v
+}
+
+// GetReason returns the Reason field value if set, zero value otherwise.
+func (o *SearchResponse) GetReason() string {
+	if o == nil || IsNil(o.Reason) {
+		var ret string
+		return ret
+	}
+	return *o.Reason
+}
+
+// GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetReasonOk() (*string, bool) {
+	if o == nil || IsNil(o.Reason) {
+		return nil, false
+	}
+	return o.Reason, true
+}
+
+// HasReason returns a boolean if a field has been set.
+func (o *SearchResponse) HasReason() bool {
+	if o != nil && !IsNil(o.Reason) {
+		return true
+	}
+
+	return false
+}
+
+// SetReason gets a reference to the given string and assigns it to the Reason field.
+func (o *SearchResponse) SetReason(v string) {
+	o.Reason = &v
+}
+
+// GetSuggestion returns the Suggestion field value if set, zero value otherwise.
+func (o *SearchResponse) GetSuggestion() string {
+	if o == nil || IsNil(o.Suggestion) {
+		var ret string
+		return ret
+	}
+	return *o.Suggestion
+}
+
+// GetSuggestionOk returns a tuple with the Suggestion field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchResponse) GetSuggestionOk() (*string, bool) {
+	if o == nil || IsNil(o.Suggestion) {
+		return nil, false
+	}
+	return o.Suggestion, true
+}
+
+// HasSuggestion returns a boolean if a field has been set.
+func (o *SearchResponse) HasSuggestion() bool {
+	if o != nil && !IsNil(o.Suggestion) {
+		return true
+	}
+
+	return false
+}
+
+// SetSuggestion gets a reference to the given string and assigns it to the Suggestion field.
+func (o *SearchResponse) SetSuggestion(v string) {
+	o.Suggestion = &v
+}
+
 // GetResults returns the Results field value
 func (o *SearchResponse) GetResults() []SearchResult {
 	if o == nil {
@@ -322,6 +429,15 @@ func (o SearchResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["embedder_model"] = o.EmbedderModel
 	toSerialize["candidates_considered"] = o.CandidatesConsidered
 	toSerialize["warnings"] = o.Warnings
+	if !IsNil(o.MatchQuality) {
+		toSerialize["match_quality"] = o.MatchQuality
+	}
+	if !IsNil(o.Reason) {
+		toSerialize["reason"] = o.Reason
+	}
+	if !IsNil(o.Suggestion) {
+		toSerialize["suggestion"] = o.Suggestion
+	}
 	toSerialize["results"] = o.Results
 	if !IsNil(o.Mock) {
 		toSerialize["_mock"] = o.Mock

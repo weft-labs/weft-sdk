@@ -1453,8 +1453,48 @@ components:
                 type: object
                 nullable: true
                 description: Structured context for the warning. Null when the code carries none.
+        match_quality:
+          type: string
+          enum: [strong, weak, none]
+          default: none
+          description: |
+            Calibrated confidence in this result set — read this instead of
+            thresholding a raw similarity score. `strong`: the top match is
+            confidently on-intent, proceed. `weak`: above the relevance floor
+            but inside the band where plausible-but-wrong matches live, verify
+            the result before paying. `none`: nothing cleared the floor —
+            `results` is empty and `reason` / `suggestion` say why. Results
+            below the floor are never returned as near-misses.
+        reason:
+          type: string
+          nullable: true
+          enum: [below_relevance_floor, filter_collapsed_pool, no_catalog_coverage, unsupported_filter_value, index_unavailable]
+          description: |
+            Machine-readable cause of an empty result set, non-null exactly when
+            `match_quality` is `none`. `below_relevance_floor`: candidates ranked
+            but the best scored under the floor. `filter_collapsed_pool`: a caller
+            filter cut the pool before ranking and nothing relevant survived —
+            relax the filter. `no_catalog_coverage`: recall returned no candidates
+            at all on an unfiltered query. `unsupported_filter_value`: a filter
+            value matches zero stored values, so it could never have matched.
+            `index_unavailable`: no active index — an operational fault, paired
+            with the `EMPTY_INDEX` warning.
+        suggestion:
+          type: string
+          nullable: true
+          description: |
+            Human/agent-readable explanation of `reason`, carrying the concrete
+            numbers behind it (pool sizes, the best discarded score against the
+            floor, the values actually stored for a filter). Non-null exactly
+            when `reason` is.
         results:
           type: array
+          description: |
+            Ranked `(Provider + Capability)` results; empty when the index is
+            empty or nothing cleared the relevance floor. Results BELOW the floor
+            are never returned — an empty list plus a `reason` is the honest
+            answer, not a list of near-misses in the same shape as a genuine
+            match.
           items:
             $ref: "#/components/schemas/SearchResult"
         _mock:

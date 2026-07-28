@@ -14,6 +14,9 @@ Name | Type
 `embedderModel` | string
 `candidatesConsidered` | number
 `warnings` | [Array&lt;SearchResponseWarningsInner&gt;](SearchResponseWarningsInner.md)
+`matchQuality` | string
+`reason` | string
+`suggestion` | string
 `results` | [Array&lt;SearchResult&gt;](SearchResult.md)
 `mock` | boolean
 
@@ -31,6 +34,9 @@ const example = {
   "embedderModel": null,
   "candidatesConsidered": null,
   "warnings": null,
+  "matchQuality": null,
+  "reason": null,
+  "suggestion": null,
   "results": null,
   "mock": null,
 } satisfies SearchResponse

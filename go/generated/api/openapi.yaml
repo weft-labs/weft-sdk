@@ -1818,6 +1818,7 @@ components:
         The weft-search-platform `POST /v1/search` response envelope. The
         mock backend emits the same shape and adds `_mock: true`.
       example:
+        reason: below_relevance_floor
         query_trace_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
         _mock: true
         query: query
@@ -1831,7 +1832,9 @@ components:
           context: "{}"
           cause: cause
           message: message
+        suggestion: suggestion
         applied_filters: ""
+        match_quality: none
         decomposition_source: CALLER
         embedder_model: embedder_model
         results:
@@ -1987,7 +1990,55 @@ components:
           items:
             $ref: "#/components/schemas/SearchResponse_warnings_inner"
           type: array
+        match_quality:
+          default: none
+          description: |
+            Calibrated confidence in this result set — read this instead of
+            thresholding a raw similarity score. `strong`: the top match is
+            confidently on-intent, proceed. `weak`: above the relevance floor
+            but inside the band where plausible-but-wrong matches live, verify
+            the result before paying. `none`: nothing cleared the floor —
+            `results` is empty and `reason` / `suggestion` say why. Results
+            below the floor are never returned as near-misses.
+          enum:
+          - strong
+          - weak
+          - none
+          type: string
+        reason:
+          description: |
+            Machine-readable cause of an empty result set, non-null exactly when
+            `match_quality` is `none`. `below_relevance_floor`: candidates ranked
+            but the best scored under the floor. `filter_collapsed_pool`: a caller
+            filter cut the pool before ranking and nothing relevant survived —
+            relax the filter. `no_catalog_coverage`: recall returned no candidates
+            at all on an unfiltered query. `unsupported_filter_value`: a filter
+            value matches zero stored values, so it could never have matched.
+            `index_unavailable`: no active index — an operational fault, paired
+            with the `EMPTY_INDEX` warning.
+          enum:
+          - below_relevance_floor
+          - filter_collapsed_pool
+          - no_catalog_coverage
+          - unsupported_filter_value
+          - index_unavailable
+          type: string
+          nullable: true
+        suggestion:
+          description: |
+            Human/agent-readable explanation of `reason`, carrying the concrete
+            numbers behind it (pool sizes, the best discarded score against the
+            floor, the values actually stored for a filter). Non-null exactly
+            when `reason` is.
+          type: string
+          nullable: true
         results:
+          description: |
+            Ranked `(Provider + Capability)` results; empty when the index is
+            empty or nothing cleared the relevance floor. Results BELOW the floor
+            are never returned — an empty list plus a `reason` is the honest
+            answer, not a list of near-misses in the same shape as a genuine
+            match.
           items:
             $ref: "#/components/schemas/SearchResult"
           type: array
