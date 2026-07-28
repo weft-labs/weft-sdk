@@ -111,10 +111,13 @@ export interface SearchResponse {
      * but the best scored under the floor. `filter_collapsed_pool`: a caller
      * filter cut the pool before ranking and nothing relevant survived —
      * relax the filter. `no_catalog_coverage`: recall returned no candidates
-     * at all on an unfiltered query. `unsupported_filter_value`: a filter
-     * value matches zero stored values, so it could never have matched.
-     * `index_unavailable`: no active index — an operational fault, paired
-     * with the `EMPTY_INDEX` warning.
+     * at all on an unfiltered query. `unsupported_filter_value`: a
+     * CATEGORICAL filter value (`type` / `protocol`) matches zero stored
+     * values, so it could never have matched — categorical only, since a
+     * continuous bound like `price` that matches nothing is reported as
+     * `filter_collapsed_pool` instead (the bound needs raising, the
+     * dimension is not unsupported). `index_unavailable`: no active index
+     * — an operational fault, paired with the `EMPTY_INDEX` warning.
      * 
      * @type {string}
      * @memberof SearchResponse
