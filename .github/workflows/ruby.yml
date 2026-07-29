@@ -35,10 +35,8 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
           working-directory: ruby
-      - name: Generate SDK
-        run: ../scripts/generate-ruby.sh
-      - name: Verify generated output
-        run: ../scripts/test-sdk.sh
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh ruby
       - name: Test
         run: bundle exec rake test
 
@@ -66,8 +64,8 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
           working-directory: ruby
-      - name: Generate SDK
-        run: ../scripts/generate-ruby.sh
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh ruby
       - name: Build gem
         run: gem build weft-sdk.gemspec
       # RubyGems has no first-party Sigstore attestation pipeline on

@@ -37,10 +37,8 @@ jobs:
           pip install hatchling
           pip install -e .
           pip install pytest pytest-asyncio ruff mypy
-      - name: Generate SDK
-        run: ../scripts/generate-python.sh
-      - name: Verify generated output
-        run: ../scripts/test-sdk.sh
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh python
       - name: Lint
         run: ruff check .
       - name: Type check
@@ -72,8 +70,8 @@ jobs:
           python-version: "3.11"
       - name: Install build tools
         run: pip install hatchling build
-      - name: Generate SDK
-        run: ../scripts/generate-python.sh
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh python
       - name: Build package
         run: python -m build
       # pypa/gh-action-pypi-publish@release/v1 emits Sigstore attestations

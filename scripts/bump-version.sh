@@ -74,31 +74,45 @@ bump_file \
   "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" \
   "typescript/package.json"
 
-# 3. Python — pyproject.toml version
+# 3. TypeScript — package-lock.json root package + lockfile version
+if [ ! -f "$ROOT_DIR/typescript/package-lock.json" ]; then
+  echo "Error: $ROOT_DIR/typescript/package-lock.json not found"
+  errors=$((errors + 1))
+elif (
+  cd "$ROOT_DIR/typescript"
+  npm version "$VERSION" --allow-same-version --no-git-tag-version --ignore-scripts >/dev/null
+); then
+  echo "Updated typescript/package-lock.json: $VERSION"
+else
+  echo "Error: Failed to update typescript/package-lock.json"
+  errors=$((errors + 1))
+fi
+
+# 4. Python — pyproject.toml version
 bump_file \
   "$ROOT_DIR/python/pyproject.toml" \
   "s/^version = \".*\"/version = \"$VERSION\"/" \
   "python/pyproject.toml"
 
-# 4. Ruby — gemspec spec.version
+# 5. Ruby — gemspec spec.version
 bump_file \
   "$ROOT_DIR/ruby/weft-sdk.gemspec" \
   "s/spec\.version       = '.*'/spec.version       = '$VERSION'/" \
   "ruby/weft-sdk.gemspec"
 
-# 5. Ruby — version.rb VERSION constant
+# 6. Ruby — version.rb VERSION constant
 bump_file \
   "$ROOT_DIR/ruby/lib/weft/generated/version.rb" \
   "s/VERSION = '.*'/VERSION = '$VERSION'/" \
   "ruby/lib/weft/generated/version.rb"
 
-# 6. Ruby — SDK VERSION constant (hand-written, not generated)
+# 7. Ruby — SDK VERSION constant (hand-written, not generated)
 bump_file \
   "$ROOT_DIR/ruby/lib/weft/sdk.rb" \
   "s/VERSION = '.*'/VERSION = '$VERSION'/" \
   "ruby/lib/weft/sdk.rb"
 
-# 7. Ruby — Gemfile.lock pins the `weft-sdk` path-gem version twice (PATH/specs
+# 8. Ruby — Gemfile.lock pins the `weft-sdk` path-gem version twice (PATH/specs
 # and CHECKSUMS). Without this, `bundle install --deployment` (used by the
 # per-language Ruby SDK workflow and the Release workflow) fails frozen-mode
 # with "The gemspecs for path gems changed, but the lockfile can't be updated".

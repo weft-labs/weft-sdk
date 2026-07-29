@@ -22,6 +22,15 @@ mkdir -p "${OUT_DIR}/generated"
 
 cp -R "${TMP_DIR}/"* "${OUT_DIR}/generated/"
 
+# The generated client is a package in the public root Go module, not a
+# separately versioned module. Keeping the generator's nested go.mod here
+# causes `go test ./...` at go/ to silently skip the generated package.
+rm -f \
+  "${OUT_DIR}/generated/go.mod" \
+  "${OUT_DIR}/generated/go.sum" \
+  "${OUT_DIR}/generated/git_push.sh"
+rm -rf "${OUT_DIR}/generated/test"
+
 # Extract docs to go/docs/ (consistent with TypeScript, Python, Ruby)
 if [ -d "${OUT_DIR}/generated/docs" ]; then
   cp -R "${OUT_DIR}/generated/docs" "${OUT_DIR}/docs"
