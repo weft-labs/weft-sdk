@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,8 +28,7 @@ class SearchCapabilityRef(BaseModel):
     """ # noqa: E501
     capability_id: Optional[StrictStr] = None
     capability_type: Optional[StrictStr] = None
-    resolution_confidence: Optional[Union[StrictFloat, StrictInt]] = None
-    __properties: ClassVar[List[str]] = ["capability_id", "capability_type", "resolution_confidence"]
+    __properties: ClassVar[List[str]] = ["capability_id", "capability_type"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -83,8 +82,7 @@ class SearchCapabilityRef(BaseModel):
 
         _obj = cls.model_validate({
             "capability_id": obj.get("capability_id"),
-            "capability_type": obj.get("capability_type"),
-            "resolution_confidence": obj.get("resolution_confidence")
+            "capability_type": obj.get("capability_type")
         })
         return _obj
 

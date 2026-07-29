@@ -13,13 +13,27 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SearchEndpointRanking } from './SearchEndpointRanking';
+import type { SearchEndpointCall } from './SearchEndpointCall';
 import {
-    SearchEndpointRankingFromJSON,
-    SearchEndpointRankingFromJSONTyped,
-    SearchEndpointRankingToJSON,
-    SearchEndpointRankingToJSONTyped,
-} from './SearchEndpointRanking';
+    SearchEndpointCallFromJSON,
+    SearchEndpointCallFromJSONTyped,
+    SearchEndpointCallToJSON,
+    SearchEndpointCallToJSONTyped,
+} from './SearchEndpointCall';
+import type { SearchPaymentOffer } from './SearchPaymentOffer';
+import {
+    SearchPaymentOfferFromJSON,
+    SearchPaymentOfferFromJSONTyped,
+    SearchPaymentOfferToJSON,
+    SearchPaymentOfferToJSONTyped,
+} from './SearchPaymentOffer';
+import type { SearchEndpointPrice } from './SearchEndpointPrice';
+import {
+    SearchEndpointPriceFromJSON,
+    SearchEndpointPriceFromJSONTyped,
+    SearchEndpointPriceToJSON,
+    SearchEndpointPriceToJSONTyped,
+} from './SearchEndpointPrice';
 
 /**
  * 
@@ -34,28 +48,11 @@ export interface SearchEndpointHit {
      */
     endpointId?: string;
     /**
-     * URL-level endpoint grouping id shared by method variants of the
-     * same URL. `endpoint_id` remains the per-operation id. Null on rows
-     * the platform has not grouped.
-     * 
-     * @type {string}
-     * @memberof SearchEndpointHit
-     */
-    sharedEndpointId?: string;
-    /**
      * 
      * @type {string}
      * @memberof SearchEndpointHit
      */
     url?: string;
-    /**
-     * Normalized HTTP method for this callable operation (e.g. `GET`,
-     * `POST`). Empty string for rows the platform carries no method for.
-     * 
-     * @type {string}
-     * @memberof SearchEndpointHit
-     */
-    method?: string;
     /**
      * 
      * @type {string}
@@ -69,36 +66,39 @@ export interface SearchEndpointHit {
      */
     primaryProtocol?: string;
     /**
-     * Price in atomic units (micro-USD) for this endpoint. Use this for
-     * settlement (exact, integer). Null when unpriced.
      * 
-     * @type {number}
+     * @type {SearchEndpointCall}
      * @memberof SearchEndpointHit
      */
-    priceAtomic?: number;
+    call?: SearchEndpointCall;
     /**
-     * Server-derived price in USD as a decimal string (= `price_atomic` /
-     * 1e6, e.g. "0.008" for `price_atomic` 8000) — the dollar value people
-     * and agents reason in. A decimal string, never a float; trailing zeros
-     * trimmed. Null when unpriced (mirrors `price_atomic`). For settlement
-     * use `price_atomic`.
+     * 
+     * @type {SearchEndpointPrice}
+     * @memberof SearchEndpointHit
+     */
+    price?: SearchEndpointPrice;
+    /**
+     * The settlement routes this endpoint's own 402 challenge published —
+     * one entry per rail × network × asset × payee it accepts. Sibling of
+     * `call`: that block says how to shape the request, this says how to
+     * pay for it, so a caller can settle with its OWN x402/mpp SDK instead
+     * of guessing. A list because rails are irreducibly plural. Order is
+     * the provider's own preference order. Honest-empty when the pipeline
+     * observed no challenge.
+     * 
+     * @type {Array<SearchPaymentOffer>}
+     * @memberof SearchEndpointHit
+     */
+    payment?: Array<SearchPaymentOffer>;
+    /**
+     * Who you are actually paying. `first_party` = operated by the provider
+     * that makes the capability; `reseller` = resold, so the price carries
+     * someone else's margin. Null until the platform resolves the operator.
      * 
      * @type {string}
      * @memberof SearchEndpointHit
      */
-    priceUsd?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SearchEndpointHit
-     */
-    priceCurrency?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof SearchEndpointHit
-     */
-    priceDecimals?: number;
+    operatorType?: SearchEndpointHitOperatorTypeEnum;
     /**
      * 
      * @type {string}
@@ -110,20 +110,47 @@ export interface SearchEndpointHit {
      * @type {string}
      * @memberof SearchEndpointHit
      */
-    operatedByType?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SearchEndpointHit
-     */
     settledViaFacilitatorId?: string;
     /**
+     * Count of payments observed settling against this endpoint by ANYONE
+     * (chain-indexed), not just by Weft — the reliability signal a caller
+     * can act on. Null when unknown.
      * 
-     * @type {SearchEndpointRanking}
+     * @type {number}
      * @memberof SearchEndpointHit
      */
-    ranking?: SearchEndpointRanking;
+    settlements?: number;
+    /**
+     * When Weft last CONFIRMED this endpoint answers — the most recent
+     * conclusive probe. Null when never probed, or when the latest probe
+     * errored: an endpoint we last failed to reach has no current
+     * verification.
+     * 
+     * @type {Date}
+     * @memberof SearchEndpointHit
+     */
+    lastVerifiedAt?: Date;
+    /**
+     * Median time-to-first-byte in ms across the endpoint's probe call set.
+     * First-byte latency, not full-response time. Null when unmeasured
+     * (never 0).
+     * 
+     * @type {number}
+     * @memberof SearchEndpointHit
+     */
+    latencyP50Ms?: number;
 }
+
+
+/**
+ * @export
+ */
+export const SearchEndpointHitOperatorTypeEnum = {
+    FirstParty: 'first_party',
+    Reseller: 'reseller'
+} as const;
+export type SearchEndpointHitOperatorTypeEnum = typeof SearchEndpointHitOperatorTypeEnum[keyof typeof SearchEndpointHitOperatorTypeEnum];
+
 
 /**
  * Check if a given object implements the SearchEndpointHit interface.
@@ -143,19 +170,18 @@ export function SearchEndpointHitFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'endpointId': json['endpoint_id'] == null ? undefined : json['endpoint_id'],
-        'sharedEndpointId': json['shared_endpoint_id'] == null ? undefined : json['shared_endpoint_id'],
         'url': json['url'] == null ? undefined : json['url'],
-        'method': json['method'] == null ? undefined : json['method'],
         'resourceType': json['resource_type'] == null ? undefined : json['resource_type'],
         'primaryProtocol': json['primary_protocol'] == null ? undefined : json['primary_protocol'],
-        'priceAtomic': json['price_atomic'] == null ? undefined : json['price_atomic'],
-        'priceUsd': json['price_usd'] == null ? undefined : json['price_usd'],
-        'priceCurrency': json['price_currency'] == null ? undefined : json['price_currency'],
-        'priceDecimals': json['price_decimals'] == null ? undefined : json['price_decimals'],
+        'call': json['call'] == null ? undefined : SearchEndpointCallFromJSON(json['call']),
+        'price': json['price'] == null ? undefined : SearchEndpointPriceFromJSON(json['price']),
+        'payment': json['payment'] == null ? undefined : ((json['payment'] as Array<any>).map(SearchPaymentOfferFromJSON)),
+        'operatorType': json['operator_type'] == null ? undefined : json['operator_type'],
         'operatedById': json['operated_by_id'] == null ? undefined : json['operated_by_id'],
-        'operatedByType': json['operated_by_type'] == null ? undefined : json['operated_by_type'],
         'settledViaFacilitatorId': json['settled_via_facilitator_id'] == null ? undefined : json['settled_via_facilitator_id'],
-        'ranking': json['ranking'] == null ? undefined : SearchEndpointRankingFromJSON(json['ranking']),
+        'settlements': json['settlements'] == null ? undefined : json['settlements'],
+        'lastVerifiedAt': json['last_verified_at'] == null ? undefined : (new Date(json['last_verified_at'])),
+        'latencyP50Ms': json['latency_p50_ms'] == null ? undefined : json['latency_p50_ms'],
     };
 }
 
@@ -171,19 +197,18 @@ export function SearchEndpointHitToJSONTyped(value?: SearchEndpointHit | null, i
     return {
         
         'endpoint_id': value['endpointId'],
-        'shared_endpoint_id': value['sharedEndpointId'],
         'url': value['url'],
-        'method': value['method'],
         'resource_type': value['resourceType'],
         'primary_protocol': value['primaryProtocol'],
-        'price_atomic': value['priceAtomic'],
-        'price_usd': value['priceUsd'],
-        'price_currency': value['priceCurrency'],
-        'price_decimals': value['priceDecimals'],
+        'call': SearchEndpointCallToJSON(value['call']),
+        'price': SearchEndpointPriceToJSON(value['price']),
+        'payment': value['payment'] == null ? undefined : ((value['payment'] as Array<any>).map(SearchPaymentOfferToJSON)),
+        'operator_type': value['operatorType'],
         'operated_by_id': value['operatedById'],
-        'operated_by_type': value['operatedByType'],
         'settled_via_facilitator_id': value['settledViaFacilitatorId'],
-        'ranking': SearchEndpointRankingToJSON(value['ranking']),
+        'settlements': value['settlements'],
+        'last_verified_at': value['lastVerifiedAt'] == null ? value['lastVerifiedAt'] : value['lastVerifiedAt'].toISOString(),
+        'latency_p50_ms': value['latencyP50Ms'],
     };
 }
 

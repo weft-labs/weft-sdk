@@ -44,7 +44,10 @@ import {
  */
 export interface SearchResponse {
     /**
-     * Opaque trace id for the served query, matching the platform `query_trace_id`.
+     * Opaque trace id for the served query, matching the platform
+     * `query_trace_id` — and the `search_id` that re-reads it. Deliberately
+     * the same id rather than a second handle: one serve, one name.
+     * 
      * @type {string}
      * @memberof SearchResponse
      */
@@ -55,6 +58,74 @@ export interface SearchResponse {
      * @memberof SearchResponse
      */
     query: string;
+    /**
+     * Which view this response carries, echoing the requested format.
+     * `json` populates `results` and leaves `markdown` null; `markdown`
+     * populates `markdown` and leaves `results` empty. Exactly one is
+     * populated per response, never both — returning both eagerly would
+     * double the payload.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    format?: SearchResponseFormatEnum;
+    /**
+     * The flat comparison table, when `format` is `markdown`; null
+     * otherwise. Rendered deterministically from the same stored result
+     * the `json` view returns, so the two views of one search can never
+     * disagree.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    markdown?: string;
+    /**
+     * How many `(Provider + Capability)` results the search produced. Read
+     * THIS, not `results.length`, for the count: on a `markdown` response
+     * `results` is empty by design, so `result_count > 0` with an empty
+     * `results` is a rendered table while `result_count == 0` is a genuine
+     * zero-result.
+     * 
+     * @type {number}
+     * @memberof SearchResponse
+     */
+    resultCount?: number;
+    /**
+     * `live` for a fresh serve; `snapshot` for an immutable replay of a
+     * completed search. A re-read is a snapshot and says so — read it with
+     * `as_of` and `stale`.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    servedFrom?: SearchResponseServedFromEnum;
+    /**
+     * When the results were produced. Now on a `live` serve; on a
+     * `snapshot` the ORIGINAL serve time, because a replay returns exactly
+     * what was paid for, not current truth.
+     * 
+     * @type {Date}
+     * @memberof SearchResponse
+     */
+    asOf?: Date;
+    /**
+     * Whether the active search index has changed since these results were
+     * produced. `true` does not mean the results are wrong — it means they
+     * are a snapshot of an index that has since moved. Always `false` on a
+     * `live` serve.
+     * 
+     * @type {boolean}
+     * @memberof SearchResponse
+     */
+    stale?: boolean;
+    /**
+     * How payment works across the catalog, stated once for the whole
+     * response rather than repeated in every endpoint's usage instructions.
+     * 
+     * @type {string}
+     * @memberof SearchResponse
+     */
+    paymentNote?: string;
     /**
      * The `FilterSpec` actually applied to recall, echoed back so the
      * caller sees exactly what constrained the results. In the current
@@ -156,6 +227,24 @@ export interface SearchResponse {
 /**
  * @export
  */
+export const SearchResponseFormatEnum = {
+    Json: 'json',
+    Markdown: 'markdown'
+} as const;
+export type SearchResponseFormatEnum = typeof SearchResponseFormatEnum[keyof typeof SearchResponseFormatEnum];
+
+/**
+ * @export
+ */
+export const SearchResponseServedFromEnum = {
+    Live: 'live',
+    Snapshot: 'snapshot'
+} as const;
+export type SearchResponseServedFromEnum = typeof SearchResponseServedFromEnum[keyof typeof SearchResponseServedFromEnum];
+
+/**
+ * @export
+ */
 export const SearchResponseDecompositionSourceEnum = {
     Caller: 'CALLER',
     Classifier: 'CLASSIFIER',
@@ -212,6 +301,13 @@ export function SearchResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
         
         'queryTraceId': json['query_trace_id'],
         'query': json['query'],
+        'format': json['format'] == null ? undefined : json['format'],
+        'markdown': json['markdown'] == null ? undefined : json['markdown'],
+        'resultCount': json['result_count'] == null ? undefined : json['result_count'],
+        'servedFrom': json['served_from'] == null ? undefined : json['served_from'],
+        'asOf': json['as_of'] == null ? undefined : (new Date(json['as_of'])),
+        'stale': json['stale'] == null ? undefined : json['stale'],
+        'paymentNote': json['payment_note'] == null ? undefined : json['payment_note'],
         'appliedFilters': json['applied_filters'] == null ? undefined : SearchFilterSpecFromJSON(json['applied_filters']),
         'decompositionSource': json['decomposition_source'] == null ? undefined : json['decomposition_source'],
         'embedderModel': json['embedder_model'],
@@ -238,6 +334,13 @@ export function SearchResponseToJSONTyped(value?: SearchResponse | null, ignoreD
         
         'query_trace_id': value['queryTraceId'],
         'query': value['query'],
+        'format': value['format'],
+        'markdown': value['markdown'],
+        'result_count': value['resultCount'],
+        'served_from': value['servedFrom'],
+        'as_of': value['asOf'] == null ? value['asOf'] : value['asOf'].toISOString(),
+        'stale': value['stale'],
+        'payment_note': value['paymentNote'],
         'applied_filters': SearchFilterSpecToJSON(value['appliedFilters']),
         'decomposition_source': value['decompositionSource'],
         'embedder_model': value['embedderModel'],

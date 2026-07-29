@@ -7,19 +7,18 @@
 Name | Type
 ------------ | -------------
 `endpointId` | string
-`sharedEndpointId` | string
 `url` | string
-`method` | string
 `resourceType` | string
 `primaryProtocol` | string
-`priceAtomic` | number
-`priceUsd` | string
-`priceCurrency` | string
-`priceDecimals` | number
+`call` | [SearchEndpointCall](SearchEndpointCall.md)
+`price` | [SearchEndpointPrice](SearchEndpointPrice.md)
+`payment` | [Array&lt;SearchPaymentOffer&gt;](SearchPaymentOffer.md)
+`operatorType` | string
 `operatedById` | string
-`operatedByType` | string
 `settledViaFacilitatorId` | string
-`ranking` | [SearchEndpointRanking](SearchEndpointRanking.md)
+`settlements` | number
+`lastVerifiedAt` | Date
+`latencyP50Ms` | number
 
 ## Example
 
@@ -29,19 +28,18 @@ import type { SearchEndpointHit } from '@weft-labs/sdk'
 // TODO: Update the object below with actual values
 const example = {
   "endpointId": null,
-  "sharedEndpointId": null,
   "url": null,
-  "method": null,
   "resourceType": null,
   "primaryProtocol": null,
-  "priceAtomic": null,
-  "priceUsd": null,
-  "priceCurrency": null,
-  "priceDecimals": null,
+  "call": null,
+  "price": null,
+  "payment": null,
+  "operatorType": null,
   "operatedById": null,
-  "operatedByType": null,
   "settledViaFacilitatorId": null,
-  "ranking": null,
+  "settlements": null,
+  "lastVerifiedAt": null,
+  "latencyP50Ms": null,
 } satisfies SearchEndpointHit
 
 console.log(example)

@@ -21,18 +21,12 @@ module Weft
 
     attr_accessor :origin_domains
 
-    attr_accessor :verification_state
-
-    attr_accessor :identity_confidence
-
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'provider_id' => :'provider_id',
         :'display_name' => :'display_name',
-        :'origin_domains' => :'origin_domains',
-        :'verification_state' => :'verification_state',
-        :'identity_confidence' => :'identity_confidence'
+        :'origin_domains' => :'origin_domains'
       }
     end
 
@@ -51,9 +45,7 @@ module Weft
       {
         :'provider_id' => :'String',
         :'display_name' => :'String',
-        :'origin_domains' => :'Array<String>',
-        :'verification_state' => :'String',
-        :'identity_confidence' => :'Float'
+        :'origin_domains' => :'Array<String>'
       }
     end
 
@@ -92,14 +84,6 @@ module Weft
           self.origin_domains = value
         end
       end
-
-      if attributes.key?(:'verification_state')
-        self.verification_state = attributes[:'verification_state']
-      end
-
-      if attributes.key?(:'identity_confidence')
-        self.identity_confidence = attributes[:'identity_confidence']
-      end
     end
 
     # Show invalid properties with the reasons. Usually used together with valid?
@@ -124,9 +108,7 @@ module Weft
       self.class == o.class &&
           provider_id == o.provider_id &&
           display_name == o.display_name &&
-          origin_domains == o.origin_domains &&
-          verification_state == o.verification_state &&
-          identity_confidence == o.identity_confidence
+          origin_domains == o.origin_domains
     end
 
     # @see the `==` method
@@ -138,7 +120,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [provider_id, display_name, origin_domains, verification_state, identity_confidence].hash
+      [provider_id, display_name, origin_domains].hash
     end
 
     # Builds the object from hash

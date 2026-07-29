@@ -8,7 +8,6 @@ Name | Type
 ------------ | -------------
 `capabilityId` | string
 `capabilityType` | string
-`resolutionConfidence` | number
 
 ## Example
 
@@ -19,7 +18,6 @@ import type { SearchCapabilityRef } from '@weft-labs/sdk'
 const example = {
   "capabilityId": null,
   "capabilityType": null,
-  "resolutionConfidence": null,
 } satisfies SearchCapabilityRef
 
 console.log(example)

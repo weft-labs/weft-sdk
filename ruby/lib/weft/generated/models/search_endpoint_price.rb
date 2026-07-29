@@ -14,24 +14,22 @@ require 'date'
 require 'time'
 
 module Weft
-  class SearchEndpointRanking < ApiModelBase
-    attr_accessor :similarity
+  # Price + provenance + freshness for this (endpoint × capability) pairing. Always present; an unpriced endpoint carries null amounts rather than an absent block, so a caller never has to distinguish \"free\" from \"we do not know\". 
+  class SearchEndpointPrice < ApiModelBase
+    # The indexed price in USD as a decimal string (e.g. \"0.008\") — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced. 
+    attr_accessor :indexed_usd
 
-    # Price tie-breaker in atomic units — the probe-observed price when one exists, else the pipeline-inferred price. `price_source` says which. Null when no price is recorded; nulls sort last. 
-    attr_accessor :price_atomic
+    # The same price in integer micro-USD — the settlement grain, exact. Null exactly when `indexed_usd` is. Use this for settlement. 
+    attr_accessor :atomic
 
-    # Where `price_atomic` came from. `probe` = observed live in the endpoint's own 402 payment-required challenge — authoritative, and refreshed on every probe. `inferred` = derived from a spec (OpenAPI) or a resale edge by the extraction pipeline, so it can lag a provider's re-pricing. Null when the endpoint carries no price. 
-    attr_accessor :price_source
+    # Where the amount came from. `probe` = observed live in the endpoint's own 402 payment-required challenge — an observation, the strongest evidence we hold. `inferred` = derived from a spec (OpenAPI) or a resale edge by the extraction pipeline, so it can lag a provider's re-pricing. Null when the endpoint carries no price. 
+    attr_accessor :source
 
-    attr_accessor :rank_reason
+    # When the amount was observed. Null when unrecorded.
+    attr_accessor :last_observed_at
 
-    attr_accessor :probe_status
-
-    attr_accessor :median_ttfb_ms
-
-    attr_accessor :min_total_latency_ms
-
-    attr_accessor :max_total_latency_ms
+    # Whether this amount was confirmed against a live 402 challenge for THIS response. Search does not issue a payment-required probe at query time, so this is `false` today — treat an unflagged price as indexed, not verified. 
+    attr_accessor :live_verified
 
     class EnumAttributeValidator
       attr_reader :datatype
@@ -58,14 +56,11 @@ module Weft
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'similarity' => :'similarity',
-        :'price_atomic' => :'price_atomic',
-        :'price_source' => :'price_source',
-        :'rank_reason' => :'rank_reason',
-        :'probe_status' => :'probe_status',
-        :'median_ttfb_ms' => :'median_ttfb_ms',
-        :'min_total_latency_ms' => :'min_total_latency_ms',
-        :'max_total_latency_ms' => :'max_total_latency_ms'
+        :'indexed_usd' => :'indexed_usd',
+        :'atomic' => :'atomic',
+        :'source' => :'source',
+        :'last_observed_at' => :'last_observed_at',
+        :'live_verified' => :'live_verified'
       }
     end
 
@@ -82,14 +77,11 @@ module Weft
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'similarity' => :'Float',
-        :'price_atomic' => :'Integer',
-        :'price_source' => :'String',
-        :'rank_reason' => :'String',
-        :'probe_status' => :'String',
-        :'median_ttfb_ms' => :'Integer',
-        :'min_total_latency_ms' => :'Integer',
-        :'max_total_latency_ms' => :'Integer'
+        :'indexed_usd' => :'String',
+        :'atomic' => :'Integer',
+        :'source' => :'String',
+        :'last_observed_at' => :'Time',
+        :'live_verified' => :'Boolean'
       }
     end
 
@@ -103,48 +95,36 @@ module Weft
     # @param [Hash] attributes Model attributes in the form of hash
     def initialize(attributes = {})
       if (!attributes.is_a?(Hash))
-        fail ArgumentError, "The input argument (attributes) must be a hash in `Weft::SearchEndpointRanking` initialize method"
+        fail ArgumentError, "The input argument (attributes) must be a hash in `Weft::SearchEndpointPrice` initialize method"
       end
 
       # check to see if the attribute exists and convert string to symbol for hash key
       acceptable_attribute_map = self.class.acceptable_attribute_map
       attributes = attributes.each_with_object({}) { |(k, v), h|
         if (!acceptable_attribute_map.key?(k.to_sym))
-          fail ArgumentError, "`#{k}` is not a valid attribute in `Weft::SearchEndpointRanking`. Please check the name to make sure it's valid. List of attributes: " + acceptable_attribute_map.keys.inspect
+          fail ArgumentError, "`#{k}` is not a valid attribute in `Weft::SearchEndpointPrice`. Please check the name to make sure it's valid. List of attributes: " + acceptable_attribute_map.keys.inspect
         end
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'similarity')
-        self.similarity = attributes[:'similarity']
+      if attributes.key?(:'indexed_usd')
+        self.indexed_usd = attributes[:'indexed_usd']
       end
 
-      if attributes.key?(:'price_atomic')
-        self.price_atomic = attributes[:'price_atomic']
+      if attributes.key?(:'atomic')
+        self.atomic = attributes[:'atomic']
       end
 
-      if attributes.key?(:'price_source')
-        self.price_source = attributes[:'price_source']
+      if attributes.key?(:'source')
+        self.source = attributes[:'source']
       end
 
-      if attributes.key?(:'rank_reason')
-        self.rank_reason = attributes[:'rank_reason']
+      if attributes.key?(:'last_observed_at')
+        self.last_observed_at = attributes[:'last_observed_at']
       end
 
-      if attributes.key?(:'probe_status')
-        self.probe_status = attributes[:'probe_status']
-      end
-
-      if attributes.key?(:'median_ttfb_ms')
-        self.median_ttfb_ms = attributes[:'median_ttfb_ms']
-      end
-
-      if attributes.key?(:'min_total_latency_ms')
-        self.min_total_latency_ms = attributes[:'min_total_latency_ms']
-      end
-
-      if attributes.key?(:'max_total_latency_ms')
-        self.max_total_latency_ms = attributes[:'max_total_latency_ms']
+      if attributes.key?(:'live_verified')
+        self.live_verified = attributes[:'live_verified']
       end
     end
 
@@ -160,19 +140,19 @@ module Weft
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
-      price_source_validator = EnumAttributeValidator.new('String', ["probe", "inferred"])
-      return false unless price_source_validator.valid?(@price_source)
+      source_validator = EnumAttributeValidator.new('String', ["probe", "inferred"])
+      return false unless source_validator.valid?(@source)
       true
     end
 
     # Custom attribute writer method checking allowed values (enum).
-    # @param [Object] price_source Object to be assigned
-    def price_source=(price_source)
+    # @param [Object] source Object to be assigned
+    def source=(source)
       validator = EnumAttributeValidator.new('String', ["probe", "inferred"])
-      unless validator.valid?(price_source)
-        fail ArgumentError, "invalid value for \"price_source\", must be one of #{validator.allowable_values}."
+      unless validator.valid?(source)
+        fail ArgumentError, "invalid value for \"source\", must be one of #{validator.allowable_values}."
       end
-      @price_source = price_source
+      @source = source
     end
 
     # Checks equality by comparing each attribute.
@@ -180,14 +160,11 @@ module Weft
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          similarity == o.similarity &&
-          price_atomic == o.price_atomic &&
-          price_source == o.price_source &&
-          rank_reason == o.rank_reason &&
-          probe_status == o.probe_status &&
-          median_ttfb_ms == o.median_ttfb_ms &&
-          min_total_latency_ms == o.min_total_latency_ms &&
-          max_total_latency_ms == o.max_total_latency_ms
+          indexed_usd == o.indexed_usd &&
+          atomic == o.atomic &&
+          source == o.source &&
+          last_observed_at == o.last_observed_at &&
+          live_verified == o.live_verified
     end
 
     # @see the `==` method
@@ -199,7 +176,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [similarity, price_atomic, price_source, rank_reason, probe_status, median_ttfb_ms, min_total_latency_ms, max_total_latency_ms].hash
+      [indexed_usd, atomic, source, last_observed_at, live_verified].hash
     end
 
     # Builds the object from hash

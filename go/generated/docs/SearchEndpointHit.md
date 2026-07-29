@@ -5,19 +5,18 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **EndpointId** | Pointer to **string** |  | [optional] 
-**SharedEndpointId** | Pointer to **string** | URL-level endpoint grouping id shared by method variants of the same URL. &#x60;endpoint_id&#x60; remains the per-operation id. Null on rows the platform has not grouped.  | [optional] 
 **Url** | Pointer to **string** |  | [optional] 
-**Method** | Pointer to **string** | Normalized HTTP method for this callable operation (e.g. &#x60;GET&#x60;, &#x60;POST&#x60;). Empty string for rows the platform carries no method for.  | [optional] 
 **ResourceType** | Pointer to **string** |  | [optional] 
 **PrimaryProtocol** | Pointer to **string** |  | [optional] 
-**PriceAtomic** | Pointer to **int32** | Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced.  | [optional] 
-**PriceUsd** | Pointer to **string** | Server-derived price in USD as a decimal string (&#x3D; &#x60;price_atomic&#x60; / 1e6, e.g. \&quot;0.008\&quot; for &#x60;price_atomic&#x60; 8000) — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced (mirrors &#x60;price_atomic&#x60;). For settlement use &#x60;price_atomic&#x60;.  | [optional] 
-**PriceCurrency** | Pointer to **string** |  | [optional] 
-**PriceDecimals** | Pointer to **int32** |  | [optional] 
+**Call** | Pointer to [**SearchEndpointCall**](SearchEndpointCall.md) |  | [optional] 
+**Price** | Pointer to [**SearchEndpointPrice**](SearchEndpointPrice.md) |  | [optional] 
+**Payment** | Pointer to [**[]SearchPaymentOffer**](SearchPaymentOffer.md) | The settlement routes this endpoint&#39;s own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of &#x60;call&#x60;: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider&#39;s own preference order. Honest-empty when the pipeline observed no challenge.  | [optional] 
+**OperatorType** | Pointer to **string** | Who you are actually paying. &#x60;first_party&#x60; &#x3D; operated by the provider that makes the capability; &#x60;reseller&#x60; &#x3D; resold, so the price carries someone else&#39;s margin. Null until the platform resolves the operator.  | [optional] 
 **OperatedById** | Pointer to **string** |  | [optional] 
-**OperatedByType** | Pointer to **string** |  | [optional] 
 **SettledViaFacilitatorId** | Pointer to **string** |  | [optional] 
-**Ranking** | Pointer to [**SearchEndpointRanking**](SearchEndpointRanking.md) |  | [optional] 
+**Settlements** | Pointer to **int32** | Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown.  | [optional] 
+**LastVerifiedAt** | Pointer to **time.Time** | When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification.  | [optional] 
+**LatencyP50Ms** | Pointer to **int32** | Median time-to-first-byte in ms across the endpoint&#39;s probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0).  | [optional] 
 
 ## Methods
 
@@ -63,31 +62,6 @@ SetEndpointId sets EndpointId field to given value.
 
 HasEndpointId returns a boolean if a field has been set.
 
-### GetSharedEndpointId
-
-`func (o *SearchEndpointHit) GetSharedEndpointId() string`
-
-GetSharedEndpointId returns the SharedEndpointId field if non-nil, zero value otherwise.
-
-### GetSharedEndpointIdOk
-
-`func (o *SearchEndpointHit) GetSharedEndpointIdOk() (*string, bool)`
-
-GetSharedEndpointIdOk returns a tuple with the SharedEndpointId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetSharedEndpointId
-
-`func (o *SearchEndpointHit) SetSharedEndpointId(v string)`
-
-SetSharedEndpointId sets SharedEndpointId field to given value.
-
-### HasSharedEndpointId
-
-`func (o *SearchEndpointHit) HasSharedEndpointId() bool`
-
-HasSharedEndpointId returns a boolean if a field has been set.
-
 ### GetUrl
 
 `func (o *SearchEndpointHit) GetUrl() string`
@@ -112,31 +86,6 @@ SetUrl sets Url field to given value.
 `func (o *SearchEndpointHit) HasUrl() bool`
 
 HasUrl returns a boolean if a field has been set.
-
-### GetMethod
-
-`func (o *SearchEndpointHit) GetMethod() string`
-
-GetMethod returns the Method field if non-nil, zero value otherwise.
-
-### GetMethodOk
-
-`func (o *SearchEndpointHit) GetMethodOk() (*string, bool)`
-
-GetMethodOk returns a tuple with the Method field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMethod
-
-`func (o *SearchEndpointHit) SetMethod(v string)`
-
-SetMethod sets Method field to given value.
-
-### HasMethod
-
-`func (o *SearchEndpointHit) HasMethod() bool`
-
-HasMethod returns a boolean if a field has been set.
 
 ### GetResourceType
 
@@ -188,105 +137,105 @@ SetPrimaryProtocol sets PrimaryProtocol field to given value.
 
 HasPrimaryProtocol returns a boolean if a field has been set.
 
-### GetPriceAtomic
+### GetCall
 
-`func (o *SearchEndpointHit) GetPriceAtomic() int32`
+`func (o *SearchEndpointHit) GetCall() SearchEndpointCall`
 
-GetPriceAtomic returns the PriceAtomic field if non-nil, zero value otherwise.
+GetCall returns the Call field if non-nil, zero value otherwise.
 
-### GetPriceAtomicOk
+### GetCallOk
 
-`func (o *SearchEndpointHit) GetPriceAtomicOk() (*int32, bool)`
+`func (o *SearchEndpointHit) GetCallOk() (*SearchEndpointCall, bool)`
 
-GetPriceAtomicOk returns a tuple with the PriceAtomic field if it's non-nil, zero value otherwise
+GetCallOk returns a tuple with the Call field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPriceAtomic
+### SetCall
 
-`func (o *SearchEndpointHit) SetPriceAtomic(v int32)`
+`func (o *SearchEndpointHit) SetCall(v SearchEndpointCall)`
 
-SetPriceAtomic sets PriceAtomic field to given value.
+SetCall sets Call field to given value.
 
-### HasPriceAtomic
+### HasCall
 
-`func (o *SearchEndpointHit) HasPriceAtomic() bool`
+`func (o *SearchEndpointHit) HasCall() bool`
 
-HasPriceAtomic returns a boolean if a field has been set.
+HasCall returns a boolean if a field has been set.
 
-### GetPriceUsd
+### GetPrice
 
-`func (o *SearchEndpointHit) GetPriceUsd() string`
+`func (o *SearchEndpointHit) GetPrice() SearchEndpointPrice`
 
-GetPriceUsd returns the PriceUsd field if non-nil, zero value otherwise.
+GetPrice returns the Price field if non-nil, zero value otherwise.
 
-### GetPriceUsdOk
+### GetPriceOk
 
-`func (o *SearchEndpointHit) GetPriceUsdOk() (*string, bool)`
+`func (o *SearchEndpointHit) GetPriceOk() (*SearchEndpointPrice, bool)`
 
-GetPriceUsdOk returns a tuple with the PriceUsd field if it's non-nil, zero value otherwise
+GetPriceOk returns a tuple with the Price field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPriceUsd
+### SetPrice
 
-`func (o *SearchEndpointHit) SetPriceUsd(v string)`
+`func (o *SearchEndpointHit) SetPrice(v SearchEndpointPrice)`
 
-SetPriceUsd sets PriceUsd field to given value.
+SetPrice sets Price field to given value.
 
-### HasPriceUsd
+### HasPrice
 
-`func (o *SearchEndpointHit) HasPriceUsd() bool`
+`func (o *SearchEndpointHit) HasPrice() bool`
 
-HasPriceUsd returns a boolean if a field has been set.
+HasPrice returns a boolean if a field has been set.
 
-### GetPriceCurrency
+### GetPayment
 
-`func (o *SearchEndpointHit) GetPriceCurrency() string`
+`func (o *SearchEndpointHit) GetPayment() []SearchPaymentOffer`
 
-GetPriceCurrency returns the PriceCurrency field if non-nil, zero value otherwise.
+GetPayment returns the Payment field if non-nil, zero value otherwise.
 
-### GetPriceCurrencyOk
+### GetPaymentOk
 
-`func (o *SearchEndpointHit) GetPriceCurrencyOk() (*string, bool)`
+`func (o *SearchEndpointHit) GetPaymentOk() (*[]SearchPaymentOffer, bool)`
 
-GetPriceCurrencyOk returns a tuple with the PriceCurrency field if it's non-nil, zero value otherwise
+GetPaymentOk returns a tuple with the Payment field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPriceCurrency
+### SetPayment
 
-`func (o *SearchEndpointHit) SetPriceCurrency(v string)`
+`func (o *SearchEndpointHit) SetPayment(v []SearchPaymentOffer)`
 
-SetPriceCurrency sets PriceCurrency field to given value.
+SetPayment sets Payment field to given value.
 
-### HasPriceCurrency
+### HasPayment
 
-`func (o *SearchEndpointHit) HasPriceCurrency() bool`
+`func (o *SearchEndpointHit) HasPayment() bool`
 
-HasPriceCurrency returns a boolean if a field has been set.
+HasPayment returns a boolean if a field has been set.
 
-### GetPriceDecimals
+### GetOperatorType
 
-`func (o *SearchEndpointHit) GetPriceDecimals() int32`
+`func (o *SearchEndpointHit) GetOperatorType() string`
 
-GetPriceDecimals returns the PriceDecimals field if non-nil, zero value otherwise.
+GetOperatorType returns the OperatorType field if non-nil, zero value otherwise.
 
-### GetPriceDecimalsOk
+### GetOperatorTypeOk
 
-`func (o *SearchEndpointHit) GetPriceDecimalsOk() (*int32, bool)`
+`func (o *SearchEndpointHit) GetOperatorTypeOk() (*string, bool)`
 
-GetPriceDecimalsOk returns a tuple with the PriceDecimals field if it's non-nil, zero value otherwise
+GetOperatorTypeOk returns a tuple with the OperatorType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPriceDecimals
+### SetOperatorType
 
-`func (o *SearchEndpointHit) SetPriceDecimals(v int32)`
+`func (o *SearchEndpointHit) SetOperatorType(v string)`
 
-SetPriceDecimals sets PriceDecimals field to given value.
+SetOperatorType sets OperatorType field to given value.
 
-### HasPriceDecimals
+### HasOperatorType
 
-`func (o *SearchEndpointHit) HasPriceDecimals() bool`
+`func (o *SearchEndpointHit) HasOperatorType() bool`
 
-HasPriceDecimals returns a boolean if a field has been set.
+HasOperatorType returns a boolean if a field has been set.
 
 ### GetOperatedById
 
@@ -313,31 +262,6 @@ SetOperatedById sets OperatedById field to given value.
 
 HasOperatedById returns a boolean if a field has been set.
 
-### GetOperatedByType
-
-`func (o *SearchEndpointHit) GetOperatedByType() string`
-
-GetOperatedByType returns the OperatedByType field if non-nil, zero value otherwise.
-
-### GetOperatedByTypeOk
-
-`func (o *SearchEndpointHit) GetOperatedByTypeOk() (*string, bool)`
-
-GetOperatedByTypeOk returns a tuple with the OperatedByType field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOperatedByType
-
-`func (o *SearchEndpointHit) SetOperatedByType(v string)`
-
-SetOperatedByType sets OperatedByType field to given value.
-
-### HasOperatedByType
-
-`func (o *SearchEndpointHit) HasOperatedByType() bool`
-
-HasOperatedByType returns a boolean if a field has been set.
-
 ### GetSettledViaFacilitatorId
 
 `func (o *SearchEndpointHit) GetSettledViaFacilitatorId() string`
@@ -363,30 +287,80 @@ SetSettledViaFacilitatorId sets SettledViaFacilitatorId field to given value.
 
 HasSettledViaFacilitatorId returns a boolean if a field has been set.
 
-### GetRanking
+### GetSettlements
 
-`func (o *SearchEndpointHit) GetRanking() SearchEndpointRanking`
+`func (o *SearchEndpointHit) GetSettlements() int32`
 
-GetRanking returns the Ranking field if non-nil, zero value otherwise.
+GetSettlements returns the Settlements field if non-nil, zero value otherwise.
 
-### GetRankingOk
+### GetSettlementsOk
 
-`func (o *SearchEndpointHit) GetRankingOk() (*SearchEndpointRanking, bool)`
+`func (o *SearchEndpointHit) GetSettlementsOk() (*int32, bool)`
 
-GetRankingOk returns a tuple with the Ranking field if it's non-nil, zero value otherwise
+GetSettlementsOk returns a tuple with the Settlements field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetRanking
+### SetSettlements
 
-`func (o *SearchEndpointHit) SetRanking(v SearchEndpointRanking)`
+`func (o *SearchEndpointHit) SetSettlements(v int32)`
 
-SetRanking sets Ranking field to given value.
+SetSettlements sets Settlements field to given value.
 
-### HasRanking
+### HasSettlements
 
-`func (o *SearchEndpointHit) HasRanking() bool`
+`func (o *SearchEndpointHit) HasSettlements() bool`
 
-HasRanking returns a boolean if a field has been set.
+HasSettlements returns a boolean if a field has been set.
+
+### GetLastVerifiedAt
+
+`func (o *SearchEndpointHit) GetLastVerifiedAt() time.Time`
+
+GetLastVerifiedAt returns the LastVerifiedAt field if non-nil, zero value otherwise.
+
+### GetLastVerifiedAtOk
+
+`func (o *SearchEndpointHit) GetLastVerifiedAtOk() (*time.Time, bool)`
+
+GetLastVerifiedAtOk returns a tuple with the LastVerifiedAt field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetLastVerifiedAt
+
+`func (o *SearchEndpointHit) SetLastVerifiedAt(v time.Time)`
+
+SetLastVerifiedAt sets LastVerifiedAt field to given value.
+
+### HasLastVerifiedAt
+
+`func (o *SearchEndpointHit) HasLastVerifiedAt() bool`
+
+HasLastVerifiedAt returns a boolean if a field has been set.
+
+### GetLatencyP50Ms
+
+`func (o *SearchEndpointHit) GetLatencyP50Ms() int32`
+
+GetLatencyP50Ms returns the LatencyP50Ms field if non-nil, zero value otherwise.
+
+### GetLatencyP50MsOk
+
+`func (o *SearchEndpointHit) GetLatencyP50MsOk() (*int32, bool)`
+
+GetLatencyP50MsOk returns a tuple with the LatencyP50Ms field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetLatencyP50Ms
+
+`func (o *SearchEndpointHit) SetLatencyP50Ms(v int32)`
+
+SetLatencyP50Ms sets LatencyP50Ms field to given value.
+
+### HasLatencyP50Ms
+
+`func (o *SearchEndpointHit) HasLatencyP50Ms() bool`
+
+HasLatencyP50Ms returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
