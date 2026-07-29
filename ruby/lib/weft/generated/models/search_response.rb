@@ -16,10 +16,31 @@ require 'time'
 module Weft
   # The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
   class SearchResponse < ApiModelBase
-    # Opaque trace id for the served query, matching the platform `query_trace_id`.
+    # Opaque trace id for the served query, matching the platform `query_trace_id` — and the `search_id` that re-reads it. Deliberately the same id rather than a second handle: one serve, one name. 
     attr_accessor :query_trace_id
 
     attr_accessor :query
+
+    # Which view this response carries, echoing the requested format. `json` populates `results` and leaves `markdown` null; `markdown` populates `markdown` and leaves `results` empty. Exactly one is populated per response, never both — returning both eagerly would double the payload. 
+    attr_accessor :format
+
+    # The flat comparison table, when `format` is `markdown`; null otherwise. Rendered deterministically from the same stored result the `json` view returns, so the two views of one search can never disagree. 
+    attr_accessor :markdown
+
+    # How many `(Provider + Capability)` results the search produced. Read THIS, not `results.length`, for the count: on a `markdown` response `results` is empty by design, so `result_count > 0` with an empty `results` is a rendered table while `result_count == 0` is a genuine zero-result. 
+    attr_accessor :result_count
+
+    # `live` for a fresh serve; `snapshot` for an immutable replay of a completed search. A re-read is a snapshot and says so — read it with `as_of` and `stale`. 
+    attr_accessor :served_from
+
+    # When the results were produced. Now on a `live` serve; on a `snapshot` the ORIGINAL serve time, because a replay returns exactly what was paid for, not current truth. 
+    attr_accessor :as_of
+
+    # Whether the active search index has changed since these results were produced. `true` does not mean the results are wrong — it means they are a snapshot of an index that has since moved. Always `false` on a `live` serve. 
+    attr_accessor :stale
+
+    # How payment works across the catalog, stated once for the whole response rather than repeated in every endpoint's usage instructions. 
+    attr_accessor :payment_note
 
     # The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). 
     attr_accessor :applied_filters
@@ -75,6 +96,13 @@ module Weft
       {
         :'query_trace_id' => :'query_trace_id',
         :'query' => :'query',
+        :'format' => :'format',
+        :'markdown' => :'markdown',
+        :'result_count' => :'result_count',
+        :'served_from' => :'served_from',
+        :'as_of' => :'as_of',
+        :'stale' => :'stale',
+        :'payment_note' => :'payment_note',
         :'applied_filters' => :'applied_filters',
         :'decomposition_source' => :'decomposition_source',
         :'embedder_model' => :'embedder_model',
@@ -103,6 +131,13 @@ module Weft
       {
         :'query_trace_id' => :'String',
         :'query' => :'String',
+        :'format' => :'String',
+        :'markdown' => :'String',
+        :'result_count' => :'Integer',
+        :'served_from' => :'String',
+        :'as_of' => :'Time',
+        :'stale' => :'Boolean',
+        :'payment_note' => :'String',
         :'applied_filters' => :'SearchFilterSpec',
         :'decomposition_source' => :'String',
         :'embedder_model' => :'String',
@@ -148,6 +183,34 @@ module Weft
         self.query = attributes[:'query']
       else
         self.query = nil
+      end
+
+      if attributes.key?(:'format')
+        self.format = attributes[:'format']
+      end
+
+      if attributes.key?(:'markdown')
+        self.markdown = attributes[:'markdown']
+      end
+
+      if attributes.key?(:'result_count')
+        self.result_count = attributes[:'result_count']
+      end
+
+      if attributes.key?(:'served_from')
+        self.served_from = attributes[:'served_from']
+      end
+
+      if attributes.key?(:'as_of')
+        self.as_of = attributes[:'as_of']
+      end
+
+      if attributes.key?(:'stale')
+        self.stale = attributes[:'stale']
+      end
+
+      if attributes.key?(:'payment_note')
+        self.payment_note = attributes[:'payment_note']
       end
 
       if attributes.key?(:'applied_filters')
@@ -218,6 +281,10 @@ module Weft
         invalid_properties.push('invalid value for "query", query cannot be nil.')
       end
 
+      if !@result_count.nil? && @result_count < 0
+        invalid_properties.push('invalid value for "result_count", must be greater than or equal to 0.')
+      end
+
       if @embedder_model.nil?
         invalid_properties.push('invalid value for "embedder_model", embedder_model cannot be nil.')
       end
@@ -247,6 +314,11 @@ module Weft
       warn '[DEPRECATED] the `valid?` method is obsolete'
       return false if @query_trace_id.nil?
       return false if @query.nil?
+      format_validator = EnumAttributeValidator.new('String', ["json", "markdown"])
+      return false unless format_validator.valid?(@format)
+      return false if !@result_count.nil? && @result_count < 0
+      served_from_validator = EnumAttributeValidator.new('String', ["live", "snapshot"])
+      return false unless served_from_validator.valid?(@served_from)
       decomposition_source_validator = EnumAttributeValidator.new('String', ["CALLER", "CLASSIFIER", "MERGED", "FALLBACK"])
       return false unless decomposition_source_validator.valid?(@decomposition_source)
       return false if @embedder_model.nil?
@@ -279,6 +351,40 @@ module Weft
       end
 
       @query = query
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] format Object to be assigned
+    def format=(format)
+      validator = EnumAttributeValidator.new('String', ["json", "markdown"])
+      unless validator.valid?(format)
+        fail ArgumentError, "invalid value for \"format\", must be one of #{validator.allowable_values}."
+      end
+      @format = format
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] result_count Value to be assigned
+    def result_count=(result_count)
+      if result_count.nil?
+        fail ArgumentError, 'result_count cannot be nil'
+      end
+
+      if result_count < 0
+        fail ArgumentError, 'invalid value for "result_count", must be greater than or equal to 0.'
+      end
+
+      @result_count = result_count
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] served_from Object to be assigned
+    def served_from=(served_from)
+      validator = EnumAttributeValidator.new('String', ["live", "snapshot"])
+      unless validator.valid?(served_from)
+        fail ArgumentError, "invalid value for \"served_from\", must be one of #{validator.allowable_values}."
+      end
+      @served_from = served_from
     end
 
     # Custom attribute writer method checking allowed values (enum).
@@ -362,6 +468,13 @@ module Weft
       self.class == o.class &&
           query_trace_id == o.query_trace_id &&
           query == o.query &&
+          format == o.format &&
+          markdown == o.markdown &&
+          result_count == o.result_count &&
+          served_from == o.served_from &&
+          as_of == o.as_of &&
+          stale == o.stale &&
+          payment_note == o.payment_note &&
           applied_filters == o.applied_filters &&
           decomposition_source == o.decomposition_source &&
           embedder_model == o.embedder_model &&
@@ -383,7 +496,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [query_trace_id, query, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, match_quality, reason, suggestion, results, _mock].hash
+      [query_trace_id, query, format, markdown, result_count, served_from, as_of, stale, payment_note, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, match_quality, reason, suggestion, results, _mock].hash
     end
 
     # Builds the object from hash

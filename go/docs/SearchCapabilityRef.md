@@ -6,7 +6,6 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **CapabilityId** | Pointer to **string** |  | [optional] 
 **CapabilityType** | Pointer to **string** |  | [optional] 
-**ResolutionConfidence** | Pointer to **float32** |  | [optional] 
 
 ## Methods
 
@@ -76,31 +75,6 @@ SetCapabilityType sets CapabilityType field to given value.
 `func (o *SearchCapabilityRef) HasCapabilityType() bool`
 
 HasCapabilityType returns a boolean if a field has been set.
-
-### GetResolutionConfidence
-
-`func (o *SearchCapabilityRef) GetResolutionConfidence() float32`
-
-GetResolutionConfidence returns the ResolutionConfidence field if non-nil, zero value otherwise.
-
-### GetResolutionConfidenceOk
-
-`func (o *SearchCapabilityRef) GetResolutionConfidenceOk() (*float32, bool)`
-
-GetResolutionConfidenceOk returns a tuple with the ResolutionConfidence field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetResolutionConfidence
-
-`func (o *SearchCapabilityRef) SetResolutionConfidence(v float32)`
-
-SetResolutionConfidence sets ResolutionConfidence field to given value.
-
-### HasResolutionConfidence
-
-`func (o *SearchCapabilityRef) HasResolutionConfidence() bool`
-
-HasResolutionConfidence returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

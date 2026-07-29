@@ -7,8 +7,6 @@ Name | Type | Description | Notes
 **ProviderId** | Pointer to **string** |  | [optional] 
 **DisplayName** | Pointer to **string** |  | [optional] 
 **OriginDomains** | Pointer to **[]string** |  | [optional] 
-**VerificationState** | Pointer to **string** |  | [optional] 
-**IdentityConfidence** | Pointer to **float32** |  | [optional] 
 
 ## Methods
 
@@ -103,56 +101,6 @@ SetOriginDomains sets OriginDomains field to given value.
 `func (o *SearchProviderRef) HasOriginDomains() bool`
 
 HasOriginDomains returns a boolean if a field has been set.
-
-### GetVerificationState
-
-`func (o *SearchProviderRef) GetVerificationState() string`
-
-GetVerificationState returns the VerificationState field if non-nil, zero value otherwise.
-
-### GetVerificationStateOk
-
-`func (o *SearchProviderRef) GetVerificationStateOk() (*string, bool)`
-
-GetVerificationStateOk returns a tuple with the VerificationState field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetVerificationState
-
-`func (o *SearchProviderRef) SetVerificationState(v string)`
-
-SetVerificationState sets VerificationState field to given value.
-
-### HasVerificationState
-
-`func (o *SearchProviderRef) HasVerificationState() bool`
-
-HasVerificationState returns a boolean if a field has been set.
-
-### GetIdentityConfidence
-
-`func (o *SearchProviderRef) GetIdentityConfidence() float32`
-
-GetIdentityConfidence returns the IdentityConfidence field if non-nil, zero value otherwise.
-
-### GetIdentityConfidenceOk
-
-`func (o *SearchProviderRef) GetIdentityConfidenceOk() (*float32, bool)`
-
-GetIdentityConfidenceOk returns a tuple with the IdentityConfidence field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetIdentityConfidence
-
-`func (o *SearchProviderRef) SetIdentityConfidence(v float32)`
-
-SetIdentityConfidence sets IdentityConfidence field to given value.
-
-### HasIdentityConfidence
-
-`func (o *SearchProviderRef) HasIdentityConfidence() bool`
-
-HasIdentityConfidence returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

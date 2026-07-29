@@ -17,9 +17,12 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
-from weft_sdk.generated.models.search_endpoint_ranking import SearchEndpointRanking
+from weft_sdk.generated.models.search_endpoint_call import SearchEndpointCall
+from weft_sdk.generated.models.search_endpoint_price import SearchEndpointPrice
+from weft_sdk.generated.models.search_payment_offer import SearchPaymentOffer
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,20 +31,29 @@ class SearchEndpointHit(BaseModel):
     SearchEndpointHit
     """ # noqa: E501
     endpoint_id: Optional[StrictStr] = None
-    shared_endpoint_id: Optional[StrictStr] = Field(default=None, description="URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. ")
     url: Optional[StrictStr] = None
-    method: Optional[StrictStr] = Field(default=None, description="Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. ")
     resource_type: Optional[StrictStr] = None
     primary_protocol: Optional[StrictStr] = None
-    price_atomic: Optional[StrictInt] = Field(default=None, description="Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced. ")
-    price_usd: Optional[StrictStr] = Field(default=None, description="Server-derived price in USD as a decimal string (= `price_atomic` / 1e6, e.g. \"0.008\" for `price_atomic` 8000) — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced (mirrors `price_atomic`). For settlement use `price_atomic`. ")
-    price_currency: Optional[StrictStr] = None
-    price_decimals: Optional[StrictInt] = None
+    call: Optional[SearchEndpointCall] = None
+    price: Optional[SearchEndpointPrice] = None
+    payment: Optional[List[SearchPaymentOffer]] = Field(default=None, description="The settlement routes this endpoint's own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of `call`: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider's own preference order. Honest-empty when the pipeline observed no challenge. ")
+    operator_type: Optional[StrictStr] = Field(default=None, description="Who you are actually paying. `first_party` = operated by the provider that makes the capability; `reseller` = resold, so the price carries someone else's margin. Null until the platform resolves the operator. ")
     operated_by_id: Optional[StrictStr] = None
-    operated_by_type: Optional[StrictStr] = None
     settled_via_facilitator_id: Optional[StrictStr] = None
-    ranking: Optional[SearchEndpointRanking] = None
-    __properties: ClassVar[List[str]] = ["endpoint_id", "shared_endpoint_id", "url", "method", "resource_type", "primary_protocol", "price_atomic", "price_usd", "price_currency", "price_decimals", "operated_by_id", "operated_by_type", "settled_via_facilitator_id", "ranking"]
+    settlements: Optional[StrictInt] = Field(default=None, description="Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown. ")
+    last_verified_at: Optional[datetime] = Field(default=None, description="When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification. ")
+    latency_p50_ms: Optional[StrictInt] = Field(default=None, description="Median time-to-first-byte in ms across the endpoint's probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0). ")
+    __properties: ClassVar[List[str]] = ["endpoint_id", "url", "resource_type", "primary_protocol", "call", "price", "payment", "operator_type", "operated_by_id", "settled_via_facilitator_id", "settlements", "last_verified_at", "latency_p50_ms"]
+
+    @field_validator('operator_type')
+    def operator_type_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['first_party', 'reseller']):
+            raise ValueError("must be one of enum values ('first_party', 'reseller')")
+        return value
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -82,9 +94,19 @@ class SearchEndpointHit(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of ranking
-        if self.ranking:
-            _dict['ranking'] = self.ranking.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of call
+        if self.call:
+            _dict['call'] = self.call.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of price
+        if self.price:
+            _dict['price'] = self.price.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in payment (list)
+        _items = []
+        if self.payment:
+            for _item_payment in self.payment:
+                if _item_payment:
+                    _items.append(_item_payment.to_dict())
+            _dict['payment'] = _items
         return _dict
 
     @classmethod
@@ -98,19 +120,18 @@ class SearchEndpointHit(BaseModel):
 
         _obj = cls.model_validate({
             "endpoint_id": obj.get("endpoint_id"),
-            "shared_endpoint_id": obj.get("shared_endpoint_id"),
             "url": obj.get("url"),
-            "method": obj.get("method"),
             "resource_type": obj.get("resource_type"),
             "primary_protocol": obj.get("primary_protocol"),
-            "price_atomic": obj.get("price_atomic"),
-            "price_usd": obj.get("price_usd"),
-            "price_currency": obj.get("price_currency"),
-            "price_decimals": obj.get("price_decimals"),
+            "call": SearchEndpointCall.from_dict(obj["call"]) if obj.get("call") is not None else None,
+            "price": SearchEndpointPrice.from_dict(obj["price"]) if obj.get("price") is not None else None,
+            "payment": [SearchPaymentOffer.from_dict(_item) for _item in obj["payment"]] if obj.get("payment") is not None else None,
+            "operator_type": obj.get("operator_type"),
             "operated_by_id": obj.get("operated_by_id"),
-            "operated_by_type": obj.get("operated_by_type"),
             "settled_via_facilitator_id": obj.get("settled_via_facilitator_id"),
-            "ranking": SearchEndpointRanking.from_dict(obj["ranking"]) if obj.get("ranking") is not None else None
+            "settlements": obj.get("settlements"),
+            "last_verified_at": obj.get("last_verified_at"),
+            "latency_p50_ms": obj.get("latency_p50_ms")
         })
         return _obj
 

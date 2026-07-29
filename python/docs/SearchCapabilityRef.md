@@ -7,7 +7,6 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **capability_id** | **str** |  | [optional] 
 **capability_type** | **str** |  | [optional] 
-**resolution_confidence** | **float** |  | [optional] 
 
 ## Example
 

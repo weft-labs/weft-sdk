@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -29,9 +29,7 @@ class SearchProviderRef(BaseModel):
     provider_id: Optional[StrictStr] = None
     display_name: Optional[StrictStr] = None
     origin_domains: Optional[List[StrictStr]] = None
-    verification_state: Optional[StrictStr] = None
-    identity_confidence: Optional[Union[StrictFloat, StrictInt]] = None
-    __properties: ClassVar[List[str]] = ["provider_id", "display_name", "origin_domains", "verification_state", "identity_confidence"]
+    __properties: ClassVar[List[str]] = ["provider_id", "display_name", "origin_domains"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -86,9 +84,7 @@ class SearchProviderRef(BaseModel):
         _obj = cls.model_validate({
             "provider_id": obj.get("provider_id"),
             "display_name": obj.get("display_name"),
-            "origin_domains": obj.get("origin_domains"),
-            "verification_state": obj.get("verification_state"),
-            "identity_confidence": obj.get("identity_confidence")
+            "origin_domains": obj.get("origin_domains")
         })
         return _obj
 

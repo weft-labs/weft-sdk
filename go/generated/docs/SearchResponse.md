@@ -4,8 +4,15 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**QueryTraceId** | **string** | Opaque trace id for the served query, matching the platform &#x60;query_trace_id&#x60;. | 
+**QueryTraceId** | **string** | Opaque trace id for the served query, matching the platform &#x60;query_trace_id&#x60; — and the &#x60;search_id&#x60; that re-reads it. Deliberately the same id rather than a second handle: one serve, one name.  | 
 **Query** | **string** |  | 
+**Format** | Pointer to **string** | Which view this response carries, echoing the requested format. &#x60;json&#x60; populates &#x60;results&#x60; and leaves &#x60;markdown&#x60; null; &#x60;markdown&#x60; populates &#x60;markdown&#x60; and leaves &#x60;results&#x60; empty. Exactly one is populated per response, never both — returning both eagerly would double the payload.  | [optional] 
+**Markdown** | Pointer to **string** | The flat comparison table, when &#x60;format&#x60; is &#x60;markdown&#x60;; null otherwise. Rendered deterministically from the same stored result the &#x60;json&#x60; view returns, so the two views of one search can never disagree.  | [optional] 
+**ResultCount** | Pointer to **int32** | How many &#x60;(Provider + Capability)&#x60; results the search produced. Read THIS, not &#x60;results.length&#x60;, for the count: on a &#x60;markdown&#x60; response &#x60;results&#x60; is empty by design, so &#x60;result_count &gt; 0&#x60; with an empty &#x60;results&#x60; is a rendered table while &#x60;result_count &#x3D;&#x3D; 0&#x60; is a genuine zero-result.  | [optional] 
+**ServedFrom** | Pointer to **string** | &#x60;live&#x60; for a fresh serve; &#x60;snapshot&#x60; for an immutable replay of a completed search. A re-read is a snapshot and says so — read it with &#x60;as_of&#x60; and &#x60;stale&#x60;.  | [optional] 
+**AsOf** | Pointer to **time.Time** | When the results were produced. Now on a &#x60;live&#x60; serve; on a &#x60;snapshot&#x60; the ORIGINAL serve time, because a replay returns exactly what was paid for, not current truth.  | [optional] 
+**Stale** | Pointer to **bool** | Whether the active search index has changed since these results were produced. &#x60;true&#x60; does not mean the results are wrong — it means they are a snapshot of an index that has since moved. Always &#x60;false&#x60; on a &#x60;live&#x60; serve.  | [optional] 
+**PaymentNote** | Pointer to **string** | How payment works across the catalog, stated once for the whole response rather than repeated in every endpoint&#39;s usage instructions.  | [optional] 
 **AppliedFilters** | Pointer to [**SearchFilterSpec**](SearchFilterSpec.md) | The &#x60;FilterSpec&#x60; actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller&#39;s &#x60;filters&#x60; verbatim (empty object when none were sent).  | [optional] 
 **DecompositionSource** | Pointer to **string** | Origin of &#x60;applied_filters&#x60;. &#x60;CALLER&#x60; today (the mock and the B1 platform have no query decomposer yet); &#x60;CLASSIFIER&#x60; / &#x60;MERGED&#x60; / &#x60;FALLBACK&#x60; arrive additively when the decomposer lands.  | [optional] 
 **EmbedderModel** | **string** |  | 
@@ -75,6 +82,181 @@ and a boolean to check if the value has been set.
 
 SetQuery sets Query field to given value.
 
+
+### GetFormat
+
+`func (o *SearchResponse) GetFormat() string`
+
+GetFormat returns the Format field if non-nil, zero value otherwise.
+
+### GetFormatOk
+
+`func (o *SearchResponse) GetFormatOk() (*string, bool)`
+
+GetFormatOk returns a tuple with the Format field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetFormat
+
+`func (o *SearchResponse) SetFormat(v string)`
+
+SetFormat sets Format field to given value.
+
+### HasFormat
+
+`func (o *SearchResponse) HasFormat() bool`
+
+HasFormat returns a boolean if a field has been set.
+
+### GetMarkdown
+
+`func (o *SearchResponse) GetMarkdown() string`
+
+GetMarkdown returns the Markdown field if non-nil, zero value otherwise.
+
+### GetMarkdownOk
+
+`func (o *SearchResponse) GetMarkdownOk() (*string, bool)`
+
+GetMarkdownOk returns a tuple with the Markdown field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMarkdown
+
+`func (o *SearchResponse) SetMarkdown(v string)`
+
+SetMarkdown sets Markdown field to given value.
+
+### HasMarkdown
+
+`func (o *SearchResponse) HasMarkdown() bool`
+
+HasMarkdown returns a boolean if a field has been set.
+
+### GetResultCount
+
+`func (o *SearchResponse) GetResultCount() int32`
+
+GetResultCount returns the ResultCount field if non-nil, zero value otherwise.
+
+### GetResultCountOk
+
+`func (o *SearchResponse) GetResultCountOk() (*int32, bool)`
+
+GetResultCountOk returns a tuple with the ResultCount field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetResultCount
+
+`func (o *SearchResponse) SetResultCount(v int32)`
+
+SetResultCount sets ResultCount field to given value.
+
+### HasResultCount
+
+`func (o *SearchResponse) HasResultCount() bool`
+
+HasResultCount returns a boolean if a field has been set.
+
+### GetServedFrom
+
+`func (o *SearchResponse) GetServedFrom() string`
+
+GetServedFrom returns the ServedFrom field if non-nil, zero value otherwise.
+
+### GetServedFromOk
+
+`func (o *SearchResponse) GetServedFromOk() (*string, bool)`
+
+GetServedFromOk returns a tuple with the ServedFrom field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetServedFrom
+
+`func (o *SearchResponse) SetServedFrom(v string)`
+
+SetServedFrom sets ServedFrom field to given value.
+
+### HasServedFrom
+
+`func (o *SearchResponse) HasServedFrom() bool`
+
+HasServedFrom returns a boolean if a field has been set.
+
+### GetAsOf
+
+`func (o *SearchResponse) GetAsOf() time.Time`
+
+GetAsOf returns the AsOf field if non-nil, zero value otherwise.
+
+### GetAsOfOk
+
+`func (o *SearchResponse) GetAsOfOk() (*time.Time, bool)`
+
+GetAsOfOk returns a tuple with the AsOf field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAsOf
+
+`func (o *SearchResponse) SetAsOf(v time.Time)`
+
+SetAsOf sets AsOf field to given value.
+
+### HasAsOf
+
+`func (o *SearchResponse) HasAsOf() bool`
+
+HasAsOf returns a boolean if a field has been set.
+
+### GetStale
+
+`func (o *SearchResponse) GetStale() bool`
+
+GetStale returns the Stale field if non-nil, zero value otherwise.
+
+### GetStaleOk
+
+`func (o *SearchResponse) GetStaleOk() (*bool, bool)`
+
+GetStaleOk returns a tuple with the Stale field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStale
+
+`func (o *SearchResponse) SetStale(v bool)`
+
+SetStale sets Stale field to given value.
+
+### HasStale
+
+`func (o *SearchResponse) HasStale() bool`
+
+HasStale returns a boolean if a field has been set.
+
+### GetPaymentNote
+
+`func (o *SearchResponse) GetPaymentNote() string`
+
+GetPaymentNote returns the PaymentNote field if non-nil, zero value otherwise.
+
+### GetPaymentNoteOk
+
+`func (o *SearchResponse) GetPaymentNoteOk() (*string, bool)`
+
+GetPaymentNoteOk returns a tuple with the PaymentNote field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPaymentNote
+
+`func (o *SearchResponse) SetPaymentNote(v string)`
+
+SetPaymentNote sets PaymentNote field to given value.
+
+### HasPaymentNote
+
+`func (o *SearchResponse) HasPaymentNote() bool`
+
+HasPaymentNote returns a boolean if a field has been set.
 
 ### GetAppliedFilters
 

@@ -6,7 +6,6 @@
 | ---- | ---- | ----------- | ----- |
 | **capability_id** | **String** |  | [optional] |
 | **capability_type** | **String** |  | [optional] |
-| **resolution_confidence** | **Float** |  | [optional] |
 
 ## Example
 
@@ -15,8 +14,7 @@ require 'weft-sdk'
 
 instance = Weft::SearchCapabilityRef.new(
   capability_id: null,
-  capability_type: null,
-  resolution_confidence: null
+  capability_type: null
 )
 ```
 

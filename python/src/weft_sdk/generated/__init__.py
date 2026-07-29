@@ -74,10 +74,12 @@ __all__ = [
     "ResourceEnrollmentResponse",
     "ResourceStats",
     "SearchCapabilityRef",
+    "SearchEndpointCall",
     "SearchEndpointHit",
-    "SearchEndpointRanking",
+    "SearchEndpointPrice",
     "SearchErrorResponse",
     "SearchFilterSpec",
+    "SearchPaymentOffer",
     "SearchPriceAtomicFilter",
     "SearchPriceUsdFilter",
     "SearchProtocolFilter",
@@ -155,10 +157,12 @@ from weft_sdk.generated.models.resource_enrollment_request import ResourceEnroll
 from weft_sdk.generated.models.resource_enrollment_response import ResourceEnrollmentResponse as ResourceEnrollmentResponse
 from weft_sdk.generated.models.resource_stats import ResourceStats as ResourceStats
 from weft_sdk.generated.models.search_capability_ref import SearchCapabilityRef as SearchCapabilityRef
+from weft_sdk.generated.models.search_endpoint_call import SearchEndpointCall as SearchEndpointCall
 from weft_sdk.generated.models.search_endpoint_hit import SearchEndpointHit as SearchEndpointHit
-from weft_sdk.generated.models.search_endpoint_ranking import SearchEndpointRanking as SearchEndpointRanking
+from weft_sdk.generated.models.search_endpoint_price import SearchEndpointPrice as SearchEndpointPrice
 from weft_sdk.generated.models.search_error_response import SearchErrorResponse as SearchErrorResponse
 from weft_sdk.generated.models.search_filter_spec import SearchFilterSpec as SearchFilterSpec
+from weft_sdk.generated.models.search_payment_offer import SearchPaymentOffer as SearchPaymentOffer
 from weft_sdk.generated.models.search_price_atomic_filter import SearchPriceAtomicFilter as SearchPriceAtomicFilter
 from weft_sdk.generated.models.search_price_usd_filter import SearchPriceUsdFilter as SearchPriceUsdFilter
 from weft_sdk.generated.models.search_protocol_filter import SearchProtocolFilter as SearchProtocolFilter

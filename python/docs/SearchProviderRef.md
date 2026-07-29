@@ -8,8 +8,6 @@ Name | Type | Description | Notes
 **provider_id** | **str** |  | [optional] 
 **display_name** | **str** |  | [optional] 
 **origin_domains** | **List[str]** |  | [optional] 
-**verification_state** | **str** |  | [optional] 
-**identity_confidence** | **float** |  | [optional] 
 
 ## Example
 

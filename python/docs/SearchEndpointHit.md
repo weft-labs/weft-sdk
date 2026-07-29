@@ -6,19 +6,18 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **endpoint_id** | **str** |  | [optional] 
-**shared_endpoint_id** | **str** | URL-level endpoint grouping id shared by method variants of the same URL. &#x60;endpoint_id&#x60; remains the per-operation id. Null on rows the platform has not grouped.  | [optional] 
 **url** | **str** |  | [optional] 
-**method** | **str** | Normalized HTTP method for this callable operation (e.g. &#x60;GET&#x60;, &#x60;POST&#x60;). Empty string for rows the platform carries no method for.  | [optional] 
 **resource_type** | **str** |  | [optional] 
 **primary_protocol** | **str** |  | [optional] 
-**price_atomic** | **int** | Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced.  | [optional] 
-**price_usd** | **str** | Server-derived price in USD as a decimal string (&#x3D; &#x60;price_atomic&#x60; / 1e6, e.g. \&quot;0.008\&quot; for &#x60;price_atomic&#x60; 8000) — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced (mirrors &#x60;price_atomic&#x60;). For settlement use &#x60;price_atomic&#x60;.  | [optional] 
-**price_currency** | **str** |  | [optional] 
-**price_decimals** | **int** |  | [optional] 
+**call** | [**SearchEndpointCall**](SearchEndpointCall.md) |  | [optional] 
+**price** | [**SearchEndpointPrice**](SearchEndpointPrice.md) |  | [optional] 
+**payment** | [**List[SearchPaymentOffer]**](SearchPaymentOffer.md) | The settlement routes this endpoint&#39;s own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of &#x60;call&#x60;: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider&#39;s own preference order. Honest-empty when the pipeline observed no challenge.  | [optional] 
+**operator_type** | **str** | Who you are actually paying. &#x60;first_party&#x60; &#x3D; operated by the provider that makes the capability; &#x60;reseller&#x60; &#x3D; resold, so the price carries someone else&#39;s margin. Null until the platform resolves the operator.  | [optional] 
 **operated_by_id** | **str** |  | [optional] 
-**operated_by_type** | **str** |  | [optional] 
 **settled_via_facilitator_id** | **str** |  | [optional] 
-**ranking** | [**SearchEndpointRanking**](SearchEndpointRanking.md) |  | [optional] 
+**settlements** | **int** | Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown.  | [optional] 
+**last_verified_at** | **datetime** | When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification.  | [optional] 
+**latency_p50_ms** | **int** | Median time-to-first-byte in ms across the endpoint&#39;s probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0).  | [optional] 
 
 ## Example
 

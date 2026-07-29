@@ -37,18 +37,6 @@ export interface SearchProviderRef {
      * @memberof SearchProviderRef
      */
     originDomains?: Array<string>;
-    /**
-     * 
-     * @type {string}
-     * @memberof SearchProviderRef
-     */
-    verificationState?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof SearchProviderRef
-     */
-    identityConfidence?: number;
 }
 
 /**
@@ -71,8 +59,6 @@ export function SearchProviderRefFromJSONTyped(json: any, ignoreDiscriminator: b
         'providerId': json['provider_id'] == null ? undefined : json['provider_id'],
         'displayName': json['display_name'] == null ? undefined : json['display_name'],
         'originDomains': json['origin_domains'] == null ? undefined : json['origin_domains'],
-        'verificationState': json['verification_state'] == null ? undefined : json['verification_state'],
-        'identityConfidence': json['identity_confidence'] == null ? undefined : json['identity_confidence'],
     };
 }
 
@@ -90,8 +76,6 @@ export function SearchProviderRefToJSONTyped(value?: SearchProviderRef | null, i
         'provider_id': value['providerId'],
         'display_name': value['displayName'],
         'origin_domains': value['originDomains'],
-        'verification_state': value['verificationState'],
-        'identity_confidence': value['identityConfidence'],
     };
 }
 

@@ -17,27 +17,25 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr, field_validator
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
-class SearchEndpointRanking(BaseModel):
+class SearchEndpointPrice(BaseModel):
     """
-    SearchEndpointRanking
+    Price + provenance + freshness for this (endpoint × capability) pairing. Always present; an unpriced endpoint carries null amounts rather than an absent block, so a caller never has to distinguish \"free\" from \"we do not know\". 
     """ # noqa: E501
-    similarity: Optional[Union[StrictFloat, StrictInt]] = None
-    price_atomic: Optional[StrictInt] = Field(default=None, description="Price tie-breaker in atomic units — the probe-observed price when one exists, else the pipeline-inferred price. `price_source` says which. Null when no price is recorded; nulls sort last. ")
-    price_source: Optional[StrictStr] = Field(default=None, description="Where `price_atomic` came from. `probe` = observed live in the endpoint's own 402 payment-required challenge — authoritative, and refreshed on every probe. `inferred` = derived from a spec (OpenAPI) or a resale edge by the extraction pipeline, so it can lag a provider's re-pricing. Null when the endpoint carries no price. ")
-    rank_reason: Optional[StrictStr] = None
-    probe_status: Optional[StrictStr] = None
-    median_ttfb_ms: Optional[StrictInt] = None
-    min_total_latency_ms: Optional[StrictInt] = None
-    max_total_latency_ms: Optional[StrictInt] = None
-    __properties: ClassVar[List[str]] = ["similarity", "price_atomic", "price_source", "rank_reason", "probe_status", "median_ttfb_ms", "min_total_latency_ms", "max_total_latency_ms"]
+    indexed_usd: Optional[StrictStr] = Field(default=None, description="The indexed price in USD as a decimal string (e.g. \"0.008\") — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced. ")
+    atomic: Optional[StrictInt] = Field(default=None, description="The same price in integer micro-USD — the settlement grain, exact. Null exactly when `indexed_usd` is. Use this for settlement. ")
+    source: Optional[StrictStr] = Field(default=None, description="Where the amount came from. `probe` = observed live in the endpoint's own 402 payment-required challenge — an observation, the strongest evidence we hold. `inferred` = derived from a spec (OpenAPI) or a resale edge by the extraction pipeline, so it can lag a provider's re-pricing. Null when the endpoint carries no price. ")
+    last_observed_at: Optional[datetime] = Field(default=None, description="When the amount was observed. Null when unrecorded.")
+    live_verified: Optional[StrictBool] = Field(default=None, description="Whether this amount was confirmed against a live 402 challenge for THIS response. Search does not issue a payment-required probe at query time, so this is `false` today — treat an unflagged price as indexed, not verified. ")
+    __properties: ClassVar[List[str]] = ["indexed_usd", "atomic", "source", "last_observed_at", "live_verified"]
 
-    @field_validator('price_source')
-    def price_source_validate_enum(cls, value):
+    @field_validator('source')
+    def source_validate_enum(cls, value):
         """Validates the enum"""
         if value is None:
             return value
@@ -64,7 +62,7 @@ class SearchEndpointRanking(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of SearchEndpointRanking from a JSON string"""
+        """Create an instance of SearchEndpointPrice from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -89,7 +87,7 @@ class SearchEndpointRanking(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of SearchEndpointRanking from a dict"""
+        """Create an instance of SearchEndpointPrice from a dict"""
         if obj is None:
             return None
 
@@ -97,14 +95,11 @@ class SearchEndpointRanking(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "similarity": obj.get("similarity"),
-            "price_atomic": obj.get("price_atomic"),
-            "price_source": obj.get("price_source"),
-            "rank_reason": obj.get("rank_reason"),
-            "probe_status": obj.get("probe_status"),
-            "median_ttfb_ms": obj.get("median_ttfb_ms"),
-            "min_total_latency_ms": obj.get("min_total_latency_ms"),
-            "max_total_latency_ms": obj.get("max_total_latency_ms")
+            "indexed_usd": obj.get("indexed_usd"),
+            "atomic": obj.get("atomic"),
+            "source": obj.get("source"),
+            "last_observed_at": obj.get("last_observed_at"),
+            "live_verified": obj.get("live_verified")
         })
         return _obj
 

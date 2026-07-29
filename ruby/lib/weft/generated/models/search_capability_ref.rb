@@ -19,14 +19,11 @@ module Weft
 
     attr_accessor :capability_type
 
-    attr_accessor :resolution_confidence
-
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'capability_id' => :'capability_id',
-        :'capability_type' => :'capability_type',
-        :'resolution_confidence' => :'resolution_confidence'
+        :'capability_type' => :'capability_type'
       }
     end
 
@@ -44,8 +41,7 @@ module Weft
     def self.openapi_types
       {
         :'capability_id' => :'String',
-        :'capability_type' => :'String',
-        :'resolution_confidence' => :'Float'
+        :'capability_type' => :'String'
       }
     end
 
@@ -78,10 +74,6 @@ module Weft
       if attributes.key?(:'capability_type')
         self.capability_type = attributes[:'capability_type']
       end
-
-      if attributes.key?(:'resolution_confidence')
-        self.resolution_confidence = attributes[:'resolution_confidence']
-      end
     end
 
     # Show invalid properties with the reasons. Usually used together with valid?
@@ -105,8 +97,7 @@ module Weft
       return true if self.equal?(o)
       self.class == o.class &&
           capability_id == o.capability_id &&
-          capability_type == o.capability_type &&
-          resolution_confidence == o.resolution_confidence
+          capability_type == o.capability_type
     end
 
     # @see the `==` method
@@ -118,7 +109,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [capability_id, capability_type, resolution_confidence].hash
+      [capability_id, capability_type].hash
     end
 
     # Builds the object from hash

@@ -21,7 +21,6 @@ var _ MappedNullable = &SearchCapabilityRef{}
 type SearchCapabilityRef struct {
 	CapabilityId *string `json:"capability_id,omitempty"`
 	CapabilityType *string `json:"capability_type,omitempty"`
-	ResolutionConfidence *float32 `json:"resolution_confidence,omitempty"`
 }
 
 // NewSearchCapabilityRef instantiates a new SearchCapabilityRef object
@@ -105,38 +104,6 @@ func (o *SearchCapabilityRef) SetCapabilityType(v string) {
 	o.CapabilityType = &v
 }
 
-// GetResolutionConfidence returns the ResolutionConfidence field value if set, zero value otherwise.
-func (o *SearchCapabilityRef) GetResolutionConfidence() float32 {
-	if o == nil || IsNil(o.ResolutionConfidence) {
-		var ret float32
-		return ret
-	}
-	return *o.ResolutionConfidence
-}
-
-// GetResolutionConfidenceOk returns a tuple with the ResolutionConfidence field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchCapabilityRef) GetResolutionConfidenceOk() (*float32, bool) {
-	if o == nil || IsNil(o.ResolutionConfidence) {
-		return nil, false
-	}
-	return o.ResolutionConfidence, true
-}
-
-// HasResolutionConfidence returns a boolean if a field has been set.
-func (o *SearchCapabilityRef) HasResolutionConfidence() bool {
-	if o != nil && !IsNil(o.ResolutionConfidence) {
-		return true
-	}
-
-	return false
-}
-
-// SetResolutionConfidence gets a reference to the given float32 and assigns it to the ResolutionConfidence field.
-func (o *SearchCapabilityRef) SetResolutionConfidence(v float32) {
-	o.ResolutionConfidence = &v
-}
-
 func (o SearchCapabilityRef) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -152,9 +119,6 @@ func (o SearchCapabilityRef) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.CapabilityType) {
 		toSerialize["capability_type"] = o.CapabilityType
-	}
-	if !IsNil(o.ResolutionConfidence) {
-		toSerialize["resolution_confidence"] = o.ResolutionConfidence
 	}
 	return toSerialize, nil
 }

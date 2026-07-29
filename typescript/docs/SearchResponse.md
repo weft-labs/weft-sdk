@@ -9,6 +9,13 @@ Name | Type
 ------------ | -------------
 `queryTraceId` | string
 `query` | string
+`format` | string
+`markdown` | string
+`resultCount` | number
+`servedFrom` | string
+`asOf` | Date
+`stale` | boolean
+`paymentNote` | string
 `appliedFilters` | [SearchFilterSpec](SearchFilterSpec.md)
 `decompositionSource` | string
 `embedderModel` | string
@@ -29,6 +36,13 @@ import type { SearchResponse } from '@weft-labs/sdk'
 const example = {
   "queryTraceId": null,
   "query": null,
+  "format": null,
+  "markdown": null,
+  "resultCount": null,
+  "servedFrom": null,
+  "asOf": null,
+  "stale": null,
+  "paymentNote": null,
   "appliedFilters": null,
   "decompositionSource": null,
   "embedderModel": null,

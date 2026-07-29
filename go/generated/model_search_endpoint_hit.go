@@ -12,6 +12,7 @@ package generated
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // checks if the SearchEndpointHit type satisfies the MappedNullable interface at compile time
@@ -20,23 +21,23 @@ var _ MappedNullable = &SearchEndpointHit{}
 // SearchEndpointHit struct for SearchEndpointHit
 type SearchEndpointHit struct {
 	EndpointId *string `json:"endpoint_id,omitempty"`
-	// URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. 
-	SharedEndpointId *string `json:"shared_endpoint_id,omitempty"`
 	Url *string `json:"url,omitempty"`
-	// Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. 
-	Method *string `json:"method,omitempty"`
 	ResourceType *string `json:"resource_type,omitempty"`
 	PrimaryProtocol *string `json:"primary_protocol,omitempty"`
-	// Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced. 
-	PriceAtomic *int32 `json:"price_atomic,omitempty"`
-	// Server-derived price in USD as a decimal string (= `price_atomic` / 1e6, e.g. \"0.008\" for `price_atomic` 8000) — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced (mirrors `price_atomic`). For settlement use `price_atomic`. 
-	PriceUsd *string `json:"price_usd,omitempty"`
-	PriceCurrency *string `json:"price_currency,omitempty"`
-	PriceDecimals *int32 `json:"price_decimals,omitempty"`
+	Call *SearchEndpointCall `json:"call,omitempty"`
+	Price *SearchEndpointPrice `json:"price,omitempty"`
+	// The settlement routes this endpoint's own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of `call`: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider's own preference order. Honest-empty when the pipeline observed no challenge. 
+	Payment []SearchPaymentOffer `json:"payment,omitempty"`
+	// Who you are actually paying. `first_party` = operated by the provider that makes the capability; `reseller` = resold, so the price carries someone else's margin. Null until the platform resolves the operator. 
+	OperatorType *string `json:"operator_type,omitempty"`
 	OperatedById *string `json:"operated_by_id,omitempty"`
-	OperatedByType *string `json:"operated_by_type,omitempty"`
 	SettledViaFacilitatorId *string `json:"settled_via_facilitator_id,omitempty"`
-	Ranking *SearchEndpointRanking `json:"ranking,omitempty"`
+	// Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown. 
+	Settlements *int32 `json:"settlements,omitempty"`
+	// When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification. 
+	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
+	// Median time-to-first-byte in ms across the endpoint's probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0). 
+	LatencyP50Ms *int32 `json:"latency_p50_ms,omitempty"`
 }
 
 // NewSearchEndpointHit instantiates a new SearchEndpointHit object
@@ -88,38 +89,6 @@ func (o *SearchEndpointHit) SetEndpointId(v string) {
 	o.EndpointId = &v
 }
 
-// GetSharedEndpointId returns the SharedEndpointId field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetSharedEndpointId() string {
-	if o == nil || IsNil(o.SharedEndpointId) {
-		var ret string
-		return ret
-	}
-	return *o.SharedEndpointId
-}
-
-// GetSharedEndpointIdOk returns a tuple with the SharedEndpointId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetSharedEndpointIdOk() (*string, bool) {
-	if o == nil || IsNil(o.SharedEndpointId) {
-		return nil, false
-	}
-	return o.SharedEndpointId, true
-}
-
-// HasSharedEndpointId returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasSharedEndpointId() bool {
-	if o != nil && !IsNil(o.SharedEndpointId) {
-		return true
-	}
-
-	return false
-}
-
-// SetSharedEndpointId gets a reference to the given string and assigns it to the SharedEndpointId field.
-func (o *SearchEndpointHit) SetSharedEndpointId(v string) {
-	o.SharedEndpointId = &v
-}
-
 // GetUrl returns the Url field value if set, zero value otherwise.
 func (o *SearchEndpointHit) GetUrl() string {
 	if o == nil || IsNil(o.Url) {
@@ -150,38 +119,6 @@ func (o *SearchEndpointHit) HasUrl() bool {
 // SetUrl gets a reference to the given string and assigns it to the Url field.
 func (o *SearchEndpointHit) SetUrl(v string) {
 	o.Url = &v
-}
-
-// GetMethod returns the Method field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetMethod() string {
-	if o == nil || IsNil(o.Method) {
-		var ret string
-		return ret
-	}
-	return *o.Method
-}
-
-// GetMethodOk returns a tuple with the Method field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetMethodOk() (*string, bool) {
-	if o == nil || IsNil(o.Method) {
-		return nil, false
-	}
-	return o.Method, true
-}
-
-// HasMethod returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasMethod() bool {
-	if o != nil && !IsNil(o.Method) {
-		return true
-	}
-
-	return false
-}
-
-// SetMethod gets a reference to the given string and assigns it to the Method field.
-func (o *SearchEndpointHit) SetMethod(v string) {
-	o.Method = &v
 }
 
 // GetResourceType returns the ResourceType field value if set, zero value otherwise.
@@ -248,132 +185,132 @@ func (o *SearchEndpointHit) SetPrimaryProtocol(v string) {
 	o.PrimaryProtocol = &v
 }
 
-// GetPriceAtomic returns the PriceAtomic field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetPriceAtomic() int32 {
-	if o == nil || IsNil(o.PriceAtomic) {
-		var ret int32
+// GetCall returns the Call field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetCall() SearchEndpointCall {
+	if o == nil || IsNil(o.Call) {
+		var ret SearchEndpointCall
 		return ret
 	}
-	return *o.PriceAtomic
+	return *o.Call
 }
 
-// GetPriceAtomicOk returns a tuple with the PriceAtomic field value if set, nil otherwise
+// GetCallOk returns a tuple with the Call field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetPriceAtomicOk() (*int32, bool) {
-	if o == nil || IsNil(o.PriceAtomic) {
+func (o *SearchEndpointHit) GetCallOk() (*SearchEndpointCall, bool) {
+	if o == nil || IsNil(o.Call) {
 		return nil, false
 	}
-	return o.PriceAtomic, true
+	return o.Call, true
 }
 
-// HasPriceAtomic returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasPriceAtomic() bool {
-	if o != nil && !IsNil(o.PriceAtomic) {
+// HasCall returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasCall() bool {
+	if o != nil && !IsNil(o.Call) {
 		return true
 	}
 
 	return false
 }
 
-// SetPriceAtomic gets a reference to the given int32 and assigns it to the PriceAtomic field.
-func (o *SearchEndpointHit) SetPriceAtomic(v int32) {
-	o.PriceAtomic = &v
+// SetCall gets a reference to the given SearchEndpointCall and assigns it to the Call field.
+func (o *SearchEndpointHit) SetCall(v SearchEndpointCall) {
+	o.Call = &v
 }
 
-// GetPriceUsd returns the PriceUsd field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetPriceUsd() string {
-	if o == nil || IsNil(o.PriceUsd) {
+// GetPrice returns the Price field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetPrice() SearchEndpointPrice {
+	if o == nil || IsNil(o.Price) {
+		var ret SearchEndpointPrice
+		return ret
+	}
+	return *o.Price
+}
+
+// GetPriceOk returns a tuple with the Price field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetPriceOk() (*SearchEndpointPrice, bool) {
+	if o == nil || IsNil(o.Price) {
+		return nil, false
+	}
+	return o.Price, true
+}
+
+// HasPrice returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasPrice() bool {
+	if o != nil && !IsNil(o.Price) {
+		return true
+	}
+
+	return false
+}
+
+// SetPrice gets a reference to the given SearchEndpointPrice and assigns it to the Price field.
+func (o *SearchEndpointHit) SetPrice(v SearchEndpointPrice) {
+	o.Price = &v
+}
+
+// GetPayment returns the Payment field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetPayment() []SearchPaymentOffer {
+	if o == nil || IsNil(o.Payment) {
+		var ret []SearchPaymentOffer
+		return ret
+	}
+	return o.Payment
+}
+
+// GetPaymentOk returns a tuple with the Payment field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetPaymentOk() ([]SearchPaymentOffer, bool) {
+	if o == nil || IsNil(o.Payment) {
+		return nil, false
+	}
+	return o.Payment, true
+}
+
+// HasPayment returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasPayment() bool {
+	if o != nil && !IsNil(o.Payment) {
+		return true
+	}
+
+	return false
+}
+
+// SetPayment gets a reference to the given []SearchPaymentOffer and assigns it to the Payment field.
+func (o *SearchEndpointHit) SetPayment(v []SearchPaymentOffer) {
+	o.Payment = v
+}
+
+// GetOperatorType returns the OperatorType field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetOperatorType() string {
+	if o == nil || IsNil(o.OperatorType) {
 		var ret string
 		return ret
 	}
-	return *o.PriceUsd
+	return *o.OperatorType
 }
 
-// GetPriceUsdOk returns a tuple with the PriceUsd field value if set, nil otherwise
+// GetOperatorTypeOk returns a tuple with the OperatorType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetPriceUsdOk() (*string, bool) {
-	if o == nil || IsNil(o.PriceUsd) {
+func (o *SearchEndpointHit) GetOperatorTypeOk() (*string, bool) {
+	if o == nil || IsNil(o.OperatorType) {
 		return nil, false
 	}
-	return o.PriceUsd, true
+	return o.OperatorType, true
 }
 
-// HasPriceUsd returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasPriceUsd() bool {
-	if o != nil && !IsNil(o.PriceUsd) {
+// HasOperatorType returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasOperatorType() bool {
+	if o != nil && !IsNil(o.OperatorType) {
 		return true
 	}
 
 	return false
 }
 
-// SetPriceUsd gets a reference to the given string and assigns it to the PriceUsd field.
-func (o *SearchEndpointHit) SetPriceUsd(v string) {
-	o.PriceUsd = &v
-}
-
-// GetPriceCurrency returns the PriceCurrency field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetPriceCurrency() string {
-	if o == nil || IsNil(o.PriceCurrency) {
-		var ret string
-		return ret
-	}
-	return *o.PriceCurrency
-}
-
-// GetPriceCurrencyOk returns a tuple with the PriceCurrency field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetPriceCurrencyOk() (*string, bool) {
-	if o == nil || IsNil(o.PriceCurrency) {
-		return nil, false
-	}
-	return o.PriceCurrency, true
-}
-
-// HasPriceCurrency returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasPriceCurrency() bool {
-	if o != nil && !IsNil(o.PriceCurrency) {
-		return true
-	}
-
-	return false
-}
-
-// SetPriceCurrency gets a reference to the given string and assigns it to the PriceCurrency field.
-func (o *SearchEndpointHit) SetPriceCurrency(v string) {
-	o.PriceCurrency = &v
-}
-
-// GetPriceDecimals returns the PriceDecimals field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetPriceDecimals() int32 {
-	if o == nil || IsNil(o.PriceDecimals) {
-		var ret int32
-		return ret
-	}
-	return *o.PriceDecimals
-}
-
-// GetPriceDecimalsOk returns a tuple with the PriceDecimals field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetPriceDecimalsOk() (*int32, bool) {
-	if o == nil || IsNil(o.PriceDecimals) {
-		return nil, false
-	}
-	return o.PriceDecimals, true
-}
-
-// HasPriceDecimals returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasPriceDecimals() bool {
-	if o != nil && !IsNil(o.PriceDecimals) {
-		return true
-	}
-
-	return false
-}
-
-// SetPriceDecimals gets a reference to the given int32 and assigns it to the PriceDecimals field.
-func (o *SearchEndpointHit) SetPriceDecimals(v int32) {
-	o.PriceDecimals = &v
+// SetOperatorType gets a reference to the given string and assigns it to the OperatorType field.
+func (o *SearchEndpointHit) SetOperatorType(v string) {
+	o.OperatorType = &v
 }
 
 // GetOperatedById returns the OperatedById field value if set, zero value otherwise.
@@ -408,38 +345,6 @@ func (o *SearchEndpointHit) SetOperatedById(v string) {
 	o.OperatedById = &v
 }
 
-// GetOperatedByType returns the OperatedByType field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetOperatedByType() string {
-	if o == nil || IsNil(o.OperatedByType) {
-		var ret string
-		return ret
-	}
-	return *o.OperatedByType
-}
-
-// GetOperatedByTypeOk returns a tuple with the OperatedByType field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetOperatedByTypeOk() (*string, bool) {
-	if o == nil || IsNil(o.OperatedByType) {
-		return nil, false
-	}
-	return o.OperatedByType, true
-}
-
-// HasOperatedByType returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasOperatedByType() bool {
-	if o != nil && !IsNil(o.OperatedByType) {
-		return true
-	}
-
-	return false
-}
-
-// SetOperatedByType gets a reference to the given string and assigns it to the OperatedByType field.
-func (o *SearchEndpointHit) SetOperatedByType(v string) {
-	o.OperatedByType = &v
-}
-
 // GetSettledViaFacilitatorId returns the SettledViaFacilitatorId field value if set, zero value otherwise.
 func (o *SearchEndpointHit) GetSettledViaFacilitatorId() string {
 	if o == nil || IsNil(o.SettledViaFacilitatorId) {
@@ -472,36 +377,100 @@ func (o *SearchEndpointHit) SetSettledViaFacilitatorId(v string) {
 	o.SettledViaFacilitatorId = &v
 }
 
-// GetRanking returns the Ranking field value if set, zero value otherwise.
-func (o *SearchEndpointHit) GetRanking() SearchEndpointRanking {
-	if o == nil || IsNil(o.Ranking) {
-		var ret SearchEndpointRanking
+// GetSettlements returns the Settlements field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetSettlements() int32 {
+	if o == nil || IsNil(o.Settlements) {
+		var ret int32
 		return ret
 	}
-	return *o.Ranking
+	return *o.Settlements
 }
 
-// GetRankingOk returns a tuple with the Ranking field value if set, nil otherwise
+// GetSettlementsOk returns a tuple with the Settlements field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SearchEndpointHit) GetRankingOk() (*SearchEndpointRanking, bool) {
-	if o == nil || IsNil(o.Ranking) {
+func (o *SearchEndpointHit) GetSettlementsOk() (*int32, bool) {
+	if o == nil || IsNil(o.Settlements) {
 		return nil, false
 	}
-	return o.Ranking, true
+	return o.Settlements, true
 }
 
-// HasRanking returns a boolean if a field has been set.
-func (o *SearchEndpointHit) HasRanking() bool {
-	if o != nil && !IsNil(o.Ranking) {
+// HasSettlements returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasSettlements() bool {
+	if o != nil && !IsNil(o.Settlements) {
 		return true
 	}
 
 	return false
 }
 
-// SetRanking gets a reference to the given SearchEndpointRanking and assigns it to the Ranking field.
-func (o *SearchEndpointHit) SetRanking(v SearchEndpointRanking) {
-	o.Ranking = &v
+// SetSettlements gets a reference to the given int32 and assigns it to the Settlements field.
+func (o *SearchEndpointHit) SetSettlements(v int32) {
+	o.Settlements = &v
+}
+
+// GetLastVerifiedAt returns the LastVerifiedAt field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetLastVerifiedAt() time.Time {
+	if o == nil || IsNil(o.LastVerifiedAt) {
+		var ret time.Time
+		return ret
+	}
+	return *o.LastVerifiedAt
+}
+
+// GetLastVerifiedAtOk returns a tuple with the LastVerifiedAt field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetLastVerifiedAtOk() (*time.Time, bool) {
+	if o == nil || IsNil(o.LastVerifiedAt) {
+		return nil, false
+	}
+	return o.LastVerifiedAt, true
+}
+
+// HasLastVerifiedAt returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasLastVerifiedAt() bool {
+	if o != nil && !IsNil(o.LastVerifiedAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetLastVerifiedAt gets a reference to the given time.Time and assigns it to the LastVerifiedAt field.
+func (o *SearchEndpointHit) SetLastVerifiedAt(v time.Time) {
+	o.LastVerifiedAt = &v
+}
+
+// GetLatencyP50Ms returns the LatencyP50Ms field value if set, zero value otherwise.
+func (o *SearchEndpointHit) GetLatencyP50Ms() int32 {
+	if o == nil || IsNil(o.LatencyP50Ms) {
+		var ret int32
+		return ret
+	}
+	return *o.LatencyP50Ms
+}
+
+// GetLatencyP50MsOk returns a tuple with the LatencyP50Ms field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchEndpointHit) GetLatencyP50MsOk() (*int32, bool) {
+	if o == nil || IsNil(o.LatencyP50Ms) {
+		return nil, false
+	}
+	return o.LatencyP50Ms, true
+}
+
+// HasLatencyP50Ms returns a boolean if a field has been set.
+func (o *SearchEndpointHit) HasLatencyP50Ms() bool {
+	if o != nil && !IsNil(o.LatencyP50Ms) {
+		return true
+	}
+
+	return false
+}
+
+// SetLatencyP50Ms gets a reference to the given int32 and assigns it to the LatencyP50Ms field.
+func (o *SearchEndpointHit) SetLatencyP50Ms(v int32) {
+	o.LatencyP50Ms = &v
 }
 
 func (o SearchEndpointHit) MarshalJSON() ([]byte, error) {
@@ -517,14 +486,8 @@ func (o SearchEndpointHit) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.EndpointId) {
 		toSerialize["endpoint_id"] = o.EndpointId
 	}
-	if !IsNil(o.SharedEndpointId) {
-		toSerialize["shared_endpoint_id"] = o.SharedEndpointId
-	}
 	if !IsNil(o.Url) {
 		toSerialize["url"] = o.Url
-	}
-	if !IsNil(o.Method) {
-		toSerialize["method"] = o.Method
 	}
 	if !IsNil(o.ResourceType) {
 		toSerialize["resource_type"] = o.ResourceType
@@ -532,29 +495,32 @@ func (o SearchEndpointHit) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.PrimaryProtocol) {
 		toSerialize["primary_protocol"] = o.PrimaryProtocol
 	}
-	if !IsNil(o.PriceAtomic) {
-		toSerialize["price_atomic"] = o.PriceAtomic
+	if !IsNil(o.Call) {
+		toSerialize["call"] = o.Call
 	}
-	if !IsNil(o.PriceUsd) {
-		toSerialize["price_usd"] = o.PriceUsd
+	if !IsNil(o.Price) {
+		toSerialize["price"] = o.Price
 	}
-	if !IsNil(o.PriceCurrency) {
-		toSerialize["price_currency"] = o.PriceCurrency
+	if !IsNil(o.Payment) {
+		toSerialize["payment"] = o.Payment
 	}
-	if !IsNil(o.PriceDecimals) {
-		toSerialize["price_decimals"] = o.PriceDecimals
+	if !IsNil(o.OperatorType) {
+		toSerialize["operator_type"] = o.OperatorType
 	}
 	if !IsNil(o.OperatedById) {
 		toSerialize["operated_by_id"] = o.OperatedById
 	}
-	if !IsNil(o.OperatedByType) {
-		toSerialize["operated_by_type"] = o.OperatedByType
-	}
 	if !IsNil(o.SettledViaFacilitatorId) {
 		toSerialize["settled_via_facilitator_id"] = o.SettledViaFacilitatorId
 	}
-	if !IsNil(o.Ranking) {
-		toSerialize["ranking"] = o.Ranking
+	if !IsNil(o.Settlements) {
+		toSerialize["settlements"] = o.Settlements
+	}
+	if !IsNil(o.LastVerifiedAt) {
+		toSerialize["last_verified_at"] = o.LastVerifiedAt
+	}
+	if !IsNil(o.LatencyP50Ms) {
+		toSerialize["latency_p50_ms"] = o.LatencyP50Ms
 	}
 	return toSerialize, nil
 }

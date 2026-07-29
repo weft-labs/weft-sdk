@@ -9,8 +9,6 @@ Name | Type
 `providerId` | string
 `displayName` | string
 `originDomains` | Array&lt;string&gt;
-`verificationState` | string
-`identityConfidence` | number
 
 ## Example
 
@@ -22,8 +20,6 @@ const example = {
   "providerId": null,
   "displayName": null,
   "originDomains": null,
-  "verificationState": null,
-  "identityConfidence": null,
 } satisfies SearchProviderRef
 
 console.log(example)

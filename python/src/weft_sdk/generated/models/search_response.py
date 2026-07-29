@@ -17,6 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
 from typing_extensions import Annotated
@@ -31,8 +32,15 @@ class SearchResponse(BaseModel):
     """
     The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
     """ # noqa: E501
-    query_trace_id: UUID = Field(description="Opaque trace id for the served query, matching the platform `query_trace_id`.")
+    query_trace_id: UUID = Field(description="Opaque trace id for the served query, matching the platform `query_trace_id` — and the `search_id` that re-reads it. Deliberately the same id rather than a second handle: one serve, one name. ")
     query: StrictStr
+    format: Optional[StrictStr] = Field(default=None, description="Which view this response carries, echoing the requested format. `json` populates `results` and leaves `markdown` null; `markdown` populates `markdown` and leaves `results` empty. Exactly one is populated per response, never both — returning both eagerly would double the payload. ")
+    markdown: Optional[StrictStr] = Field(default=None, description="The flat comparison table, when `format` is `markdown`; null otherwise. Rendered deterministically from the same stored result the `json` view returns, so the two views of one search can never disagree. ")
+    result_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="How many `(Provider + Capability)` results the search produced. Read THIS, not `results.length`, for the count: on a `markdown` response `results` is empty by design, so `result_count > 0` with an empty `results` is a rendered table while `result_count == 0` is a genuine zero-result. ")
+    served_from: Optional[StrictStr] = Field(default=None, description="`live` for a fresh serve; `snapshot` for an immutable replay of a completed search. A re-read is a snapshot and says so — read it with `as_of` and `stale`. ")
+    as_of: Optional[datetime] = Field(default=None, description="When the results were produced. Now on a `live` serve; on a `snapshot` the ORIGINAL serve time, because a replay returns exactly what was paid for, not current truth. ")
+    stale: Optional[StrictBool] = Field(default=None, description="Whether the active search index has changed since these results were produced. `true` does not mean the results are wrong — it means they are a snapshot of an index that has since moved. Always `false` on a `live` serve. ")
+    payment_note: Optional[StrictStr] = Field(default=None, description="How payment works across the catalog, stated once for the whole response rather than repeated in every endpoint's usage instructions. ")
     applied_filters: Optional[SearchFilterSpec] = Field(default=None, description="The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). ")
     decomposition_source: Optional[StrictStr] = Field(default=None, description="Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands. ")
     embedder_model: StrictStr
@@ -43,7 +51,27 @@ class SearchResponse(BaseModel):
     suggestion: Optional[StrictStr] = Field(default=None, description="Human/agent-readable explanation of `reason`, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when `reason` is. ")
     results: List[SearchResult] = Field(description="Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match. ")
     mock: Optional[StrictBool] = Field(default=None, description="Present and `true` only when served by the mock backend.", alias="_mock")
-    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "match_quality", "reason", "suggestion", "results", "_mock"]
+    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "format", "markdown", "result_count", "served_from", "as_of", "stale", "payment_note", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "match_quality", "reason", "suggestion", "results", "_mock"]
+
+    @field_validator('format')
+    def format_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['json', 'markdown']):
+            raise ValueError("must be one of enum values ('json', 'markdown')")
+        return value
+
+    @field_validator('served_from')
+    def served_from_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['live', 'snapshot']):
+            raise ValueError("must be one of enum values ('live', 'snapshot')")
+        return value
 
     @field_validator('decomposition_source')
     def decomposition_source_validate_enum(cls, value):
@@ -145,6 +173,13 @@ class SearchResponse(BaseModel):
         _obj = cls.model_validate({
             "query_trace_id": obj.get("query_trace_id"),
             "query": obj.get("query"),
+            "format": obj.get("format"),
+            "markdown": obj.get("markdown"),
+            "result_count": obj.get("result_count"),
+            "served_from": obj.get("served_from"),
+            "as_of": obj.get("as_of"),
+            "stale": obj.get("stale"),
+            "payment_note": obj.get("payment_note"),
             "applied_filters": SearchFilterSpec.from_dict(obj["applied_filters"]) if obj.get("applied_filters") is not None else None,
             "decomposition_source": obj.get("decomposition_source"),
             "embedder_model": obj.get("embedder_model"),

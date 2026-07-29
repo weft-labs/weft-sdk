@@ -17,53 +17,73 @@ module Weft
   class SearchEndpointHit < ApiModelBase
     attr_accessor :endpoint_id
 
-    # URL-level endpoint grouping id shared by method variants of the same URL. `endpoint_id` remains the per-operation id. Null on rows the platform has not grouped. 
-    attr_accessor :shared_endpoint_id
-
     attr_accessor :url
-
-    # Normalized HTTP method for this callable operation (e.g. `GET`, `POST`). Empty string for rows the platform carries no method for. 
-    attr_accessor :method
 
     attr_accessor :resource_type
 
     attr_accessor :primary_protocol
 
-    # Price in atomic units (micro-USD) for this endpoint. Use this for settlement (exact, integer). Null when unpriced. 
-    attr_accessor :price_atomic
+    attr_accessor :call
 
-    # Server-derived price in USD as a decimal string (= `price_atomic` / 1e6, e.g. \"0.008\" for `price_atomic` 8000) — the dollar value people and agents reason in. A decimal string, never a float; trailing zeros trimmed. Null when unpriced (mirrors `price_atomic`). For settlement use `price_atomic`. 
-    attr_accessor :price_usd
+    attr_accessor :price
 
-    attr_accessor :price_currency
+    # The settlement routes this endpoint's own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of `call`: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider's own preference order. Honest-empty when the pipeline observed no challenge. 
+    attr_accessor :payment
 
-    attr_accessor :price_decimals
+    # Who you are actually paying. `first_party` = operated by the provider that makes the capability; `reseller` = resold, so the price carries someone else's margin. Null until the platform resolves the operator. 
+    attr_accessor :operator_type
 
     attr_accessor :operated_by_id
 
-    attr_accessor :operated_by_type
-
     attr_accessor :settled_via_facilitator_id
 
-    attr_accessor :ranking
+    # Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown. 
+    attr_accessor :settlements
+
+    # When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification. 
+    attr_accessor :last_verified_at
+
+    # Median time-to-first-byte in ms across the endpoint's probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0). 
+    attr_accessor :latency_p50_ms
+
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'endpoint_id' => :'endpoint_id',
-        :'shared_endpoint_id' => :'shared_endpoint_id',
         :'url' => :'url',
-        :'method' => :'method',
         :'resource_type' => :'resource_type',
         :'primary_protocol' => :'primary_protocol',
-        :'price_atomic' => :'price_atomic',
-        :'price_usd' => :'price_usd',
-        :'price_currency' => :'price_currency',
-        :'price_decimals' => :'price_decimals',
+        :'call' => :'call',
+        :'price' => :'price',
+        :'payment' => :'payment',
+        :'operator_type' => :'operator_type',
         :'operated_by_id' => :'operated_by_id',
-        :'operated_by_type' => :'operated_by_type',
         :'settled_via_facilitator_id' => :'settled_via_facilitator_id',
-        :'ranking' => :'ranking'
+        :'settlements' => :'settlements',
+        :'last_verified_at' => :'last_verified_at',
+        :'latency_p50_ms' => :'latency_p50_ms'
       }
     end
 
@@ -81,19 +101,18 @@ module Weft
     def self.openapi_types
       {
         :'endpoint_id' => :'String',
-        :'shared_endpoint_id' => :'String',
         :'url' => :'String',
-        :'method' => :'String',
         :'resource_type' => :'String',
         :'primary_protocol' => :'String',
-        :'price_atomic' => :'Integer',
-        :'price_usd' => :'String',
-        :'price_currency' => :'String',
-        :'price_decimals' => :'Integer',
+        :'call' => :'SearchEndpointCall',
+        :'price' => :'SearchEndpointPrice',
+        :'payment' => :'Array<SearchPaymentOffer>',
+        :'operator_type' => :'String',
         :'operated_by_id' => :'String',
-        :'operated_by_type' => :'String',
         :'settled_via_facilitator_id' => :'String',
-        :'ranking' => :'SearchEndpointRanking'
+        :'settlements' => :'Integer',
+        :'last_verified_at' => :'Time',
+        :'latency_p50_ms' => :'Integer'
       }
     end
 
@@ -123,16 +142,8 @@ module Weft
         self.endpoint_id = attributes[:'endpoint_id']
       end
 
-      if attributes.key?(:'shared_endpoint_id')
-        self.shared_endpoint_id = attributes[:'shared_endpoint_id']
-      end
-
       if attributes.key?(:'url')
         self.url = attributes[:'url']
-      end
-
-      if attributes.key?(:'method')
-        self.method = attributes[:'method']
       end
 
       if attributes.key?(:'resource_type')
@@ -143,36 +154,42 @@ module Weft
         self.primary_protocol = attributes[:'primary_protocol']
       end
 
-      if attributes.key?(:'price_atomic')
-        self.price_atomic = attributes[:'price_atomic']
+      if attributes.key?(:'call')
+        self.call = attributes[:'call']
       end
 
-      if attributes.key?(:'price_usd')
-        self.price_usd = attributes[:'price_usd']
+      if attributes.key?(:'price')
+        self.price = attributes[:'price']
       end
 
-      if attributes.key?(:'price_currency')
-        self.price_currency = attributes[:'price_currency']
+      if attributes.key?(:'payment')
+        if (value = attributes[:'payment']).is_a?(Array)
+          self.payment = value
+        end
       end
 
-      if attributes.key?(:'price_decimals')
-        self.price_decimals = attributes[:'price_decimals']
+      if attributes.key?(:'operator_type')
+        self.operator_type = attributes[:'operator_type']
       end
 
       if attributes.key?(:'operated_by_id')
         self.operated_by_id = attributes[:'operated_by_id']
       end
 
-      if attributes.key?(:'operated_by_type')
-        self.operated_by_type = attributes[:'operated_by_type']
-      end
-
       if attributes.key?(:'settled_via_facilitator_id')
         self.settled_via_facilitator_id = attributes[:'settled_via_facilitator_id']
       end
 
-      if attributes.key?(:'ranking')
-        self.ranking = attributes[:'ranking']
+      if attributes.key?(:'settlements')
+        self.settlements = attributes[:'settlements']
+      end
+
+      if attributes.key?(:'last_verified_at')
+        self.last_verified_at = attributes[:'last_verified_at']
+      end
+
+      if attributes.key?(:'latency_p50_ms')
+        self.latency_p50_ms = attributes[:'latency_p50_ms']
       end
     end
 
@@ -188,7 +205,19 @@ module Weft
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
+      operator_type_validator = EnumAttributeValidator.new('String', ["first_party", "reseller"])
+      return false unless operator_type_validator.valid?(@operator_type)
       true
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] operator_type Object to be assigned
+    def operator_type=(operator_type)
+      validator = EnumAttributeValidator.new('String', ["first_party", "reseller"])
+      unless validator.valid?(operator_type)
+        fail ArgumentError, "invalid value for \"operator_type\", must be one of #{validator.allowable_values}."
+      end
+      @operator_type = operator_type
     end
 
     # Checks equality by comparing each attribute.
@@ -197,19 +226,18 @@ module Weft
       return true if self.equal?(o)
       self.class == o.class &&
           endpoint_id == o.endpoint_id &&
-          shared_endpoint_id == o.shared_endpoint_id &&
           url == o.url &&
-          method == o.method &&
           resource_type == o.resource_type &&
           primary_protocol == o.primary_protocol &&
-          price_atomic == o.price_atomic &&
-          price_usd == o.price_usd &&
-          price_currency == o.price_currency &&
-          price_decimals == o.price_decimals &&
+          call == o.call &&
+          price == o.price &&
+          payment == o.payment &&
+          operator_type == o.operator_type &&
           operated_by_id == o.operated_by_id &&
-          operated_by_type == o.operated_by_type &&
           settled_via_facilitator_id == o.settled_via_facilitator_id &&
-          ranking == o.ranking
+          settlements == o.settlements &&
+          last_verified_at == o.last_verified_at &&
+          latency_p50_ms == o.latency_p50_ms
     end
 
     # @see the `==` method
@@ -221,7 +249,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [endpoint_id, shared_endpoint_id, url, method, resource_type, primary_protocol, price_atomic, price_usd, price_currency, price_decimals, operated_by_id, operated_by_type, settled_via_facilitator_id, ranking].hash
+      [endpoint_id, url, resource_type, primary_protocol, call, price, payment, operator_type, operated_by_id, settled_via_facilitator_id, settlements, last_verified_at, latency_p50_ms].hash
     end
 
     # Builds the object from hash

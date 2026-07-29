@@ -31,12 +31,6 @@ export interface SearchCapabilityRef {
      * @memberof SearchCapabilityRef
      */
     capabilityType?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof SearchCapabilityRef
-     */
-    resolutionConfidence?: number;
 }
 
 /**
@@ -58,7 +52,6 @@ export function SearchCapabilityRefFromJSONTyped(json: any, ignoreDiscriminator:
         
         'capabilityId': json['capability_id'] == null ? undefined : json['capability_id'],
         'capabilityType': json['capability_type'] == null ? undefined : json['capability_type'],
-        'resolutionConfidence': json['resolution_confidence'] == null ? undefined : json['resolution_confidence'],
     };
 }
 
@@ -75,7 +68,6 @@ export function SearchCapabilityRefToJSONTyped(value?: SearchCapabilityRef | nul
         
         'capability_id': value['capabilityId'],
         'capability_type': value['capabilityType'],
-        'resolution_confidence': value['resolutionConfidence'],
     };
 }
 

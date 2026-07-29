@@ -22,8 +22,6 @@ type SearchProviderRef struct {
 	ProviderId *string `json:"provider_id,omitempty"`
 	DisplayName *string `json:"display_name,omitempty"`
 	OriginDomains []string `json:"origin_domains,omitempty"`
-	VerificationState *string `json:"verification_state,omitempty"`
-	IdentityConfidence *float32 `json:"identity_confidence,omitempty"`
 }
 
 // NewSearchProviderRef instantiates a new SearchProviderRef object
@@ -139,70 +137,6 @@ func (o *SearchProviderRef) SetOriginDomains(v []string) {
 	o.OriginDomains = v
 }
 
-// GetVerificationState returns the VerificationState field value if set, zero value otherwise.
-func (o *SearchProviderRef) GetVerificationState() string {
-	if o == nil || IsNil(o.VerificationState) {
-		var ret string
-		return ret
-	}
-	return *o.VerificationState
-}
-
-// GetVerificationStateOk returns a tuple with the VerificationState field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchProviderRef) GetVerificationStateOk() (*string, bool) {
-	if o == nil || IsNil(o.VerificationState) {
-		return nil, false
-	}
-	return o.VerificationState, true
-}
-
-// HasVerificationState returns a boolean if a field has been set.
-func (o *SearchProviderRef) HasVerificationState() bool {
-	if o != nil && !IsNil(o.VerificationState) {
-		return true
-	}
-
-	return false
-}
-
-// SetVerificationState gets a reference to the given string and assigns it to the VerificationState field.
-func (o *SearchProviderRef) SetVerificationState(v string) {
-	o.VerificationState = &v
-}
-
-// GetIdentityConfidence returns the IdentityConfidence field value if set, zero value otherwise.
-func (o *SearchProviderRef) GetIdentityConfidence() float32 {
-	if o == nil || IsNil(o.IdentityConfidence) {
-		var ret float32
-		return ret
-	}
-	return *o.IdentityConfidence
-}
-
-// GetIdentityConfidenceOk returns a tuple with the IdentityConfidence field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchProviderRef) GetIdentityConfidenceOk() (*float32, bool) {
-	if o == nil || IsNil(o.IdentityConfidence) {
-		return nil, false
-	}
-	return o.IdentityConfidence, true
-}
-
-// HasIdentityConfidence returns a boolean if a field has been set.
-func (o *SearchProviderRef) HasIdentityConfidence() bool {
-	if o != nil && !IsNil(o.IdentityConfidence) {
-		return true
-	}
-
-	return false
-}
-
-// SetIdentityConfidence gets a reference to the given float32 and assigns it to the IdentityConfidence field.
-func (o *SearchProviderRef) SetIdentityConfidence(v float32) {
-	o.IdentityConfidence = &v
-}
-
 func (o SearchProviderRef) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -221,12 +155,6 @@ func (o SearchProviderRef) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.OriginDomains) {
 		toSerialize["origin_domains"] = o.OriginDomains
-	}
-	if !IsNil(o.VerificationState) {
-		toSerialize["verification_state"] = o.VerificationState
-	}
-	if !IsNil(o.IdentityConfidence) {
-		toSerialize["identity_confidence"] = o.IdentityConfidence
 	}
 	return toSerialize, nil
 }

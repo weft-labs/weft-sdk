@@ -1,4 +1,4 @@
-# Changelog — OpenAPI 0.8.0 (2026-07-28)
+# Changelog — OpenAPI 0.8.0 (2026-07-29)
 
 _No API surface changes detected between the previous and current spec._
 
