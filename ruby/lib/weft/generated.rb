@@ -1,3 +1,5 @@
+require 'set'
+
 require_relative 'generated/version'
 require_relative 'generated/api_error'
 require_relative 'generated/api_model_base'
