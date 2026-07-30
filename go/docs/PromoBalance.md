@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BalanceUsd** | **string** |  | 
-**Scope** | **string** | Where the promo can be spent. | 
-**ExpiresAt** | **time.Time** |  | 
+**BalanceUsd** | **string** |  |
+**Scope** | **string** | Where the promo can be spent. |
+**ExpiresAt** | **time.Time** |  |
 
 ## Methods
 
@@ -89,5 +89,3 @@ SetExpiresAt sets ExpiresAt field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

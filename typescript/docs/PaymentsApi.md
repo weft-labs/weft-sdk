@@ -26,7 +26,7 @@ import type { GetPaymentRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const config = new Configuration({ 
+  const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
   });
@@ -97,7 +97,7 @@ import type { ListPaymentsRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const config = new Configuration({ 
+  const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
   });
@@ -152,4 +152,3 @@ example().catch(console.error);
 | **403** | The credential authenticated but has no organization context (&#x60;ORGANIZATION_REQUIRED&#x60;). Account-scoped (buyer) keys cannot read this org-scoped endpoint.  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-

@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**capability_id** | **str** |  | [optional] 
-**capability_type** | **str** |  | [optional] 
+**capability_id** | **str** |  | [optional]
+**capability_type** | **str** |  | [optional]
 
 ## Example
 
@@ -26,5 +26,3 @@ search_capability_ref_dict = search_capability_ref_instance.to_dict()
 search_capability_ref_from_dict = SearchCapabilityRef.from_dict(search_capability_ref_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

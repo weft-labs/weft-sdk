@@ -17,4 +17,3 @@ instance = Weft::ApiKeyListResponse.new(
   pagination: null
 )
 ```
-

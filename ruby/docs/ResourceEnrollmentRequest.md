@@ -21,4 +21,3 @@ instance = Weft::ResourceEnrollmentRequest.new(
   wallet_address: null
 )
 ```
-

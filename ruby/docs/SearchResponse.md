@@ -51,4 +51,3 @@ instance = Weft::SearchResponse.new(
   _mock: null
 )
 ```
-

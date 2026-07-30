@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**reset_password_token** | **str** |  | 
-**password** | **str** |  | 
-**password_confirmation** | **str** |  | 
+**reset_password_token** | **str** |  |
+**password** | **str** |  |
+**password_confirmation** | **str** |  |
 
 ## Example
 
@@ -27,5 +27,3 @@ password_update_request_dict = password_update_request_instance.to_dict()
 password_update_request_from_dict = PasswordUpdateRequest.from_dict(password_update_request_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

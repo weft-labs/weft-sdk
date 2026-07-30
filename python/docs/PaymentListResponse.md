@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**List[Payment]**](Payment.md) |  | 
-**pagination** | [**Pagination**](Pagination.md) |  | 
+**data** | [**List[Payment]**](Payment.md) |  |
+**pagination** | [**Pagination**](Pagination.md) |  |
 
 ## Example
 
@@ -26,5 +26,3 @@ payment_list_response_dict = payment_list_response_instance.to_dict()
 payment_list_response_from_dict = PaymentListResponse.from_dict(payment_list_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

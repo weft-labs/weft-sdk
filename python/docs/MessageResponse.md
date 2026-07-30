@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**MessageResponseData**](MessageResponseData.md) |  | 
+**data** | [**MessageResponseData**](MessageResponseData.md) |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ message_response_dict = message_response_instance.to_dict()
 message_response_from_dict = MessageResponse.from_dict(message_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

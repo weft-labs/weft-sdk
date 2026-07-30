@@ -17,4 +17,3 @@ instance = Weft::PaymentListResponse.new(
   pagination: null
 )
 ```
-

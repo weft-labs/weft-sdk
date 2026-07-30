@@ -4,17 +4,18 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**Name** | **string** |  | 
-**Slug** | **string** |  | 
-**Kind** | **string** |  | 
-**ApiKey** | [**MeApiKey**](MeApiKey.md) |  | 
+**PrincipalType** | **string** |  |
+**Id** | **int32** |  |
+**Name** | **string** |  |
+**Slug** | **string** |  |
+**Kind** | **string** |  |
+**ApiKey** | [**MeApiKey**](MeApiKey.md) |  |
 
 ## Methods
 
 ### NewAccountDetails
 
-`func NewAccountDetails(id int32, name string, slug string, kind string, apiKey MeApiKey, ) *AccountDetails`
+`func NewAccountDetails(principalType string, id int32, name string, slug string, kind string, apiKey MeApiKey, ) *AccountDetails`
 
 NewAccountDetails instantiates a new AccountDetails object
 This constructor will assign default values to properties that have it defined,
@@ -28,6 +29,26 @@ will change when the set of required properties is changed
 NewAccountDetailsWithDefaults instantiates a new AccountDetails object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetPrincipalType
+
+`func (o *AccountDetails) GetPrincipalType() string`
+
+GetPrincipalType returns the PrincipalType field if non-nil, zero value otherwise.
+
+### GetPrincipalTypeOk
+
+`func (o *AccountDetails) GetPrincipalTypeOk() (*string, bool)`
+
+GetPrincipalTypeOk returns a tuple with the PrincipalType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPrincipalType
+
+`func (o *AccountDetails) SetPrincipalType(v string)`
+
+SetPrincipalType sets PrincipalType field to given value.
+
 
 ### GetId
 
@@ -131,5 +152,3 @@ SetApiKey sets ApiKey field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

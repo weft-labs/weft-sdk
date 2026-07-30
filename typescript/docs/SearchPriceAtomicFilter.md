@@ -1,7 +1,7 @@
 
 # SearchPriceAtomicFilter
 
-The same price constraint in integer micro-USD (1 USDC = 1_000_000 micro-USD) — the settlement form. Set exactly one operator: a scalar (`lte` / `gte` / `eq`) OR a range (`range_gte` + `range_lte` together, lower ≤ upper). Mutually exclusive with `price`. An unpriced resource is excluded from any price-filtered query. 
+The same price constraint in integer micro-USD (1 USDC = 1_000_000 micro-USD) — the settlement form. Set exactly one operator: a scalar (`lte` / `gte` / `eq`) OR a range (`range_gte` + `range_lte` together, lower ≤ upper). Mutually exclusive with `price`. An unpriced resource is excluded from any price-filtered query.
 
 ## Properties
 
@@ -39,5 +39,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Error** | **string** | Stable error code. | 
-**Details** | **map[string]interface{}** | Optional context. Shape varies by error code. | 
-**Policy** | [**SpendingPolicy**](SpendingPolicy.md) |  | 
-**Balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  | 
-**DashboardUrl** | **string** | Deep-link to the dashboard&#39;s policy page. | 
+**Error** | **string** | Stable error code. |
+**Details** | **map[string]interface{}** | Optional context. Shape varies by error code. |
+**Policy** | [**SpendingPolicy**](SpendingPolicy.md) |  |
+**Balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  |
+**DashboardUrl** | **string** | Deep-link to the dashboard&#39;s policy page. |
 
 ## Methods
 
@@ -131,5 +131,3 @@ SetDashboardUrl sets DashboardUrl field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

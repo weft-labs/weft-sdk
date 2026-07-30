@@ -39,4 +39,3 @@ instance = Weft::Payment.new(
   api_key_name: null
 )
 ```
-

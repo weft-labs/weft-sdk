@@ -19,4 +19,3 @@ instance = Weft::PasswordUpdateRequest.new(
   password_confirmation: null
 )
 ```
-

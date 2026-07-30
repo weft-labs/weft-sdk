@@ -16,12 +16,9 @@ fi
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}"
 
-docker run --rm \
-  -v "${ROOT_DIR}:/local" \
-  openapitools/openapi-generator-cli:v7.19.0 generate \
-  -i /local/spec/openapi.yaml \
-  -g ruby \
-  -o /local/ruby/.generated \
+"${ROOT_DIR}/scripts/run-openapi-generator.sh" \
+  ruby \
+  "${TMP_DIR}" \
   --additional-properties=moduleName=Weft,gemName=weft-sdk,gemVersion="${SPEC_VERSION}"
 
 rm -rf "${OUT_DIR}/lib/weft/generated" "${OUT_DIR}/docs"
@@ -29,7 +26,18 @@ mkdir -p "${OUT_DIR}/lib/weft/generated"
 
 cp -R "${TMP_DIR}/lib/weft-sdk/"* "${OUT_DIR}/lib/weft/generated/"
 
+# OpenAPI Generator 7.19 emits oneOf discriminator builders that only read
+# symbol keys, but JSON.parse supplies string keys. Normalize every generated
+# discriminator lookup so real API responses deserialize correctly.
+find "${OUT_DIR}/lib/weft/generated/models" -type f -name '*.rb' \
+  -exec sed -i.bak \
+  's/data\[openapi_discriminator_name\]/data[openapi_discriminator_name] || data[openapi_discriminator_name.to_s]/g' {} +
+find "${OUT_DIR}/lib/weft/generated/models" -type f -name '*.bak' -delete
+
 # Copy generated docs
 if [ -d "${TMP_DIR}/docs" ]; then
   cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
 fi
+
+"${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
+  "${OUT_DIR}/lib/weft/generated" "${OUT_DIR}/docs"

@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**user** | [**User**](User.md) |  | 
-**token** | **str** |  | [optional] 
-**confirmation_required** | **bool** |  | 
+**user** | [**User**](User.md) |  |
+**token** | **str** |  | [optional]
+**confirmation_required** | **bool** |  |
 
 ## Example
 
@@ -27,5 +27,3 @@ auth_response_data_dict = auth_response_data_instance.to_dict()
 auth_response_data_from_dict = AuthResponseData.from_dict(auth_response_data_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

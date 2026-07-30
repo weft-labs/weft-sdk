@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**max_tx_usd** | **str** | Maximum USD per single transaction. | 
-**daily_limit_usd** | **str** | Maximum USD spent in a 24-hour window. | 
-**weekly_limit_usd** | **str** | Maximum USD spent in a 7-day window. | 
+**max_tx_usd** | **str** | Maximum USD per single transaction. |
+**daily_limit_usd** | **str** | Maximum USD spent in a 24-hour window. |
+**weekly_limit_usd** | **str** | Maximum USD spent in a 7-day window. |
 
 ## Example
 
@@ -27,5 +27,3 @@ spending_policy_dict = spending_policy_instance.to_dict()
 spending_policy_from_dict = SpendingPolicy.from_dict(spending_policy_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -6,8 +6,8 @@ Payment-protocol constraint. Set exactly one of `eq` / `in`.
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**eq** | **str** | Primary protocol is exactly this value. | [optional] 
-**var_in** | **List[str]** | Primary protocol is one of these values. | [optional] 
+**eq** | **str** | Primary protocol is exactly this value. | [optional]
+**var_in** | **List[str]** | Primary protocol is one of these values. | [optional]
 
 ## Example
 
@@ -27,5 +27,3 @@ search_protocol_filter_dict = search_protocol_filter_instance.to_dict()
 search_protocol_filter_from_dict = SearchProtocolFilter.from_dict(search_protocol_filter_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

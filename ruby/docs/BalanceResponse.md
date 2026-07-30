@@ -23,4 +23,3 @@ instance = Weft::BalanceResponse.new(
   policy: null
 )
 ```
-

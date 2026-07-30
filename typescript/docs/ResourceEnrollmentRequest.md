@@ -1,7 +1,7 @@
 
 # ResourceEnrollmentRequest
 
-`slug` and `category` are accepted but silently ignored — the server generates the slug from `name`, and category is a post-claim concern. 
+`slug` and `category` are accepted but silently ignored — the server generates the slug from `name`, and category is a post-claim concern.
 
 ## Properties
 
@@ -37,5 +37,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

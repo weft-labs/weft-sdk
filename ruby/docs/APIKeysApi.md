@@ -27,7 +27,7 @@ Weft.configure do |config|
 end
 
 api_instance = Weft::APIKeysApi.new
-create_api_key_request = Weft::CreateApiKeyRequest.new # CreateApiKeyRequest | 
+create_api_key_request = Weft::CreateApiKeyRequest.new # CreateApiKeyRequest |
 
 begin
   # Create an API key
@@ -205,4 +205,3 @@ end
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-

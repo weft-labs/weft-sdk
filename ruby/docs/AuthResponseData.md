@@ -19,4 +19,3 @@ instance = Weft::AuthResponseData.new(
   confirmation_required: null
 )
 ```
-

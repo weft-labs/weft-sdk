@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | **string** | Stable machine-readable error code (snake_case). | 
-**Message** | **string** | Human-readable error description. | 
-**Details** | Pointer to **map[string]interface{}** | Optional structured context about the failure. | [optional] 
-**RequestId** | Pointer to **string** | Correlates with server logs; include when reporting bugs. | [optional] 
+**Code** | **string** | Stable machine-readable error code (snake_case). |
+**Message** | **string** | Human-readable error description. |
+**Details** | Pointer to **map[string]interface{}** | Optional structured context about the failure. | [optional]
+**RequestId** | Pointer to **string** | Correlates with server logs; include when reporting bugs. | [optional]
 
 ## Methods
 
@@ -120,5 +120,3 @@ HasRequestId returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

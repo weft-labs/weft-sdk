@@ -31,4 +31,3 @@ instance = Weft::FetchResponse.new(
   merchant: null
 )
 ```
-

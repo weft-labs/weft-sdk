@@ -5,13 +5,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | **str** |  | 
-**details** | **Dict[str, object]** | Optional context. Shape varies by error code. | 
-**policy** | [**SpendingPolicy**](SpendingPolicy.md) |  | 
-**balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  | 
-**dashboard_url** | **str** | Deep-link to the dashboard&#39;s policy page. | 
-**error_description** | **str** |  | 
-**scope** | **str** | Space-delimited list of scopes the endpoint requires. | 
+**error** | **str** |  |
+**details** | **Dict[str, object]** | Optional context. Shape varies by error code. |
+**policy** | [**SpendingPolicy**](SpendingPolicy.md) |  |
+**balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  |
+**dashboard_url** | **str** | Deep-link to the dashboard&#39;s policy page. |
+**error_description** | **str** |  |
+**scope** | **str** | Space-delimited list of scopes the endpoint requires. |
 
 ## Example
 
@@ -31,5 +31,3 @@ fetch403_response_dict = fetch403_response_instance.to_dict()
 fetch403_response_from_dict = Fetch403Response.from_dict(fetch403_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

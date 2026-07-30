@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**AccountDetails**](AccountDetails.md) |  | 
+**data** | [**MeResponseData**](MeResponseData.md) |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ me_response_dict = me_response_instance.to_dict()
 me_response_from_dict = MeResponse.from_dict(me_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

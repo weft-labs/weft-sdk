@@ -23,4 +23,3 @@ instance = Weft::Wallet.new(
   network: null
 )
 ```
-

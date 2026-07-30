@@ -64,4 +64,3 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: application/yaml
-

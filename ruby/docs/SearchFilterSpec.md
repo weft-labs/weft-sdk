@@ -21,4 +21,3 @@ instance = Weft::SearchFilterSpec.new(
   protocol: null
 )
 ```
-

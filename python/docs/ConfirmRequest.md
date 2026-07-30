@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**confirmation_token** | **str** |  | 
+**confirmation_token** | **str** |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ confirm_request_dict = confirm_request_instance.to_dict()
 confirm_request_from_dict = ConfirmRequest.from_dict(confirm_request_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

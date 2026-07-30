@@ -4,19 +4,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**TxHash** | **string** |  | 
-**PayerAddress** | **string** |  | 
-**RecipientAddress** | **string** |  | 
-**Amount** | **int32** | Amount in atomic units (1 USDC &#x3D; 1,000,000) | 
-**AmountFormatted** | **string** | Human-readable amount (e.g. \&quot;1.00 USDC\&quot;) | 
-**Currency** | **string** |  | 
-**Network** | **string** | CAIP-2 chain identifier | 
-**ResourceUrl** | Pointer to **string** |  | [optional] 
-**ResourceHost** | Pointer to **string** |  | [optional] 
-**SettlementLatencyMs** | Pointer to **int32** |  | [optional] 
-**SettledAt** | **time.Time** |  | 
-**ApiKeyName** | **string** |  | 
+**Id** | **int32** |  |
+**TxHash** | **string** |  |
+**PayerAddress** | **string** |  |
+**RecipientAddress** | **string** |  |
+**Amount** | **int32** | Amount in atomic units (1 USDC &#x3D; 1,000,000) |
+**AmountFormatted** | **string** | Human-readable amount (e.g. \&quot;1.00 USDC\&quot;) |
+**Currency** | **string** |  |
+**Network** | **string** | CAIP-2 chain identifier |
+**ResourceUrl** | Pointer to **string** |  | [optional]
+**ResourceHost** | Pointer to **string** |  | [optional]
+**SettlementLatencyMs** | Pointer to **int32** |  | [optional]
+**SettledAt** | **time.Time** |  |
+**ApiKeyName** | **string** |  |
 
 ## Methods
 
@@ -314,5 +314,3 @@ SetApiKeyName sets ApiKeyName field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Lte** | Pointer to **int32** | Price ≤ this many micro-USD (inclusive ceiling). | [optional] 
-**Gte** | Pointer to **int32** | Price ≥ this many micro-USD (inclusive floor). | [optional] 
-**Eq** | Pointer to **int32** | Price exactly this many micro-USD. | [optional] 
-**RangeGte** | Pointer to **int32** | Range lower bound (inclusive), micro-USD. Set with range_lte. | [optional] 
-**RangeLte** | Pointer to **int32** | Range upper bound (inclusive), micro-USD. Set with range_gte. | [optional] 
+**Lte** | Pointer to **int32** | Price ≤ this many micro-USD (inclusive ceiling). | [optional]
+**Gte** | Pointer to **int32** | Price ≥ this many micro-USD (inclusive floor). | [optional]
+**Eq** | Pointer to **int32** | Price exactly this many micro-USD. | [optional]
+**RangeGte** | Pointer to **int32** | Range lower bound (inclusive), micro-USD. Set with range_lte. | [optional]
+**RangeLte** | Pointer to **int32** | Range upper bound (inclusive), micro-USD. Set with range_gte. | [optional]
 
 ## Methods
 
@@ -156,5 +156,3 @@ HasRangeLte returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

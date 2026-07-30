@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**Name** | Pointer to **string** |  | [optional] 
-**KeyPrefix** | **string** |  | 
-**RawKey** | **string** | Full API key (shown only once at creation) | 
-**CreatedAt** | **time.Time** |  | 
+**Id** | **int32** |  |
+**Name** | Pointer to **string** |  | [optional]
+**KeyPrefix** | **string** |  |
+**RawKey** | **string** | Full API key (shown only once at creation) |
+**CreatedAt** | **time.Time** |  |
 
 ## Methods
 
@@ -136,5 +136,3 @@ SetCreatedAt sets CreatedAt field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

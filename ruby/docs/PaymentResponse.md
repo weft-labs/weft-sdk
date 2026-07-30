@@ -15,4 +15,3 @@ instance = Weft::PaymentResponse.new(
   data: null
 )
 ```
-

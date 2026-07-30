@@ -1,7 +1,7 @@
 
 # SearchPaymentOffer
 
-One settlement route the endpoint\'s own 402 challenge published — a (rail × network × asset × payee) tuple a caller can settle against directly with its own SDK. 
+One settlement route the endpoint\'s own 402 challenge published — a (rail × network × asset × payee) tuple a caller can settle against directly with its own SDK.
 
 ## Properties
 
@@ -45,5 +45,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

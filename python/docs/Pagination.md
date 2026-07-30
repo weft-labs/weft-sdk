@@ -5,10 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**page** | **int** |  | 
-**per_page** | **int** |  | 
-**total** | **int** |  | 
-**total_pages** | **int** |  | 
+**page** | **int** |  |
+**per_page** | **int** |  |
+**total** | **int** |  |
+**total_pages** | **int** |  |
 
 ## Example
 
@@ -28,5 +28,3 @@ pagination_dict = pagination_instance.to_dict()
 pagination_from_dict = Pagination.from_dict(pagination_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

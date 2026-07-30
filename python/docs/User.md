@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**email** | **str** |  | 
-**status** | **str** |  | [optional] 
+**id** | **int** |  |
+**email** | **str** |  |
+**status** | **str** |  | [optional]
 
 ## Example
 
@@ -27,5 +27,3 @@ user_dict = user_instance.to_dict()
 user_from_dict = User.from_dict(user_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

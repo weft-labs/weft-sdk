@@ -1,7 +1,7 @@
 
 # PromoBalance
 
-Freemium promo credit. v1 returns zero values; once the promo ledger ships (deferred from spec 10), real balances appear here without a shape change. 
+Freemium promo credit. v1 returns zero values; once the promo ledger ships (deferred from spec 10), real balances appear here without a shape change.
 
 ## Properties
 
@@ -35,5 +35,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

@@ -19,4 +19,3 @@ instance = Weft::SpendingPolicy.new(
   weekly_limit_usd: 50.00
 )
 ```
-

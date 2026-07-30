@@ -15,4 +15,3 @@ instance = Weft::ConfirmRequest.new(
   confirmation_token: null
 )
 ```
-

@@ -25,7 +25,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-confirm_request = Weft::ConfirmRequest.new({confirmation_token: 'confirmation_token_example'}) # ConfirmRequest | 
+confirm_request = Weft::ConfirmRequest.new({confirmation_token: 'confirmation_token_example'}) # ConfirmRequest |
 
 begin
   # Confirm an account
@@ -87,7 +87,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-password_reset_request = Weft::PasswordResetRequest.new({email: 'email_example'}) # PasswordResetRequest | 
+password_reset_request = Weft::PasswordResetRequest.new({email: 'email_example'}) # PasswordResetRequest |
 
 begin
   # Request password reset
@@ -149,7 +149,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-resend_confirmation_request = Weft::ResendConfirmationRequest.new({email: 'email_example'}) # ResendConfirmationRequest | 
+resend_confirmation_request = Weft::ResendConfirmationRequest.new({email: 'email_example'}) # ResendConfirmationRequest |
 
 begin
   # Resend confirmation email
@@ -211,7 +211,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-sign_in_request = Weft::SignInRequest.new({email: 'email_example', password: 'password_example'}) # SignInRequest | 
+sign_in_request = Weft::SignInRequest.new({email: 'email_example', password: 'password_example'}) # SignInRequest |
 
 begin
   # Sign in with email and password
@@ -273,7 +273,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-sign_up_request = Weft::SignUpRequest.new({email: 'email_example', password: 'password_example', password_confirmation: 'password_confirmation_example'}) # SignUpRequest | 
+sign_up_request = Weft::SignUpRequest.new({email: 'email_example', password: 'password_example', password_confirmation: 'password_confirmation_example'}) # SignUpRequest |
 
 begin
   # Create an account
@@ -335,7 +335,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::AuthApi.new
-password_update_request = Weft::PasswordUpdateRequest.new({reset_password_token: 'reset_password_token_example', password: 'password_example', password_confirmation: 'password_confirmation_example'}) # PasswordUpdateRequest | 
+password_update_request = Weft::PasswordUpdateRequest.new({reset_password_token: 'reset_password_token_example', password: 'password_example', password_confirmation: 'password_confirmation_example'}) # PasswordUpdateRequest |
 
 begin
   # Update password with reset token
@@ -382,4 +382,3 @@ No authorization required
 
 - **Content-Type**: application/json
 - **Accept**: application/json
-

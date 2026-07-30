@@ -23,4 +23,3 @@ instance = Weft::FetchErrorResponse.new(
   dashboard_url: null
 )
 ```
-

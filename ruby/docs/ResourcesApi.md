@@ -13,7 +13,7 @@ All URIs are relative to *https://weft.network*
 
 Self-enroll a ghost resource (public, no auth)
 
-Lets an unauthenticated agent (or its operator) self-enroll a Resource as a \"ghost\" (no owning provider). The server generates the `slug` and a single-use `claim_token`; the response also carries a `claim_url` the agent hands to its human controller to claim the resource from the dashboard.  Client-supplied `slug` and `category` are silently ignored: slugs are server-generated from `name` (so callers cannot squat on reserved names), and `category` is a post-claim concern set by a real human.  Rate-limited to 10 enrollments/hour/IP. 
+Lets an unauthenticated agent (or its operator) self-enroll a Resource as a \"ghost\" (no owning provider). The server generates the `slug` and a single-use `claim_token`; the response also carries a `claim_url` the agent hands to its human controller to claim the resource from the dashboard.  Client-supplied `slug` and `category` are silently ignored: slugs are server-generated from `name` (so callers cannot squat on reserved names), and `category` is a post-claim concern set by a real human.  Rate-limited to 10 enrollments/hour/IP.
 
 ### Examples
 
@@ -22,7 +22,7 @@ require 'time'
 require 'weft-sdk'
 
 api_instance = Weft::ResourcesApi.new
-resource_enrollment_request = Weft::ResourceEnrollmentRequest.new({kind: 'agent', name: 'Self-Enrolled Bot'}) # ResourceEnrollmentRequest | 
+resource_enrollment_request = Weft::ResourceEnrollmentRequest.new({kind: 'agent', name: 'Self-Enrolled Bot'}) # ResourceEnrollmentRequest |
 
 begin
   # Self-enroll a ghost resource (public, no auth)
@@ -69,4 +69,3 @@ No authorization required
 
 - **Content-Type**: application/json
 - **Accept**: application/json
-

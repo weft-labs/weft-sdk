@@ -10,12 +10,9 @@ TMP_DIR="${OUT_DIR}/.generated"
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}"
 
-docker run --rm \
-  -v "${ROOT_DIR}:/local" \
-  openapitools/openapi-generator-cli:v7.19.0 generate \
-  -i /local/spec/openapi.yaml \
-  -g typescript-fetch \
-  -o /local/typescript/.generated \
+"${ROOT_DIR}/scripts/run-openapi-generator.sh" \
+  typescript-fetch \
+  "${TMP_DIR}" \
   --additional-properties=supportsES6=true,npmName=@weft-labs/sdk,typescriptThreePlus=true
 
 rm -rf "${OUT_DIR}/src/generated" "${OUT_DIR}/docs" "${OUT_DIR}/.openapi-generator" "${OUT_DIR}/.openapi-generator-ignore"
@@ -29,3 +26,6 @@ cp "${TMP_DIR}/src/index.ts" "${OUT_DIR}/src/generated/index.ts"
 cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
 cp -R "${TMP_DIR}/.openapi-generator" "${OUT_DIR}/.openapi-generator"
 cp "${TMP_DIR}/.openapi-generator-ignore" "${OUT_DIR}/.openapi-generator-ignore"
+
+"${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
+  "${OUT_DIR}/src/generated" "${OUT_DIR}/docs"

@@ -5,10 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**address** | **str** | EVM address that received the payment. | 
-**settlement_count** | **int** | All-time settlement count for this merchant address. | 
-**first_seen_at** | **datetime** | First time Weft observed a payment to this address. | 
-**dispute_count** | **int** | All-time dispute count for this merchant address. | 
+**address** | **str** | EVM address that received the payment. |
+**settlement_count** | **int** | All-time settlement count for this merchant address. |
+**first_seen_at** | **datetime** | First time Weft observed a payment to this address. |
+**dispute_count** | **int** | All-time dispute count for this merchant address. |
 
 ## Example
 
@@ -28,5 +28,3 @@ merchant_dict = merchant_instance.to_dict()
 merchant_from_dict = Merchant.from_dict(merchant_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

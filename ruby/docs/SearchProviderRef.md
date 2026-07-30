@@ -19,4 +19,3 @@ instance = Weft::SearchProviderRef.new(
   origin_domains: null
 )
 ```
-

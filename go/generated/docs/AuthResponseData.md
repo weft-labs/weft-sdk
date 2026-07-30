@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**User** | [**User**](User.md) |  | 
-**Token** | Pointer to **string** |  | [optional] 
-**ConfirmationRequired** | **bool** |  | 
+**User** | [**User**](User.md) |  |
+**Token** | Pointer to **string** |  | [optional]
+**ConfirmationRequired** | **bool** |  |
 
 ## Methods
 
@@ -94,5 +94,3 @@ SetConfirmationRequired sets ConfirmationRequired field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

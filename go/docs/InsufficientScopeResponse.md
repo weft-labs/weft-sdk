@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Error** | **string** |  | 
-**ErrorDescription** | **string** |  | 
-**Scope** | **string** | Space-delimited list of scopes the endpoint requires. | 
+**Error** | **string** |  |
+**ErrorDescription** | **string** |  |
+**Scope** | **string** | Space-delimited list of scopes the endpoint requires. |
 
 ## Methods
 
@@ -89,5 +89,3 @@ SetScope sets Scope field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

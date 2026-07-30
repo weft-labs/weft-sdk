@@ -21,4 +21,3 @@ instance = Weft::Pagination.new(
   total_pages: null
 )
 ```
-

@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	resourceEnrollmentRequest := *openapiclient.NewResourceEnrollmentRequest("agent", "Self-Enrolled Bot") // ResourceEnrollmentRequest | 
+	resourceEnrollmentRequest := *openapiclient.NewResourceEnrollmentRequest("agent", "Self-Enrolled Bot") // ResourceEnrollmentRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -54,7 +54,7 @@ Other parameters are passed through a pointer to a apiEnrollResourceRequest stru
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resourceEnrollmentRequest** | [**ResourceEnrollmentRequest**](ResourceEnrollmentRequest.md) |  | 
+ **resourceEnrollmentRequest** | [**ResourceEnrollmentRequest**](ResourceEnrollmentRequest.md) |  |
 
 ### Return type
 
@@ -72,4 +72,3 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
 [[Back to README]](../README.md)
-

@@ -9,12 +9,9 @@ TMP_DIR="${OUT_DIR}/.generated"
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}"
 
-docker run --rm \
-  -v "${ROOT_DIR}:/local" \
-  openapitools/openapi-generator-cli:v7.19.0 generate \
-  -i /local/spec/openapi.yaml \
-  -g go \
-  -o /local/go/.generated \
+"${ROOT_DIR}/scripts/run-openapi-generator.sh" \
+  go \
+  "${TMP_DIR}" \
   --additional-properties=packageName=generated,moduleName=github.com/weft-labs/weft-sdk/go/generated
 
 rm -rf "${OUT_DIR}/generated" "${OUT_DIR}/docs"
@@ -40,3 +37,6 @@ fi
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -type f \( -name '*.go' -o -name '*.md' \) \
   -exec sed -i.bak 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -name '*.bak' -delete
+
+"${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
+  "${OUT_DIR}/generated" "${OUT_DIR}/docs"
