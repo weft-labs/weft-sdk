@@ -23,4 +23,3 @@ instance = Weft::SearchPriceAtomicFilter.new(
   range_lte: null
 )
 ```
-

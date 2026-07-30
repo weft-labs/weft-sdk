@@ -1,6 +1,6 @@
 [project]
 name = "weft-sdk"
-version = "0.8.0"
+version = "0.9.0"
 description = "Unified Weft SDK for the Weft API and x402 Facilitator"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -21,6 +21,10 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.27.0",
+    "pydantic>=2",
+    "python-dateutil>=2.8.2",
+    "typing-extensions>=4.7.1",
+    "urllib3>=1.25.3,<3",
     "x402>=1.0.0",
 ]
 

@@ -8,7 +8,7 @@ Method | HTTP request | Description
 
 
 # **fetch**
-> FetchResponse fetch(fetch_request)
+> FetchResponse fetch(fetch_request, idempotency_key=idempotency_key)
 
 Pay-and-fetch any URL (x402 proxy)
 
@@ -76,11 +76,12 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.FetchApi(api_client)
-    fetch_request = weft_sdk.generated.FetchRequest() # FetchRequest | 
+    fetch_request = weft_sdk.generated.FetchRequest() # FetchRequest |
+    idempotency_key = 'idempotency_key_example' # str | Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.  (optional)
 
     try:
         # Pay-and-fetch any URL (x402 proxy)
-        api_response = api_instance.fetch(fetch_request)
+        api_response = api_instance.fetch(fetch_request, idempotency_key=idempotency_key)
         print("The response of FetchApi->fetch:\n")
         pprint(api_response)
     except Exception as e:
@@ -94,7 +95,8 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **fetch_request** | [**FetchRequest**](FetchRequest.md)|  | 
+ **fetch_request** | [**FetchRequest**](FetchRequest.md)|  |
+ **idempotency_key** | **str**| Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.  | [optional]
 
 ### Return type
 
@@ -117,10 +119,10 @@ Name | Type | Description  | Notes
 **401** | Unauthorized — missing or non-buyer-scoped API key |  -  |
 **402** | Payment refused. &#x60;EXCEEDED_MAX_COST&#x60; (over the caller cap) or &#x60;INSUFFICIENT_BALANCE&#x60; (the buyer is genuinely short — &#x60;details.asset&#x60;, when present, names the exact token the failed check read). Both use &#x60;FetchErrorResponse&#x60;.  |  -  |
 **403** | Policy violation, denylisted recipient, or a merchant challenge on a chain outside the wallet&#39;s own environment — a testnet wallet may not pay a mainnet challenge, nor the reverse (&#x60;WALLET_ENVIRONMENT_MISMATCH&#x60;; terminal, not retryable). All three use &#x60;FetchErrorResponse&#x60;. Alternatively an OAuth access token lacking the &#x60;fetch&#x60; scope (&#x60;InsufficientScopeResponse&#x60;, RFC 6750 &#x60;insufficient_scope&#x60;, with a &#x60;WWW-Authenticate&#x60; challenge). The two envelopes are disjoint; branch on the &#x60;error&#x60; value.  |  -  |
+**409** | &#x60;IDEMPOTENCY_CONFLICT&#x60; — this buyer already used the supplied &#x60;Idempotency-Key&#x60; for a different fetch request. Generate a new key for the new operation; retry the original operation unchanged.  |  -  |
 **413** | Upstream artifact exceeded the proxy&#39;s size cap. |  -  |
-**422** | Invalid request URL, a merchant payment method Weft cannot sign (&#x60;UNSUPPORTED_PAYMENT_METHOD&#x60;), or a merchant settlement token Weft can never settle (&#x60;UNSUPPORTED_ASSET&#x60; — settlement is exact-asset and the token&#39;s on-chain &#x60;currency()&#x60; is not USD; terminal for this merchant, funds untouched, &#x60;details.asset&#x60; names it).  |  -  |
+**422** | Invalid request fields, method, cost, body, headers, idempotency key, or URL; a merchant payment method Weft cannot sign (&#x60;UNSUPPORTED_PAYMENT_METHOD&#x60;), or a merchant settlement token Weft can never settle (&#x60;UNSUPPORTED_ASSET&#x60; — settlement is exact-asset and the token&#39;s on-chain &#x60;currency()&#x60; is not USD; terminal for this merchant, funds untouched, &#x60;details.asset&#x60; names it).  |  -  |
 **424** | &#x60;MERCHANT_RETURNED_NON_402&#x60; — the upstream merchant is at fault: it did not return a 402, or its 402 challenge was invalid. A 4xx (not 5xx) because Weft behaved correctly and the caller should act on &#x60;details.reason&#x60; (e.g. pick another merchant); it also keeps the error envelope intact through CDNs that replace 5xx bodies.  |  -  |
 **502** | Settlement signing failed on Weft&#39;s side (&#x60;SETTLEMENT_FAILED&#x60;). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

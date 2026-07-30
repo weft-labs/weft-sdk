@@ -45,7 +45,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.APIKeysApi(api_client)
-    create_api_key_request = weft_sdk.generated.CreateApiKeyRequest() # CreateApiKeyRequest | 
+    create_api_key_request = weft_sdk.generated.CreateApiKeyRequest() # CreateApiKeyRequest |
 
     try:
         # Create an API key
@@ -63,7 +63,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **create_api_key_request** | [**CreateApiKeyRequest**](CreateApiKeyRequest.md)|  | 
+ **create_api_key_request** | [**CreateApiKeyRequest**](CreateApiKeyRequest.md)|  |
 
 ### Return type
 
@@ -215,7 +215,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **id** | **int**| API key ID | 
+ **id** | **int**| API key ID |
 
 ### Return type
 
@@ -239,4 +239,3 @@ Name | Type | Description  | Notes
 **404** | API key not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

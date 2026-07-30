@@ -1,0 +1,111 @@
+import {
+  AccountApi,
+  BalanceApi,
+  Configuration,
+  FetchApi,
+  PurchasesApi,
+  SearchApi,
+  type FetchAPI,
+  type FetchRequest,
+  type FetchResponse,
+  type MeResponse,
+  type BalanceResponse,
+  type PurchaseListResponse,
+  type PurchaseResponse,
+  type SearchRequest,
+  type SearchResponse,
+} from "./generated";
+
+export interface WeftClientOptions {
+  apiKey: string;
+  baseUrl?: string;
+  fetchApi?: FetchAPI;
+}
+
+export type PaidFetchRequest = FetchRequest & { maxCostUsd: string };
+
+export interface FetchOptions {
+  idempotencyKey?: string;
+}
+
+export interface PurchaseListOptions {
+  page?: number;
+  perPage?: number;
+}
+
+function withoutTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return value.slice(0, end);
+}
+
+/**
+ * Stable buyer-facing façade over the generated API clients.
+ *
+ * The generated clients remain exported for advanced use; this class is the
+ * small surface agents and applications should normally build against.
+ */
+export class WeftClient {
+  private readonly account: AccountApi;
+  private readonly balances: BalanceApi;
+  private readonly searches: SearchApi;
+  private readonly fetches: FetchApi;
+  private readonly purchaseHistory: PurchasesApi;
+
+  constructor(options: WeftClientOptions) {
+    const apiKey = options.apiKey.trim();
+    if (!apiKey) {
+      throw new Error("apiKey is required");
+    }
+
+    const configuration = new Configuration({
+      accessToken: apiKey,
+      basePath: withoutTrailingSlashes(
+        options.baseUrl ?? "https://weft.network",
+      ),
+      fetchApi: options.fetchApi,
+    });
+
+    this.account = new AccountApi(configuration);
+    this.balances = new BalanceApi(configuration);
+    this.searches = new SearchApi(configuration);
+    this.fetches = new FetchApi(configuration);
+    this.purchaseHistory = new PurchasesApi(configuration);
+  }
+
+  me(): Promise<MeResponse> {
+    return this.account.getMe();
+  }
+
+  balance(): Promise<BalanceResponse> {
+    return this.balances.getBalance();
+  }
+
+  search(request: SearchRequest): Promise<SearchResponse> {
+    return this.searches.search({ searchRequest: request });
+  }
+
+  fetch(
+    request: PaidFetchRequest,
+    options: FetchOptions = {},
+  ): Promise<FetchResponse> {
+    if (!request.maxCostUsd.trim()) {
+      throw new Error("maxCostUsd is required");
+    }
+
+    return this.fetches.fetch({
+      fetchRequest: request,
+      idempotencyKey: options.idempotencyKey,
+    });
+  }
+
+  purchases(options: PurchaseListOptions = {}): Promise<PurchaseListResponse> {
+    return this.purchaseHistory.listPurchases(options);
+  }
+
+  purchase(id: number): Promise<PurchaseResponse> {
+    return this.purchaseHistory.getPurchase({ id });
+  }
+}

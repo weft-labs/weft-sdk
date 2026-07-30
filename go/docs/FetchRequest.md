@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Url** | **string** | Target URL. Must pass Weft&#39;s URL safety check (no SSRF / private IP ranges). | 
+**Url** | **string** | Target URL. Must pass Weft&#39;s URL safety check (no SSRF / private IP ranges). |
 **MaxCostUsd** | Pointer to **string** | Hard ceiling on what the buyer is willing to pay. Defaults to &#x60;0.10&#x60; USD. | [optional] [default to "0.10"]
 **Method** | Pointer to **string** | HTTP method to use against the upstream. | [optional] [default to "GET"]
-**Body** | Pointer to [**NullableFetchRequestBody**](FetchRequestBody.md) |  | [optional] 
-**Headers** | Pointer to **map[string]string** | Headers forwarded to the upstream. Up to 32 headers, 4 KB total. The following are silently stripped: &#x60;host&#x60;, &#x60;authorization&#x60;, &#x60;cookie&#x60;, &#x60;proxy-authorization&#x60;, &#x60;x-forwarded-*&#x60;, &#x60;x-real-ip&#x60;, &#x60;x-payment&#x60;, &#x60;connection&#x60;, &#x60;upgrade&#x60;.  | [optional] 
+**Body** | Pointer to [**NullableFetchRequestBody**](FetchRequestBody.md) |  | [optional]
+**Headers** | Pointer to **map[string]string** | Headers forwarded to the upstream. Up to 32 headers, 4 KB total. The following are silently stripped: &#x60;host&#x60;, &#x60;authorization&#x60;, &#x60;cookie&#x60;, &#x60;proxy-authorization&#x60;, &#x60;x-forwarded-*&#x60;, &#x60;x-real-ip&#x60;, &#x60;x-payment&#x60;, &#x60;connection&#x60;, &#x60;upgrade&#x60;.  | [optional]
 
 ## Methods
 
@@ -161,5 +161,3 @@ HasHeaders returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

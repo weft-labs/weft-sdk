@@ -6,13 +6,13 @@ Aggregate public payment stats for the resource.
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**total_paid** | **int** | Total atomic units paid out by this resource. | 
-**total_received** | **int** | Total atomic units received by this resource. | 
-**payments_made** | **int** |  | 
-**payments_received** | **int** |  | 
-**unique_counterparties** | **int** |  | 
-**first_seen** | **datetime** |  | 
-**last_active** | **datetime** |  | 
+**total_paid** | **int** | Total atomic units paid out by this resource. |
+**total_received** | **int** | Total atomic units received by this resource. |
+**payments_made** | **int** |  |
+**payments_received** | **int** |  |
+**unique_counterparties** | **int** |  |
+**first_seen** | **datetime** |  |
+**last_active** | **datetime** |  |
 
 ## Example
 
@@ -32,5 +32,3 @@ resource_stats_dict = resource_stats_instance.to_dict()
 resource_stats_from_dict = ResourceStats.from_dict(resource_stats_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

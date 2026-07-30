@@ -1,14 +1,14 @@
 # MeApiKeyCreator
 
-The user who minted this API key, surfaced for audit rendering only. `null` if that user has since left the Organization. NEVER use for authorization. 
+The user who minted this API key, surfaced for audit rendering only. `null` if that user has since left the Organization. NEVER use for authorization.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**email** | **str** |  | 
-**display_name** | **str** |  | [optional] 
+**id** | **int** |  |
+**email** | **str** |  |
+**display_name** | **str** |  | [optional]
 
 ## Example
 
@@ -28,5 +28,3 @@ me_api_key_creator_dict = me_api_key_creator_instance.to_dict()
 me_api_key_creator_from_dict = MeApiKeyCreator.from_dict(me_api_key_creator_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -4,14 +4,16 @@ All URIs are relative to *https://weft.network*
 
 | Method | HTTP request | Description |
 | ------ | ------------ | ----------- |
-| [**get_me**](AccountApi.md#get_me) | **GET** /api/v1/me | Get current account |
+| [**get_me**](AccountApi.md#get_me) | **GET** /api/v1/me | Get the current credential principal |
 
 
 ## get_me
 
 > <MeResponse> get_me
 
-Get current account
+Get the current credential principal
+
+Returns the Organization represented by a resource API key, or the User represented by an account API key or OAuth access token. Branch on `data.principal_type`; existing Organization fields remain unchanged.
 
 ### Examples
 
@@ -27,7 +29,7 @@ end
 api_instance = Weft::AccountApi.new
 
 begin
-  # Get current account
+  # Get the current credential principal
   result = api_instance.get_me
   p result
 rescue Weft::ApiError => e
@@ -43,7 +45,7 @@ This returns an Array which contains the response data, status code and headers.
 
 ```ruby
 begin
-  # Get current account
+  # Get the current credential principal
   data, status_code, headers = api_instance.get_me_with_http_info
   p status_code # => 2xx
   p headers # => { ... }
@@ -69,4 +71,3 @@ This endpoint does not need any parameter.
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-

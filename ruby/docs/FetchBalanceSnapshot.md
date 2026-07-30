@@ -23,4 +23,3 @@ instance = Weft::FetchBalanceSnapshot.new(
   spent_today_usd: 0.42
 )
 ```
-

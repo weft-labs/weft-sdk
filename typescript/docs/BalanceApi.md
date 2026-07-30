@@ -14,7 +14,7 @@ All URIs are relative to *https://weft.network*
 
 Get wallet, spending policy, and current-window spend
 
-Read-only snapshot for the buyer behind the bearer token. The response always includes a &#x60;promo&#x60; block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. &#x60;wallet.balance_usdc&#x60; is fetched live from Privy; if Privy is unreachable the field returns &#x60;\&quot;0.00\&quot;&#x60; rather than erroring the whole call.  Account-scoped: the bearer must be a buyer-scoped API key. 
+Read-only snapshot for the buyer behind the bearer token. The response always includes a &#x60;promo&#x60; block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. &#x60;wallet.balance_usdc&#x60; is fetched live from Privy; if Privy is unreachable the field returns &#x60;\&quot;0.00\&quot;&#x60; rather than erroring the whole call.  Account-scoped: the bearer must be a buyer-scoped API key.
 
 ### Example
 
@@ -27,7 +27,7 @@ import type { GetBalanceRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const config = new Configuration({ 
+  const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
   });
@@ -71,4 +71,3 @@ This endpoint does not need any parameter.
 | **403** | The OAuth access token authenticated but lacks the &#x60;balance&#x60; scope (RFC 6750 &#x60;insufficient_scope&#x60;). Carries a &#x60;WWW-Authenticate: Bearer error&#x3D;\&quot;insufficient_scope\&quot;, scope&#x3D;\&quot;balance\&quot;&#x60; header. &#x60;wk_&#x60; API keys are unscoped and never see this.  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-

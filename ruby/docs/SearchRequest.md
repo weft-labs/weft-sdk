@@ -19,4 +19,3 @@ instance = Weft::SearchRequest.new(
   filters: null
 )
 ```
-

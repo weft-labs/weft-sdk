@@ -1,13 +1,13 @@
 # SearchErrorResponse
 
-Bespoke error envelope returned by `/api/v1/search` for `422`, `502`, and `500` responses. It differs from the standard `ErrorResponse` envelope (no nested `code`/`message`/`request_id`); SDK clients should handle both shapes for this endpoint until the controller is migrated to the standard envelope. 
+Bespoke error envelope returned by `/api/v1/search` for `422`, `502`, and `500` responses. It differs from the standard `ErrorResponse` envelope (no nested `code`/`message`/`request_id`); SDK clients should handle both shapes for this endpoint until the controller is migrated to the standard envelope.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | **str** | Stable error code. | 
-**details** | **Dict[str, object]** | Optional context. Shape varies by error code. | [optional] 
+**error** | **str** | Stable error code. |
+**details** | **Dict[str, object]** | Optional context. Shape varies by error code. | [optional]
 
 ## Example
 
@@ -27,5 +27,3 @@ search_error_response_dict = search_error_response_instance.to_dict()
 search_error_response_from_dict = SearchErrorResponse.from_dict(search_error_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

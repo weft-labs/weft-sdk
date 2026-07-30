@@ -4,20 +4,20 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**Name** | **string** |  | 
-**Slug** | **string** |  | 
-**Description** | Pointer to **string** |  | [optional] 
-**Kind** | **string** |  | 
-**Visibility** | **string** |  | 
-**WalletAddress** | Pointer to **string** | Declared wallet address, or &#x60;null&#x60; if none was provided. | [optional] 
-**Category** | **string** | Legacy v3 taxonomy field. Returns a string only for &#x60;agent&#x60;-kind resources that carry a &#x60;category&#x60; in their metadata; &#x60;null&#x60; for all other kinds and for agents without one. Always &#x60;null&#x60; on enrollment (category is a post-claim concern).  | 
-**Verified** | **bool** |  | 
-**Claimed** | **bool** | True once the resource has an owning provider. Always false at enrollment. | 
-**CreatedAt** | **time.Time** |  | 
-**Stats** | [**ResourceStats**](ResourceStats.md) |  | 
-**ClaimToken** | **string** | Single-use token for the magic claim URL. Surfaced only on enrollment. | 
-**ClaimUrl** | **string** | Dashboard path the agent hands to its human to claim the resource. | 
+**Id** | **int32** |  |
+**Name** | **string** |  |
+**Slug** | **string** |  |
+**Description** | Pointer to **string** |  | [optional]
+**Kind** | **string** |  |
+**Visibility** | **string** |  |
+**WalletAddress** | Pointer to **string** | Declared wallet address, or &#x60;null&#x60; if none was provided. | [optional]
+**Category** | **string** | Legacy v3 taxonomy field. Returns a string only for &#x60;agent&#x60;-kind resources that carry a &#x60;category&#x60; in their metadata; &#x60;null&#x60; for all other kinds and for agents without one. Always &#x60;null&#x60; on enrollment (category is a post-claim concern).  |
+**Verified** | **bool** |  |
+**Claimed** | **bool** | True once the resource has an owning provider. Always false at enrollment. |
+**CreatedAt** | **time.Time** |  |
+**Stats** | [**ResourceStats**](ResourceStats.md) |  |
+**ClaimToken** | **string** | Single-use token for the magic claim URL. Surfaced only on enrollment. |
+**ClaimUrl** | **string** | Dashboard path the agent hands to its human to claim the resource. |
 
 ## Methods
 
@@ -330,5 +330,3 @@ SetClaimUrl sets ClaimUrl field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

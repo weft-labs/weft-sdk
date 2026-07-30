@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**AuthResponseData**](AuthResponseData.md) |  | 
+**data** | [**AuthResponseData**](AuthResponseData.md) |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ auth_response_dict = auth_response_instance.to_dict()
 auth_response_from_dict = AuthResponse.from_dict(auth_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

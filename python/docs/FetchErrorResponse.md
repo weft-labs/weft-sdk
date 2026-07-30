@@ -1,16 +1,16 @@
 # FetchErrorResponse
 
-Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see `PolicyViolation::REASONS`). 
+Bespoke error envelope for `/api/v1/fetch`. Every error carries the buyer's current `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  `error` values include the fixed codes listed below plus the `POLICY_VIOLATION_<REASON>` family, where `<REASON>` is the violated policy field (`MAX_TX`, `DAILY`, or `WEEKLY` — see `PolicyViolation::REASONS`).
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | **str** | Stable error code. | 
-**details** | **Dict[str, object]** | Optional context. Shape varies by error code. | 
-**policy** | [**SpendingPolicy**](SpendingPolicy.md) |  | 
-**balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  | 
-**dashboard_url** | **str** | Deep-link to the dashboard&#39;s policy page. | 
+**error** | **str** | Stable error code. |
+**details** | **Dict[str, object]** | Optional context. Shape varies by error code. |
+**policy** | [**SpendingPolicy**](SpendingPolicy.md) |  |
+**balance** | [**FetchBalanceSnapshot**](FetchBalanceSnapshot.md) |  |
+**dashboard_url** | **str** | Deep-link to the dashboard&#39;s policy page. |
 
 ## Example
 
@@ -30,5 +30,3 @@ fetch_error_response_dict = fetch_error_response_instance.to_dict()
 fetch_error_response_from_dict = FetchErrorResponse.from_dict(fetch_error_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

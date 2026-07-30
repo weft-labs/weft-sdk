@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Query** | **string** | Free-text query. Required and non-empty. | 
+**Query** | **string** | Free-text query. Required and non-empty. |
 **MaxResults** | Pointer to **int32** | Max number of hits to return. Invalid values are rejected, not clamped. | [optional] [default to 10]
-**Filters** | Pointer to [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional] 
+**Filters** | Pointer to [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional]
 
 ## Methods
 
@@ -99,5 +99,3 @@ HasFilters returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -33,11 +33,9 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        run: npm install
-      - name: Generate SDK
-        run: npm run generate
-      - name: Verify generated output
-        run: ../scripts/test-sdk.sh
+        run: npm ci
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh typescript
       - name: Lint
         run: npm run lint:check
       - name: Test
@@ -68,9 +66,9 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
-        run: npm install
-      - name: Generate SDK
-        run: npm run generate
+        run: npm ci
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh typescript
       - name: Build
         run: npm run build
       # --provenance attaches a Sigstore-signed provenance statement to the

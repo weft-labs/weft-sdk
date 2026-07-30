@@ -15,4 +15,3 @@ instance = Weft::ResendConfirmationRequest.new(
   email: null
 )
 ```
-

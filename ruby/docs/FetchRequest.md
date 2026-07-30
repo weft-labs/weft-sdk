@@ -23,4 +23,3 @@ instance = Weft::FetchRequest.new(
   headers: {Accept&#x3D;application/json, User-Agent&#x3D;my-agent/1.0}
 )
 ```
-

@@ -23,4 +23,3 @@ instance = Weft::SearchEndpointPrice.new(
   live_verified: null
 )
 ```
-

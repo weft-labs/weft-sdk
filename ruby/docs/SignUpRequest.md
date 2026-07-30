@@ -19,4 +19,3 @@ instance = Weft::SignUpRequest.new(
   password_confirmation: null
 )
 ```
-

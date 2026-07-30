@@ -19,4 +19,3 @@ instance = Weft::MeApiKeyCreator.new(
   display_name: null
 )
 ```
-

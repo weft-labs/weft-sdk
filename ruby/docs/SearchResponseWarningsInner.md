@@ -21,4 +21,3 @@ instance = Weft::SearchResponseWarningsInner.new(
   context: null
 )
 ```
-

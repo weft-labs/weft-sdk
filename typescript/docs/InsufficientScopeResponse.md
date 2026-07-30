@@ -1,7 +1,7 @@
 
 # InsufficientScopeResponse
 
-RFC 6750 §3.1 `insufficient_scope` error. Returned with HTTP 403 and a `WWW-Authenticate: Bearer error=\"insufficient_scope\", scope=\"...\"` header when an OAuth access token authenticates successfully but does not carry the scope the endpoint requires. Only OAuth bearer tokens are scope-gated; `wk_`-prefixed API keys are unscoped and never see this response. 
+RFC 6750 §3.1 `insufficient_scope` error. Returned with HTTP 403 and a `WWW-Authenticate: Bearer error=\"insufficient_scope\", scope=\"...\"` header when an OAuth access token authenticates successfully but does not carry the scope the endpoint requires. Only OAuth bearer tokens are scope-gated; `wk_`-prefixed API keys are unscoped and never see this response.
 
 ## Properties
 
@@ -35,5 +35,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

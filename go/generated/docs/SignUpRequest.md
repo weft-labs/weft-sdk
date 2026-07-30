@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Email** | **string** |  | 
-**Password** | **string** |  | 
-**PasswordConfirmation** | **string** |  | 
+**Email** | **string** |  |
+**Password** | **string** |  |
+**PasswordConfirmation** | **string** |  |
 
 ## Methods
 
@@ -89,5 +89,3 @@ SetPasswordConfirmation sets PasswordConfirmation field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -38,7 +38,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    confirm_request = weft_sdk.generated.ConfirmRequest() # ConfirmRequest | 
+    confirm_request = weft_sdk.generated.ConfirmRequest() # ConfirmRequest |
 
     try:
         # Confirm an account
@@ -56,7 +56,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **confirm_request** | [**ConfirmRequest**](ConfirmRequest.md)|  | 
+ **confirm_request** | [**ConfirmRequest**](ConfirmRequest.md)|  |
 
 ### Return type
 
@@ -106,7 +106,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    password_reset_request = weft_sdk.generated.PasswordResetRequest() # PasswordResetRequest | 
+    password_reset_request = weft_sdk.generated.PasswordResetRequest() # PasswordResetRequest |
 
     try:
         # Request password reset
@@ -124,7 +124,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **password_reset_request** | [**PasswordResetRequest**](PasswordResetRequest.md)|  | 
+ **password_reset_request** | [**PasswordResetRequest**](PasswordResetRequest.md)|  |
 
 ### Return type
 
@@ -173,7 +173,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    resend_confirmation_request = weft_sdk.generated.ResendConfirmationRequest() # ResendConfirmationRequest | 
+    resend_confirmation_request = weft_sdk.generated.ResendConfirmationRequest() # ResendConfirmationRequest |
 
     try:
         # Resend confirmation email
@@ -191,7 +191,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resend_confirmation_request** | [**ResendConfirmationRequest**](ResendConfirmationRequest.md)|  | 
+ **resend_confirmation_request** | [**ResendConfirmationRequest**](ResendConfirmationRequest.md)|  |
 
 ### Return type
 
@@ -240,7 +240,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    sign_in_request = weft_sdk.generated.SignInRequest() # SignInRequest | 
+    sign_in_request = weft_sdk.generated.SignInRequest() # SignInRequest |
 
     try:
         # Sign in with email and password
@@ -258,7 +258,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **sign_in_request** | [**SignInRequest**](SignInRequest.md)|  | 
+ **sign_in_request** | [**SignInRequest**](SignInRequest.md)|  |
 
 ### Return type
 
@@ -308,7 +308,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    sign_up_request = weft_sdk.generated.SignUpRequest() # SignUpRequest | 
+    sign_up_request = weft_sdk.generated.SignUpRequest() # SignUpRequest |
 
     try:
         # Create an account
@@ -326,7 +326,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **sign_up_request** | [**SignUpRequest**](SignUpRequest.md)|  | 
+ **sign_up_request** | [**SignUpRequest**](SignUpRequest.md)|  |
 
 ### Return type
 
@@ -376,7 +376,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.AuthApi(api_client)
-    password_update_request = weft_sdk.generated.PasswordUpdateRequest() # PasswordUpdateRequest | 
+    password_update_request = weft_sdk.generated.PasswordUpdateRequest() # PasswordUpdateRequest |
 
     try:
         # Update password with reset token
@@ -394,7 +394,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **password_update_request** | [**PasswordUpdateRequest**](PasswordUpdateRequest.md)|  | 
+ **password_update_request** | [**PasswordUpdateRequest**](PasswordUpdateRequest.md)|  |
 
 ### Return type
 
@@ -417,4 +417,3 @@ No authorization required
 **422** | Invalid or expired reset token |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

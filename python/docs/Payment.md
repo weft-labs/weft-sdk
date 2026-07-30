@@ -5,19 +5,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**tx_hash** | **str** |  | 
-**payer_address** | **str** |  | 
-**recipient_address** | **str** |  | 
-**amount** | **int** | Amount in atomic units (1 USDC &#x3D; 1,000,000) | 
-**amount_formatted** | **str** | Human-readable amount (e.g. \&quot;1.00 USDC\&quot;) | 
-**currency** | **str** |  | 
-**network** | **str** | CAIP-2 chain identifier | 
-**resource_url** | **str** |  | [optional] 
-**resource_host** | **str** |  | [optional] 
-**settlement_latency_ms** | **int** |  | [optional] 
-**settled_at** | **datetime** |  | 
-**api_key_name** | **str** |  | 
+**id** | **int** |  |
+**tx_hash** | **str** |  |
+**payer_address** | **str** |  |
+**recipient_address** | **str** |  |
+**amount** | **int** | Amount in atomic units (1 USDC &#x3D; 1,000,000) |
+**amount_formatted** | **str** | Human-readable amount (e.g. \&quot;1.00 USDC\&quot;) |
+**currency** | **str** |  |
+**network** | **str** | CAIP-2 chain identifier |
+**resource_url** | **str** |  | [optional]
+**resource_host** | **str** |  | [optional]
+**settlement_latency_ms** | **int** |  | [optional]
+**settled_at** | **datetime** |  |
+**api_key_name** | **str** |  |
 
 ## Example
 
@@ -37,5 +37,3 @@ payment_dict = payment_instance.to_dict()
 payment_from_dict = Payment.from_dict(payment_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -1,7 +1,7 @@
 
 # FetchBalanceSnapshot
 
-Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed. 
+Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed.
 
 ## Properties
 
@@ -39,5 +39,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

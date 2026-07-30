@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**TotalPaid** | **int32** | Total atomic units paid out by this resource. | 
-**TotalReceived** | **int32** | Total atomic units received by this resource. | 
-**PaymentsMade** | **int32** |  | 
-**PaymentsReceived** | **int32** |  | 
-**UniqueCounterparties** | **int32** |  | 
-**FirstSeen** | **time.Time** |  | 
-**LastActive** | **time.Time** |  | 
+**TotalPaid** | **int32** | Total atomic units paid out by this resource. |
+**TotalReceived** | **int32** | Total atomic units received by this resource. |
+**PaymentsMade** | **int32** |  |
+**PaymentsReceived** | **int32** |  |
+**UniqueCounterparties** | **int32** |  |
+**FirstSeen** | **time.Time** |  |
+**LastActive** | **time.Time** |  |
 
 ## Methods
 
@@ -173,5 +173,3 @@ SetLastActive sets LastActive field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

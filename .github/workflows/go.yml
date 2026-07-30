@@ -32,10 +32,8 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: "1.23"
-      - name: Generate SDK
-        run: ../scripts/generate-go.sh
-      - name: Verify generated output
-        run: ../scripts/test-sdk.sh
+      - name: Verify committed generated SDK
+        run: ../scripts/check-generated.sh go
       - name: Test
         run: go test ./...
 

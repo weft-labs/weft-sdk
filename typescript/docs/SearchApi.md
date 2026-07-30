@@ -14,7 +14,7 @@ All URIs are relative to *https://weft.network*
 
 Search the Weft index
 
-Semantic search over the Weft index of paid agent resources. The request body is the weft-search-platform &#x60;/v1/search&#x60; contract: a free-text &#x60;query&#x60;, optional &#x60;max_results&#x60;, and optional structured &#x60;filters&#x60; (price / price_atomic / type / protocol — the canonical FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is a dual representation of one constraint: &#x60;price&#x60; in USD decimal strings (the reasoning form) XOR &#x60;price_atomic&#x60; in integer micro-USD (the settlement form) — mutually exclusive, set at most one.  Backend selection is server-side via the &#x60;SEARCH_BACKEND&#x60; env var: &#x60;mock&#x60; (default, reads YAML fixtures and sets &#x60;_mock: true&#x60; in the response) or &#x60;platform&#x60; (proxies to the upstream search service). Both backends return the platform &#x60;SearchResponse&#x60; envelope.  Account-scoped: the bearer token must be a buyer-scoped API key. Free for authenticated buyers in v1; billing is planned for a later release.  Response negotiation: &#x60;Accept: application/json&#x60; (default) returns the structured envelope; &#x60;Accept: text/markdown&#x60; returns a rendered Markdown digest of the same results — useful for piping into a chat UI or LLM prompt. 
+Semantic search over the Weft index of paid agent resources. The request body is the weft-search-platform &#x60;/v1/search&#x60; contract: a free-text &#x60;query&#x60;, optional &#x60;max_results&#x60;, and optional structured &#x60;filters&#x60; (price / price_atomic / type / protocol — the canonical FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is a dual representation of one constraint: &#x60;price&#x60; in USD decimal strings (the reasoning form) XOR &#x60;price_atomic&#x60; in integer micro-USD (the settlement form) — mutually exclusive, set at most one.  Backend selection is server-side via the &#x60;SEARCH_BACKEND&#x60; env var: &#x60;mock&#x60; (default, reads YAML fixtures and sets &#x60;_mock: true&#x60; in the response) or &#x60;platform&#x60; (proxies to the upstream search service). Both backends return the platform &#x60;SearchResponse&#x60; envelope.  Account-scoped: the bearer token must be a buyer-scoped API key. Free for authenticated buyers in v1; billing is planned for a later release.  Response negotiation: &#x60;Accept: application/json&#x60; (default) returns the structured envelope; &#x60;Accept: text/markdown&#x60; returns a rendered Markdown digest of the same results — useful for piping into a chat UI or LLM prompt.
 
 ### Example
 
@@ -27,7 +27,7 @@ import type { SearchOperationRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const config = new Configuration({ 
+  const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
   });
@@ -82,4 +82,3 @@ example().catch(console.error);
 | **500** | Backend misconfigured (&#x60;SEARCH_BACKEND&#x60; unset or unknown) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-

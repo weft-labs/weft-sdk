@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**Payment**](Payment.md) |  | 
+**data** | [**Payment**](Payment.md) |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ payment_response_dict = payment_response_instance.to_dict()
 payment_response_from_dict = PaymentResponse.from_dict(payment_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

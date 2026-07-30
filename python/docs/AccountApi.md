@@ -4,13 +4,18 @@ All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**get_me**](AccountApi.md#get_me) | **GET** /api/v1/me | Get current account
+[**get_me**](AccountApi.md#get_me) | **GET** /api/v1/me | Get the current credential principal
 
 
 # **get_me**
 > MeResponse get_me()
 
-Get current account
+Get the current credential principal
+
+Returns the Organization represented by a resource API key, or the User
+represented by an account API key or OAuth access token. Branch on
+`data.principal_type`; existing Organization fields remain unchanged.
+
 
 ### Example
 
@@ -44,7 +49,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
     api_instance = weft_sdk.generated.AccountApi(api_client)
 
     try:
-        # Get current account
+        # Get the current credential principal
         api_response = api_instance.get_me()
         print("The response of AccountApi->get_me:\n")
         pprint(api_response)
@@ -75,9 +80,7 @@ This endpoint does not need any parameter.
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Current user account |  -  |
+**200** | Current Organization or User principal |  -  |
 **401** | Unauthorized |  -  |
-**403** | The credential authenticated but has no organization context (&#x60;ORGANIZATION_REQUIRED&#x60;). Account-scoped (buyer) keys cannot read this org-scoped endpoint.  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

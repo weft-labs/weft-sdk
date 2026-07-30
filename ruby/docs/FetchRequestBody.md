@@ -46,4 +46,3 @@ Weft::FetchRequestBody.build(data_that_doesnt_match)
 - `Object`
 - `String`
 - `nil` (if no type matches)
-

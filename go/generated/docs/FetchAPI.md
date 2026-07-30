@@ -10,7 +10,7 @@ Method | HTTP request | Description
 
 ## Fetch
 
-> FetchResponse Fetch(ctx).FetchRequest(fetchRequest).Execute()
+> FetchResponse Fetch(ctx).FetchRequest(fetchRequest).IdempotencyKey(idempotencyKey).Execute()
 
 Pay-and-fetch any URL (x402 proxy)
 
@@ -29,11 +29,12 @@ import (
 )
 
 func main() {
-	fetchRequest := *openapiclient.NewFetchRequest("https://x402.api.agentmail.to/v0/inboxes") // FetchRequest | 
+	fetchRequest := *openapiclient.NewFetchRequest("https://x402.api.agentmail.to/v0/inboxes") // FetchRequest |
+	idempotencyKey := "idempotencyKey_example" // string | Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.  (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.FetchAPI.Fetch(context.Background()).FetchRequest(fetchRequest).Execute()
+	resp, r, err := apiClient.FetchAPI.Fetch(context.Background()).FetchRequest(fetchRequest).IdempotencyKey(idempotencyKey).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `FetchAPI.Fetch``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -54,7 +55,8 @@ Other parameters are passed through a pointer to a apiFetchRequest struct via th
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **fetchRequest** | [**FetchRequest**](FetchRequest.md) |  | 
+ **fetchRequest** | [**FetchRequest**](FetchRequest.md) |  |
+ **idempotencyKey** | **string** | Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.  |
 
 ### Return type
 
@@ -72,4 +74,3 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
 [[Back to README]](../README.md)
-

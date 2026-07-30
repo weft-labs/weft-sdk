@@ -144,4 +144,3 @@ end
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-

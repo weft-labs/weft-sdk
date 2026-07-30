@@ -4,7 +4,7 @@
 
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
-| **data** | [**AccountDetails**](AccountDetails.md) |  |  |
+| **data** | [**MeResponseData**](MeResponseData.md) |  |  |
 
 ## Example
 
@@ -15,4 +15,3 @@ instance = Weft::MeResponse.new(
   data: null
 )
 ```
-

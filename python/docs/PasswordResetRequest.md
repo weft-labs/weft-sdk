@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**email** | **str** |  | 
+**email** | **str** |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ password_reset_request_dict = password_reset_request_instance.to_dict()
 password_reset_request_from_dict = PasswordResetRequest.from_dict(password_reset_request_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

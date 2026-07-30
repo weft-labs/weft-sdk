@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | **string** |  | 
-**Message** | **string** |  | 
-**Cause** | Pointer to **string** | Typed cause for codes that carry one (e.g. &#x60;DECOMPOSE_FALLBACK&#x60;). Null otherwise. | [optional] 
-**Context** | Pointer to **map[string]interface{}** | Structured context for the warning. Null when the code carries none. | [optional] 
+**Code** | **string** |  |
+**Message** | **string** |  |
+**Cause** | Pointer to **string** | Typed cause for codes that carry one (e.g. &#x60;DECOMPOSE_FALLBACK&#x60;). Null otherwise. | [optional]
+**Context** | Pointer to **map[string]interface{}** | Structured context for the warning. Null when the code carries none. | [optional]
 
 ## Methods
 
@@ -120,5 +120,3 @@ HasContext returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

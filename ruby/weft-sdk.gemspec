@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'weft-sdk'
-  spec.version       = '0.8.0'
+  spec.version       = '0.9.0'
   spec.authors       = ['Weft Labs']
   spec.summary       = 'Unified Weft SDK for the Weft API and x402 Facilitator'
   spec.license       = 'Apache-2.0'
@@ -9,4 +9,6 @@ Gem::Specification.new do |spec|
 
   spec.metadata['homepage_uri'] = 'https://github.com/weft-labs/weft-sdk'
   spec.metadata['source_code_uri'] = 'https://github.com/weft-labs/weft-sdk'
+
+  spec.add_dependency 'typhoeus', '~> 1.0'
 end

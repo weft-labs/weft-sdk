@@ -1,7 +1,7 @@
 
 # SearchErrorResponse
 
-Bespoke error envelope returned by `/api/v1/search` for `422`, `502`, and `500` responses. It differs from the standard `ErrorResponse` envelope (no nested `code`/`message`/`request_id`); SDK clients should handle both shapes for this endpoint until the controller is migrated to the standard envelope. 
+Bespoke error envelope returned by `/api/v1/search` for `422`, `502`, and `500` responses. It differs from the standard `ErrorResponse` envelope (no nested `code`/`message`/`request_id`); SDK clients should handle both shapes for this endpoint until the controller is migrated to the standard envelope.
 
 ## Properties
 
@@ -33,5 +33,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

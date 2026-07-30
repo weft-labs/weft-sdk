@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Method** | Pointer to **string** | The HTTP verb to send. Empty string when neither the index nor the provider&#39;s own 402 challenge / OpenAPI spec declares one.  | [optional] 
-**InputSchema** | Pointer to **map[string]interface{}** | The provider&#39;s OWN structured declaration of the arguments this endpoint takes — the machine-usable form of what &#x60;usage_instructions&#x60; states in prose. Null when the provider declares nothing.  | [optional] 
-**ExampleRequest** | Pointer to **map[string]interface{}** | A worked set of arguments grouped by slot (&#x60;query&#x60; / &#x60;body&#x60; / &#x60;path&#x60;). Every value is one the PROVIDER published; never synthesized.  | [optional] 
-**ExampleResponse** | Pointer to **interface{}** |  | [optional] 
+**Method** | Pointer to **string** | The HTTP verb to send. Empty string when neither the index nor the provider&#39;s own 402 challenge / OpenAPI spec declares one.  | [optional]
+**InputSchema** | Pointer to **map[string]interface{}** | The provider&#39;s OWN structured declaration of the arguments this endpoint takes — the machine-usable form of what &#x60;usage_instructions&#x60; states in prose. Null when the provider declares nothing.  | [optional]
+**ExampleRequest** | Pointer to **map[string]interface{}** | A worked set of arguments grouped by slot (&#x60;query&#x60; / &#x60;body&#x60; / &#x60;path&#x60;). Every value is one the PROVIDER published; never synthesized.  | [optional]
+**ExampleResponse** | Pointer to **interface{}** |  | [optional]
 
 ## Methods
 
@@ -140,5 +140,3 @@ HasExampleResponse returns a boolean if a field has been set.
 UnsetExampleResponse ensures that no value is present for ExampleResponse, not even an explicit nil
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

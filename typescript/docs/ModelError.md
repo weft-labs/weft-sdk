@@ -1,7 +1,7 @@
 
 # ModelError
 
-A single error inside an `ErrorResponse` envelope. `code` is the stable machine-readable identifier (snake_case), `message` is human-readable, `details` carries optional structured context (e.g. validation field breakdown), and `request_id` correlates with server logs for debugging. 
+A single error inside an `ErrorResponse` envelope. `code` is the stable machine-readable identifier (snake_case), `message` is human-readable, `details` carries optional structured context (e.g. validation field breakdown), and `request_id` correlates with server logs for debugging.
 
 ## Properties
 
@@ -37,5 +37,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

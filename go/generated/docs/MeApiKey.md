@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**Name** | Pointer to **string** |  | [optional] 
-**CreatedAt** | **time.Time** |  | 
-**LastUsedAt** | Pointer to **time.Time** |  | [optional] 
-**CreatedBy** | Pointer to [**MeApiKeyCreator**](MeApiKeyCreator.md) |  | [optional] 
+**Id** | **int32** |  |
+**Name** | Pointer to **string** |  | [optional]
+**CreatedAt** | **time.Time** |  |
+**LastUsedAt** | Pointer to **time.Time** |  | [optional]
+**CreatedBy** | Pointer to [**MeApiKeyCreator**](MeApiKeyCreator.md) |  | [optional]
 
 ## Methods
 
@@ -146,5 +146,3 @@ HasCreatedBy returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

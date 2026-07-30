@@ -32,7 +32,7 @@ import (
 )
 
 func main() {
-	confirmRequest := *openapiclient.NewConfirmRequest("ConfirmationToken_example") // ConfirmRequest | 
+	confirmRequest := *openapiclient.NewConfirmRequest("ConfirmationToken_example") // ConfirmRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -57,7 +57,7 @@ Other parameters are passed through a pointer to a apiConfirmAccountRequest stru
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **confirmRequest** | [**ConfirmRequest**](ConfirmRequest.md) |  | 
+ **confirmRequest** | [**ConfirmRequest**](ConfirmRequest.md) |  |
 
 ### Return type
 
@@ -96,7 +96,7 @@ import (
 )
 
 func main() {
-	passwordResetRequest := *openapiclient.NewPasswordResetRequest("Email_example") // PasswordResetRequest | 
+	passwordResetRequest := *openapiclient.NewPasswordResetRequest("Email_example") // PasswordResetRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -121,7 +121,7 @@ Other parameters are passed through a pointer to a apiRequestPasswordResetReques
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **passwordResetRequest** | [**PasswordResetRequest**](PasswordResetRequest.md) |  | 
+ **passwordResetRequest** | [**PasswordResetRequest**](PasswordResetRequest.md) |  |
 
 ### Return type
 
@@ -160,7 +160,7 @@ import (
 )
 
 func main() {
-	resendConfirmationRequest := *openapiclient.NewResendConfirmationRequest("Email_example") // ResendConfirmationRequest | 
+	resendConfirmationRequest := *openapiclient.NewResendConfirmationRequest("Email_example") // ResendConfirmationRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -185,7 +185,7 @@ Other parameters are passed through a pointer to a apiResendConfirmationRequest 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resendConfirmationRequest** | [**ResendConfirmationRequest**](ResendConfirmationRequest.md) |  | 
+ **resendConfirmationRequest** | [**ResendConfirmationRequest**](ResendConfirmationRequest.md) |  |
 
 ### Return type
 
@@ -224,7 +224,7 @@ import (
 )
 
 func main() {
-	signInRequest := *openapiclient.NewSignInRequest("Email_example", "Password_example") // SignInRequest | 
+	signInRequest := *openapiclient.NewSignInRequest("Email_example", "Password_example") // SignInRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -249,7 +249,7 @@ Other parameters are passed through a pointer to a apiSignInRequest struct via t
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **signInRequest** | [**SignInRequest**](SignInRequest.md) |  | 
+ **signInRequest** | [**SignInRequest**](SignInRequest.md) |  |
 
 ### Return type
 
@@ -288,7 +288,7 @@ import (
 )
 
 func main() {
-	signUpRequest := *openapiclient.NewSignUpRequest("Email_example", "Password_example", "PasswordConfirmation_example") // SignUpRequest | 
+	signUpRequest := *openapiclient.NewSignUpRequest("Email_example", "Password_example", "PasswordConfirmation_example") // SignUpRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -313,7 +313,7 @@ Other parameters are passed through a pointer to a apiSignUpRequest struct via t
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **signUpRequest** | [**SignUpRequest**](SignUpRequest.md) |  | 
+ **signUpRequest** | [**SignUpRequest**](SignUpRequest.md) |  |
 
 ### Return type
 
@@ -352,7 +352,7 @@ import (
 )
 
 func main() {
-	passwordUpdateRequest := *openapiclient.NewPasswordUpdateRequest("ResetPasswordToken_example", "Password_example", "PasswordConfirmation_example") // PasswordUpdateRequest | 
+	passwordUpdateRequest := *openapiclient.NewPasswordUpdateRequest("ResetPasswordToken_example", "Password_example", "PasswordConfirmation_example") // PasswordUpdateRequest |
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -377,7 +377,7 @@ Other parameters are passed through a pointer to a apiUpdatePasswordRequest stru
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **passwordUpdateRequest** | [**PasswordUpdateRequest**](PasswordUpdateRequest.md) |  | 
+ **passwordUpdateRequest** | [**PasswordUpdateRequest**](PasswordUpdateRequest.md) |  |
 
 ### Return type
 
@@ -395,4 +395,3 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
 [[Back to README]](../README.md)
-

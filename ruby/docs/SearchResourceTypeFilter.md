@@ -17,4 +17,3 @@ instance = Weft::SearchResourceTypeFilter.new(
   _in: null
 )
 ```
-

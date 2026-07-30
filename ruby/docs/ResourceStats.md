@@ -27,4 +27,3 @@ instance = Weft::ResourceStats.new(
   last_active: null
 )
 ```
-

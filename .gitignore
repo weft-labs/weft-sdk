@@ -1,7 +1,6 @@
 .DS_Store
 node_modules
 dist
-**/package-lock.json
 **/.generated
 **/.openapi-generator
 **/.openapi-generator-ignore
@@ -14,7 +13,6 @@ dist
 **/.bundle
 **/coverage
 **/.ruby-lsp
-**/go.sum
 **/bin
 **/obj
 **/tmp

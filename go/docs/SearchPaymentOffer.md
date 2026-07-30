@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Protocol** | **string** | The payment rail (e.g. &#x60;x402&#x60;, &#x60;mpp&#x60;). | 
-**Scheme** | Pointer to **string** |  | [optional] 
-**Network** | Pointer to **string** |  | [optional] 
-**Asset** | Pointer to **string** |  | [optional] 
-**Amount** | Pointer to **string** |  | [optional] 
-**PayTo** | Pointer to **string** |  | [optional] 
-**MaxTimeoutSeconds** | Pointer to **int32** |  | [optional] 
-**Facilitator** | Pointer to **string** |  | [optional] 
+**Protocol** | **string** | The payment rail (e.g. &#x60;x402&#x60;, &#x60;mpp&#x60;). |
+**Scheme** | Pointer to **string** |  | [optional]
+**Network** | Pointer to **string** |  | [optional]
+**Asset** | Pointer to **string** |  | [optional]
+**Amount** | Pointer to **string** |  | [optional]
+**PayTo** | Pointer to **string** |  | [optional]
+**MaxTimeoutSeconds** | Pointer to **int32** |  | [optional]
+**Facilitator** | Pointer to **string** |  | [optional]
 
 ## Methods
 
@@ -229,5 +229,3 @@ HasFacilitator returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-
