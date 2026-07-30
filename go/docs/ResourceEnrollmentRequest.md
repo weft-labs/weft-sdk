@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Kind** | **string** | Resource kind. Must be one of the supported kinds (currently &#x60;agent&#x60;); an unknown value is rejected with a 422.  | 
-**Name** | **string** | Human-readable name; the server derives the slug from it. | 
-**Description** | Pointer to **string** |  | [optional] 
-**WalletAddress** | Pointer to **string** | Declared EVM wallet address for the ghost resource. Stored as a claim (unverified) until the resource is claimed.  | [optional] 
+**Kind** | **string** | Resource kind. Must be one of the supported kinds (currently &#x60;agent&#x60;); an unknown value is rejected with a 422.  |
+**Name** | **string** | Human-readable name; the server derives the slug from it. |
+**Description** | Pointer to **string** |  | [optional]
+**WalletAddress** | Pointer to **string** | Declared EVM wallet address for the ghost resource. Stored as a claim (unverified) until the resource is claimed.  | [optional]
 
 ## Methods
 
@@ -120,5 +120,3 @@ HasWalletAddress returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

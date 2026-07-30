@@ -5,11 +5,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**name** | **str** |  | [optional] 
-**key_prefix** | **str** |  | 
-**raw_key** | **str** | Full API key (shown only once at creation) | 
-**created_at** | **datetime** |  | 
+**id** | **int** |  |
+**name** | **str** |  | [optional]
+**key_prefix** | **str** |  |
+**raw_key** | **str** | Full API key (shown only once at creation) |
+**created_at** | **datetime** |  |
 
 ## Example
 
@@ -29,5 +29,3 @@ api_key_created_dict = api_key_created_instance.to_dict()
 api_key_created_from_dict = ApiKeyCreated.from_dict(api_key_created_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

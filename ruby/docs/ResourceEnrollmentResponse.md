@@ -15,4 +15,3 @@ instance = Weft::ResourceEnrollmentResponse.new(
   data: null
 )
 ```
-

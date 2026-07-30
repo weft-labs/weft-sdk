@@ -23,4 +23,3 @@ instance = Weft::ApiKeyCreated.new(
   created_at: null
 )
 ```
-

@@ -4,12 +4,12 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **int32** |  | 
-**Name** | Pointer to **string** |  | [optional] 
-**KeyPrefix** | **string** | First 16 characters of the key for identification | 
-**LastUsedAt** | Pointer to **time.Time** |  | [optional] 
-**RevokedAt** | Pointer to **time.Time** |  | [optional] 
-**CreatedAt** | **time.Time** |  | 
+**Id** | **int32** |  |
+**Name** | Pointer to **string** |  | [optional]
+**KeyPrefix** | **string** | First 16 characters of the key for identification |
+**LastUsedAt** | Pointer to **time.Time** |  | [optional]
+**RevokedAt** | Pointer to **time.Time** |  | [optional]
+**CreatedAt** | **time.Time** |  |
 
 ## Methods
 
@@ -167,5 +167,3 @@ SetCreatedAt sets CreatedAt field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

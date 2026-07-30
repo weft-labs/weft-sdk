@@ -15,4 +15,3 @@ instance = Weft::AuthResponse.new(
   data: null
 )
 ```
-

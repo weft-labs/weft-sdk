@@ -6,8 +6,8 @@ Resource-type constraint. Set exactly one of `eq` / `in`.
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**eq** | **str** | Resource type is exactly this value. | [optional] 
-**var_in** | **List[str]** | Resource type is one of these values. | [optional] 
+**eq** | **str** | Resource type is exactly this value. | [optional]
+**var_in** | **List[str]** | Resource type is one of these values. | [optional]
 
 ## Example
 
@@ -27,5 +27,3 @@ search_resource_type_filter_dict = search_resource_type_filter_instance.to_dict(
 search_resource_type_filter_from_dict = SearchResourceTypeFilter.from_dict(search_resource_type_filter_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -67,7 +67,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.SearchApi(api_client)
-    search_request = weft_sdk.generated.SearchRequest() # SearchRequest | 
+    search_request = weft_sdk.generated.SearchRequest() # SearchRequest |
 
     try:
         # Search the Weft index
@@ -85,7 +85,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **search_request** | [**SearchRequest**](SearchRequest.md)|  | 
+ **search_request** | [**SearchRequest**](SearchRequest.md)|  |
 
 ### Return type
 
@@ -112,4 +112,3 @@ Name | Type | Description  | Notes
 **500** | Backend misconfigured (&#x60;SEARCH_BACKEND&#x60; unset or unknown) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

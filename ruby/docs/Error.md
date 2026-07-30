@@ -21,4 +21,3 @@ instance = Weft::Error.new(
   request_id: req_01HX9F3K7B2N4P8Q1R6T8Y2Z5
 )
 ```
-

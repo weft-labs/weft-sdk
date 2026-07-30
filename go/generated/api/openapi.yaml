@@ -11,7 +11,7 @@ info:
       3. Wallet visibility (`/api/v1/balance`)
       4. Discovery (`/api/v1/search`)
       5. Paid execution (`/api/v1/fetch`)
-      6. Purchase history (`/api/v1/payments`)
+      6. Purchase history (`/api/v1/purchases`)
 
     Seller-side concerns (agent management, payout analytics, webhook
     delivery, the public storefront for `data_api` resources) live in the
@@ -24,7 +24,7 @@ info:
     envelopes carrying additional context — see `SearchErrorResponse` and
     `FetchErrorResponse`.
   title: Weft API
-  version: 0.8.0
+  version: 0.9.0
 servers:
 - description: Production
   url: https://weft.network
@@ -60,8 +60,10 @@ tags:
     policy + balance + dashboard URL so the caller can surface "what
     changed?" without a second round-trip.
   name: Fetch
-- description: Payment history and individual purchase details.
+- description: Seller Organization payment receipts.
   name: Payments
+- description: Buyer signing and settlement history.
+  name: Purchases
 - description: |
     Public, unauthenticated ghost-resource enrollment. Lets an agent
     self-register so its human controller can later claim it from the
@@ -262,6 +264,10 @@ paths:
       - Auth
   /api/v1/me:
     get:
+      description: |
+        Returns the Organization represented by a resource API key, or the User
+        represented by an account API key or OAuth access token. Branch on
+        `data.principal_type`; existing Organization fields remain unchanged.
       operationId: getMe
       responses:
         "200":
@@ -269,25 +275,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MeResponse"
-          description: Current user account
+          description: Current Organization or User principal
         "401":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Unauthorized
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-          description: |
-            The credential authenticated but has no organization context
-            (`ORGANIZATION_REQUIRED`). Account-scoped (buyer) keys cannot read
-            this org-scoped endpoint.
       security:
       - bearerAuth: []
-      summary: Get current account
+      summary: Get the current credential principal
       tags:
       - Account
   /api/v1/api_keys:
@@ -549,6 +546,22 @@ paths:
         `x-payment`, `connection`, `upgrade`). Up to 32 headers, 4 KB of
         combined value bytes.
       operationId: fetch
+      parameters:
+      - description: |
+          Opaque caller-generated retry key. Reusing the same key for the
+          same buyer converges on one paid fetch; keys are hashed and
+          namespaced by buyer before storage. Send this header for every
+          unattended or retryable paid request.
+        explode: false
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          maxLength: 255
+          minLength: 1
+          pattern: "^[!-~]+$"
+          type: string
+        style: simple
       requestBody:
         content:
           application/json:
@@ -593,6 +606,15 @@ paths:
             lacking the `fetch` scope (`InsufficientScopeResponse`, RFC 6750
             `insufficient_scope`, with a `WWW-Authenticate` challenge). The two
             envelopes are disjoint; branch on the `error` value.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+          description: |
+            `IDEMPOTENCY_CONFLICT` — this buyer already used the supplied
+            `Idempotency-Key` for a different fetch request. Generate a new key
+            for the new operation; retry the original operation unchanged.
         "413":
           content:
             application/json:
@@ -605,7 +627,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: |
-            Invalid request URL, a merchant payment method Weft cannot sign
+            Invalid request fields, method, cost, body, headers, idempotency
+            key, or URL; a merchant payment method Weft cannot sign
             (`UNSUPPORTED_PAYMENT_METHOD`), or a merchant settlement token Weft
             can never settle (`UNSUPPORTED_ASSET` — settlement is exact-asset
             and the token's on-chain `currency()` is not USD; terminal for
@@ -718,6 +741,99 @@ paths:
       summary: Get payment details
       tags:
       - Payments
+  /api/v1/purchases:
+    get:
+      description: |
+        Returns the authenticated buyer's signing and settlement ledger. Unlike
+        `/api/v1/payments`, this endpoint is User-scoped and backed by
+        `signed_events`, so rejected and pending attempts are included.
+      operationId: listPurchases
+      parameters:
+      - description: Page number
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - description: Items per page
+        explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 25
+          maximum: 100
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseListResponse"
+          description: Buyer purchase ledger
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or non-buyer-scoped credential
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
+          description: OAuth token lacks the `balance` scope.
+      security:
+      - bearerAuth: []
+      summary: List buyer purchases
+      tags:
+      - Purchases
+  /api/v1/purchases/{id}:
+    get:
+      operationId: getPurchase
+      parameters:
+      - description: Purchase ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResponse"
+          description: Buyer purchase details
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized — missing or non-buyer-scoped credential
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientScopeResponse"
+          description: OAuth token lacks the `balance` scope.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Purchase not found or owned by another buyer
+      security:
+      - bearerAuth: []
+      summary: Get a buyer purchase
+      tags:
+      - Purchases
 components:
   schemas:
     ErrorResponse:
@@ -1124,10 +1240,11 @@ components:
           kind: kind
           name: name
           id: 0
+          principal_type: organization
           slug: slug
       properties:
         data:
-          $ref: "#/components/schemas/AccountDetails"
+          $ref: "#/components/schemas/MeResponse_data"
       required:
       - data
     AccountDetails:
@@ -1149,8 +1266,13 @@ components:
         kind: kind
         name: name
         id: 0
+        principal_type: organization
         slug: slug
       properties:
+        principal_type:
+          enum:
+          - organization
+          type: string
         id:
           type: integer
         name:
@@ -1166,7 +1288,60 @@ components:
       - id
       - kind
       - name
+      - principal_type
       - slug
+    UserPrincipal:
+      description: The buyer User represented by an account API key or OAuth token.
+      properties:
+        principal_type:
+          enum:
+          - user
+          type: string
+        id:
+          type: integer
+        email:
+          format: email
+          type: string
+        display_name:
+          type: string
+          nullable: true
+        status:
+          enum:
+          - active
+          - blocked
+          type: string
+        buyer_enabled:
+          type: boolean
+        seller_enabled:
+          type: boolean
+        provisioning_status:
+          enum:
+          - pending
+          - ready
+          - not_applicable
+          type: string
+        wallet:
+          allOf:
+          - $ref: "#/components/schemas/PrincipalWallet"
+          nullable: true
+      required:
+      - buyer_enabled
+      - email
+      - id
+      - principal_type
+      - provisioning_status
+      - seller_enabled
+      - status
+      - wallet
+    PrincipalWallet:
+      properties:
+        address:
+          type: string
+        network:
+          type: string
+      required:
+      - address
+      - network
     MeApiKey:
       example:
         last_used_at: 2000-01-23T04:56:07.000+00:00
@@ -1448,6 +1623,184 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Payment"
+      required:
+      - data
+    Purchase:
+      example:
+        amount_usd: amount_usd
+        tx_hash: tx_hash
+        recipient_address: recipient_address
+        reject_reason: reject_reason
+        failure_reason: failure_reason
+        network: network
+        artifact: ""
+        protocol: mpp
+        context: context
+        signed_at: 2000-01-23T04:56:07.000+00:00
+        idempotency_key: idempotency_key
+        id: 0
+        settled_at: 2000-01-23T04:56:07.000+00:00
+        status: signed
+      properties:
+        id:
+          type: integer
+        status:
+          enum:
+          - signed
+          - settled
+          - locked
+          - rejected
+          - declined
+          - expired
+          - reverted
+          type: string
+        amount_usd:
+          description: Exact decimal USD amount with up to six fractional digits.
+          type: string
+        recipient_address:
+          type: string
+        network:
+          type: string
+        protocol:
+          enum:
+          - mpp
+          - x402
+          - null
+          nullable: true
+          type: string
+          nullable: true
+        context:
+          nullable: true
+          type: string
+          nullable: true
+        tx_hash:
+          nullable: true
+          type: string
+          nullable: true
+        reject_reason:
+          nullable: true
+          type: string
+          nullable: true
+        failure_reason:
+          nullable: true
+          type: string
+          nullable: true
+        idempotency_key:
+          nullable: true
+          type: string
+          nullable: true
+        signed_at:
+          format: date-time
+          type: string
+        settled_at:
+          format: date-time
+          nullable: true
+          type: string
+          nullable: true
+        artifact:
+          allOf:
+          - $ref: "#/components/schemas/PurchaseArtifact"
+          nullable: true
+      required:
+      - amount_usd
+      - artifact
+      - context
+      - failure_reason
+      - id
+      - idempotency_key
+      - network
+      - protocol
+      - recipient_address
+      - reject_reason
+      - settled_at
+      - signed_at
+      - status
+      - tx_hash
+    PurchaseArtifact:
+      properties:
+        id:
+          type: integer
+        merchant_url:
+          format: uri
+          type: string
+        bytes:
+          minimum: 0
+          type: integer
+        mime:
+          nullable: true
+          type: string
+          nullable: true
+      required:
+      - bytes
+      - id
+      - merchant_url
+      - mime
+    PurchaseListResponse:
+      example:
+        pagination:
+          per_page: 1
+          total: 5
+          page: 6
+          total_pages: 5
+        data:
+        - amount_usd: amount_usd
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          reject_reason: reject_reason
+          failure_reason: failure_reason
+          network: network
+          artifact: ""
+          protocol: mpp
+          context: context
+          signed_at: 2000-01-23T04:56:07.000+00:00
+          idempotency_key: idempotency_key
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          status: signed
+        - amount_usd: amount_usd
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          reject_reason: reject_reason
+          failure_reason: failure_reason
+          network: network
+          artifact: ""
+          protocol: mpp
+          context: context
+          signed_at: 2000-01-23T04:56:07.000+00:00
+          idempotency_key: idempotency_key
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          status: signed
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Purchase"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+    PurchaseResponse:
+      example:
+        data:
+          amount_usd: amount_usd
+          tx_hash: tx_hash
+          recipient_address: recipient_address
+          reject_reason: reject_reason
+          failure_reason: failure_reason
+          network: network
+          artifact: ""
+          protocol: mpp
+          context: context
+          signed_at: 2000-01-23T04:56:07.000+00:00
+          idempotency_key: idempotency_key
+          id: 0
+          settled_at: 2000-01-23T04:56:07.000+00:00
+          status: signed
+      properties:
+        data:
+          $ref: "#/components/schemas/Purchase"
       required:
       - data
     BalanceResponse:
@@ -2605,6 +2958,8 @@ components:
           - PUT
           - PATCH
           - DELETE
+          - HEAD
+          - OPTIONS
           type: string
         body:
           $ref: "#/components/schemas/FetchRequest_body"
@@ -2768,7 +3123,15 @@ components:
         error:
           description: Stable error code.
           enum:
+          - INVALID_REQUEST
+          - UNKNOWN_PARAMETER
           - INVALID_URL
+          - INVALID_MAX_COST_USD
+          - UNSUPPORTED_METHOD
+          - INVALID_BODY
+          - INVALID_HEADERS
+          - INVALID_IDEMPOTENCY_KEY
+          - IDEMPOTENCY_CONFLICT
           - EXCEEDED_MAX_COST
           - INSUFFICIENT_BALANCE
           - MERCHANT_RETURNED_NON_402
@@ -2872,6 +3235,15 @@ components:
       required:
       - confirmation_required
       - user
+    MeResponse_data:
+      discriminator:
+        mapping:
+          organization: "#/components/schemas/AccountDetails"
+          user: "#/components/schemas/UserPrincipal"
+        propertyName: principal_type
+      oneOf:
+      - $ref: "#/components/schemas/AccountDetails"
+      - $ref: "#/components/schemas/UserPrincipal"
     SearchResponse_warnings_inner:
       example:
         code: code

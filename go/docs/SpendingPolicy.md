@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**MaxTxUsd** | **string** | Maximum USD per single transaction. | 
-**DailyLimitUsd** | **string** | Maximum USD spent in a 24-hour window. | 
-**WeeklyLimitUsd** | **string** | Maximum USD spent in a 7-day window. | 
+**MaxTxUsd** | **string** | Maximum USD per single transaction. |
+**DailyLimitUsd** | **string** | Maximum USD spent in a 24-hour window. |
+**WeeklyLimitUsd** | **string** | Maximum USD spent in a 7-day window. |
 
 ## Methods
 
@@ -89,5 +89,3 @@ SetWeeklyLimitUsd sets WeeklyLimitUsd field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

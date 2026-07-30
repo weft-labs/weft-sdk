@@ -9,11 +9,11 @@ All URIs are relative to *https://weft.network*
 
 ## fetch
 
-> <FetchResponse> fetch(fetch_request)
+> <FetchResponse> fetch(fetch_request, opts)
 
 Pay-and-fetch any URL (x402 proxy)
 
-Universal x402 fetch proxy. The caller provides a target `url`, a hard `max_cost_usd` ceiling, and optional `method` / `body` / `headers`. Weft:    1. Issues the request.   2. On `402 Payment Required`, parses the merchant's challenge.   3. Compares the asking price to `max_cost_usd` and the      buyer's policy (`max_tx_usd`, daily/weekly limits).   4. Signs an EIP-3009 transfer from the buyer's wallet.   5. Replays the request with the `X-Payment` header.   6. Streams the upstream artifact back, base64-encoded under      `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,      `tx_hash`, and the merchant's reputation snapshot. `paid_usd`      is \"0\" until the charge is CONFIRMED settled — a signed-but-      unsettled hold (the common case for x402, which settles      asynchronously) reports its amount in `held_usd` instead, never      in `paid_usd`.  Errors are structured with a stable `error` code, and each error response carries the buyer's `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  Account-scoped: the bearer must be a buyer-scoped API key.  **Forwarded headers:** the caller's `headers` are passed through to the upstream, except a denylist of hop-by-hop and Weft-internal headers (`host`, `authorization`, `cookie`, `proxy-authorization`, `x-forwarded-*`, `x-real-ip`, `x-payment`, `connection`, `upgrade`). Up to 32 headers, 4 KB of combined value bytes. 
+Universal x402 fetch proxy. The caller provides a target `url`, a hard `max_cost_usd` ceiling, and optional `method` / `body` / `headers`. Weft:    1. Issues the request.   2. On `402 Payment Required`, parses the merchant's challenge.   3. Compares the asking price to `max_cost_usd` and the      buyer's policy (`max_tx_usd`, daily/weekly limits).   4. Signs an EIP-3009 transfer from the buyer's wallet.   5. Replays the request with the `X-Payment` header.   6. Streams the upstream artifact back, base64-encoded under      `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,      `tx_hash`, and the merchant's reputation snapshot. `paid_usd`      is \"0\" until the charge is CONFIRMED settled — a signed-but-      unsettled hold (the common case for x402, which settles      asynchronously) reports its amount in `held_usd` instead, never      in `paid_usd`.  Errors are structured with a stable `error` code, and each error response carries the buyer's `policy`, `balance`, and a `dashboard_url` so a CLI can render an actionable message without a second round-trip.  Account-scoped: the bearer must be a buyer-scoped API key.  **Forwarded headers:** the caller's `headers` are passed through to the upstream, except a denylist of hop-by-hop and Weft-internal headers (`host`, `authorization`, `cookie`, `proxy-authorization`, `x-forwarded-*`, `x-real-ip`, `x-payment`, `connection`, `upgrade`). Up to 32 headers, 4 KB of combined value bytes.
 
 ### Examples
 
@@ -27,11 +27,14 @@ Weft.configure do |config|
 end
 
 api_instance = Weft::FetchApi.new
-fetch_request = Weft::FetchRequest.new({url: 'https://x402.api.agentmail.to/v0/inboxes'}) # FetchRequest | 
+fetch_request = Weft::FetchRequest.new({url: 'https://x402.api.agentmail.to/v0/inboxes'}) # FetchRequest |
+opts = {
+  idempotency_key: 'idempotency_key_example' # String | Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.
+}
 
 begin
   # Pay-and-fetch any URL (x402 proxy)
-  result = api_instance.fetch(fetch_request)
+  result = api_instance.fetch(fetch_request, opts)
   p result
 rescue Weft::ApiError => e
   puts "Error when calling FetchApi->fetch: #{e}"
@@ -42,12 +45,12 @@ end
 
 This returns an Array which contains the response data, status code and headers.
 
-> <Array(<FetchResponse>, Integer, Hash)> fetch_with_http_info(fetch_request)
+> <Array(<FetchResponse>, Integer, Hash)> fetch_with_http_info(fetch_request, opts)
 
 ```ruby
 begin
   # Pay-and-fetch any URL (x402 proxy)
-  data, status_code, headers = api_instance.fetch_with_http_info(fetch_request)
+  data, status_code, headers = api_instance.fetch_with_http_info(fetch_request, opts)
   p status_code # => 2xx
   p headers # => { ... }
   p data # => <FetchResponse>
@@ -61,6 +64,7 @@ end
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
 | **fetch_request** | [**FetchRequest**](FetchRequest.md) |  |  |
+| **idempotency_key** | **String** | Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.  | [optional] |
 
 ### Return type
 
@@ -74,4 +78,3 @@ end
 
 - **Content-Type**: application/json
 - **Accept**: application/json
-

@@ -17,4 +17,3 @@ instance = Weft::SearchCapabilityRef.new(
   capability_type: null
 )
 ```
-

@@ -1,12 +1,12 @@
 # ErrorResponse
 
-Standard error envelope returned by all `/api/v1` endpoints except `/search` and `/fetch` (which use bespoke envelopes carrying additional context). `error.code` is stable across releases and safe to branch on; `error.message` is human-readable and may change. 
+Standard error envelope returned by all `/api/v1` endpoints except `/search` and `/fetch` (which use bespoke envelopes carrying additional context). `error.code` is stable across releases and safe to branch on; `error.message` is human-readable and may change.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | [**Error**](Error.md) |  | 
+**error** | [**Error**](Error.md) |  |
 
 ## Example
 
@@ -26,5 +26,3 @@ error_response_dict = error_response_instance.to_dict()
 error_response_from_dict = ErrorResponse.from_dict(error_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

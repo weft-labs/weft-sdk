@@ -5,12 +5,12 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**name** | **str** |  | [optional] 
-**key_prefix** | **str** | First 16 characters of the key for identification | 
-**last_used_at** | **datetime** |  | [optional] 
-**revoked_at** | **datetime** |  | [optional] 
-**created_at** | **datetime** |  | 
+**id** | **int** |  |
+**name** | **str** |  | [optional]
+**key_prefix** | **str** | First 16 characters of the key for identification |
+**last_used_at** | **datetime** |  | [optional]
+**revoked_at** | **datetime** |  | [optional]
+**created_at** | **datetime** |  |
 
 ## Example
 
@@ -30,5 +30,3 @@ api_key_dict = api_key_instance.to_dict()
 api_key_from_dict = ApiKey.from_dict(api_key_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

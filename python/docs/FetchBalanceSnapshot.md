@@ -1,16 +1,16 @@
 # FetchBalanceSnapshot
 
-Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed. 
+Compact balance snapshot returned inside `FetchErrorResponse`. Less rich than `BalanceResponse` — just the fields a CLI needs to explain why a fetch failed.
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**promo_usd** | **str** |  | 
-**wallet_usdc** | **str** | Live Base USDC balance. | 
-**tempo_usd** | **str** | Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. &#x60;null&#x60; when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \&quot;0.00\&quot; for an unread component.  | 
-**total_usd** | **str** | Aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals &#x60;wallet_usdc&#x60; alone when &#x60;tempo_usd&#x60; is null. Null when the Base USDC provider is unreachable.  | 
-**spent_today_usd** | **str** |  | 
+**promo_usd** | **str** |  |
+**wallet_usdc** | **str** | Live Base USDC balance. |
+**tempo_usd** | **str** | Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. &#x60;null&#x60; when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \&quot;0.00\&quot; for an unread component.  |
+**total_usd** | **str** | Aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals &#x60;wallet_usdc&#x60; alone when &#x60;tempo_usd&#x60; is null. Null when the Base USDC provider is unreachable.  |
+**spent_today_usd** | **str** |  |
 
 ## Example
 
@@ -30,5 +30,3 @@ fetch_balance_snapshot_dict = fetch_balance_snapshot_instance.to_dict()
 fetch_balance_snapshot_from_dict = FetchBalanceSnapshot.from_dict(fetch_balance_snapshot_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

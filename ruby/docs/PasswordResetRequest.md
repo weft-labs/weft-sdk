@@ -15,4 +15,3 @@ instance = Weft::PasswordResetRequest.new(
   email: null
 )
 ```
-

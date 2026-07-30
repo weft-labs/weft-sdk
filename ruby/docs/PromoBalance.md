@@ -19,4 +19,3 @@ instance = Weft::PromoBalance.new(
   expires_at: null
 )
 ```
-

@@ -1,12 +1,13 @@
 
 # AccountDetails
 
-The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org). 
+The Organization that owns the authenticated API key — the principal in API v1 (the key represents an Org, not a person). `api_key` carries audit info about the key itself, including the user who minted it (`created_by`, which may be `null` if that user has left the Org).
 
 ## Properties
 
 Name | Type
 ------------ | -------------
+`principalType` | string
 `id` | number
 `name` | string
 `slug` | string
@@ -20,6 +21,7 @@ import type { AccountDetails } from '@weft-labs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {
+  "principalType": null,
   "id": null,
   "name": null,
   "slug": null,
@@ -39,5 +41,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

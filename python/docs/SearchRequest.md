@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**query** | **str** | Free-text query. Required and non-empty. | 
+**query** | **str** | Free-text query. Required and non-empty. |
 **max_results** | **int** | Max number of hits to return. Invalid values are rejected, not clamped. | [optional] [default to 10]
-**filters** | [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional] 
+**filters** | [**SearchFilterSpec**](SearchFilterSpec.md) |  | [optional]
 
 ## Example
 
@@ -27,5 +27,3 @@ search_request_dict = search_request_instance.to_dict()
 search_request_from_dict = SearchRequest.from_dict(search_request_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

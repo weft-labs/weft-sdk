@@ -1,7 +1,7 @@
 
 # BalanceResponse
 
-Buyer\'s wallet snapshot. Note: unlike `/me` / `/payments` / `/api_keys`, this endpoint does NOT use a `data:` envelope — the response object is the snapshot directly. 
+Buyer\'s wallet snapshot. Note: unlike `/me` / `/payments` / `/api_keys`, this endpoint does NOT use a `data:` envelope — the response object is the snapshot directly.
 
 ## Properties
 
@@ -39,5 +39,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

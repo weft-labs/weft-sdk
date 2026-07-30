@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Lte** | Pointer to **string** | Price ≤ this many USD (inclusive ceiling), e.g. \&quot;0.009\&quot;. | [optional] 
-**Gte** | Pointer to **string** | Price ≥ this many USD (inclusive floor), e.g. \&quot;0.001\&quot;. | [optional] 
-**Eq** | Pointer to **string** | Price exactly this many USD, e.g. \&quot;1.5\&quot;. | [optional] 
-**RangeGte** | Pointer to **string** | Range lower bound (inclusive), USD. Set with range_lte. | [optional] 
-**RangeLte** | Pointer to **string** | Range upper bound (inclusive), USD. Set with range_gte. | [optional] 
+**Lte** | Pointer to **string** | Price ≤ this many USD (inclusive ceiling), e.g. \&quot;0.009\&quot;. | [optional]
+**Gte** | Pointer to **string** | Price ≥ this many USD (inclusive floor), e.g. \&quot;0.001\&quot;. | [optional]
+**Eq** | Pointer to **string** | Price exactly this many USD, e.g. \&quot;1.5\&quot;. | [optional]
+**RangeGte** | Pointer to **string** | Range lower bound (inclusive), USD. Set with range_lte. | [optional]
+**RangeLte** | Pointer to **string** | Range upper bound (inclusive), USD. Set with range_gte. | [optional]
 
 ## Methods
 
@@ -156,5 +156,3 @@ HasRangeLte returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -16,12 +16,9 @@ fi
 rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}"
 
-docker run --rm \
-  -v "${ROOT_DIR}:/local" \
-  openapitools/openapi-generator-cli:v7.19.0 generate \
-  -i /local/spec/openapi.yaml \
-  -g python \
-  -o /local/python/.generated \
+"${ROOT_DIR}/scripts/run-openapi-generator.sh" \
+  python \
+  "${TMP_DIR}" \
   --additional-properties=packageName=weft_sdk.generated,projectName=weft-sdk,packageVersion="${SPEC_VERSION}"
 
 rm -rf "${OUT_DIR}/src/weft_sdk/generated" "${OUT_DIR}/docs"
@@ -33,3 +30,6 @@ cp -R "${TMP_DIR}/weft_sdk/generated" "${OUT_DIR}/src/weft_sdk/"
 if [ -d "${TMP_DIR}/docs" ]; then
   cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
 fi
+
+"${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
+  "${OUT_DIR}/src/weft_sdk/generated" "${OUT_DIR}/docs"

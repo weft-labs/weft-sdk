@@ -21,4 +21,3 @@ instance = Weft::SearchResult.new(
   score: null
 )
 ```
-

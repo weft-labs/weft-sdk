@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Error** | [**Error**](Error.md) |  | 
+**Error** | [**Error**](Error.md) |  |
 
 ## Methods
 
@@ -47,5 +47,3 @@ SetError sets Error field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

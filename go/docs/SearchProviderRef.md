@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ProviderId** | Pointer to **string** |  | [optional] 
-**DisplayName** | Pointer to **string** |  | [optional] 
-**OriginDomains** | Pointer to **[]string** |  | [optional] 
+**ProviderId** | Pointer to **string** |  | [optional]
+**DisplayName** | Pointer to **string** |  | [optional]
+**OriginDomains** | Pointer to **[]string** |  | [optional]
 
 ## Methods
 
@@ -104,5 +104,3 @@ HasOriginDomains returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

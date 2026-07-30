@@ -1,7 +1,7 @@
 
 # SearchResponse
 
-The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`. 
+The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`.
 
 ## Properties
 
@@ -67,5 +67,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

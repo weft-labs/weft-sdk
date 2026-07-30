@@ -17,4 +17,3 @@ instance = Weft::SearchErrorResponse.new(
   details: null
 )
 ```
-

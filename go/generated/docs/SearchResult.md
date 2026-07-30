@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Provider** | [**SearchProviderRef**](SearchProviderRef.md) |  | 
-**Capability** | [**SearchCapabilityRef**](SearchCapabilityRef.md) |  | 
-**Endpoints** | [**[]SearchEndpointHit**](SearchEndpointHit.md) |  | 
-**Score** | **float64** |  | 
+**Provider** | [**SearchProviderRef**](SearchProviderRef.md) |  |
+**Capability** | [**SearchCapabilityRef**](SearchCapabilityRef.md) |  |
+**Endpoints** | [**[]SearchEndpointHit**](SearchEndpointHit.md) |  |
+**Score** | **float64** |  |
 
 ## Methods
 
@@ -110,5 +110,3 @@ SetScore sets Score field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

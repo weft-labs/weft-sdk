@@ -15,4 +15,3 @@ instance = Weft::ApiKeyCreatedResponse.new(
   data: null
 )
 ```
-

@@ -41,4 +41,3 @@ instance = Weft::EnrolledResource.new(
   claim_url: null
 )
 ```
-

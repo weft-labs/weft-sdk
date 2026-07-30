@@ -15,4 +15,3 @@ instance = Weft::MessageResponse.new(
   data: null
 )
 ```
-

@@ -4,6 +4,7 @@
 
 | Name | Type | Description | Notes |
 | ---- | ---- | ----------- | ----- |
+| **principal_type** | **String** |  |  |
 | **id** | **Integer** |  |  |
 | **name** | **String** |  |  |
 | **slug** | **String** |  |  |
@@ -16,6 +17,7 @@
 require 'weft-sdk'
 
 instance = Weft::AccountDetails.new(
+  principal_type: null,
   id: null,
   name: null,
   slug: null,
@@ -23,4 +25,3 @@ instance = Weft::AccountDetails.new(
   api_key: null
 )
 ```
-

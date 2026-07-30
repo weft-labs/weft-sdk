@@ -21,4 +21,3 @@ instance = Weft::Merchant.new(
   dispute_count: null
 )
 ```
-

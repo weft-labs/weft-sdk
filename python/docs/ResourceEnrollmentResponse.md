@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**data** | [**EnrolledResource**](EnrolledResource.md) |  | 
+**data** | [**EnrolledResource**](EnrolledResource.md) |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ resource_enrollment_response_dict = resource_enrollment_response_instance.to_dic
 resource_enrollment_response_from_dict = ResourceEnrollmentResponse.from_dict(resource_enrollment_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

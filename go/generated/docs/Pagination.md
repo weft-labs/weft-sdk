@@ -4,10 +4,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Page** | **int32** |  | 
-**PerPage** | **int32** |  | 
-**Total** | **int32** |  | 
-**TotalPages** | **int32** |  | 
+**Page** | **int32** |  |
+**PerPage** | **int32** |  |
+**Total** | **int32** |  |
+**TotalPages** | **int32** |  |
 
 ## Methods
 
@@ -110,5 +110,3 @@ SetTotalPages sets TotalPages field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -4,19 +4,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**EndpointId** | Pointer to **string** |  | [optional] 
-**Url** | Pointer to **string** |  | [optional] 
-**ResourceType** | Pointer to **string** |  | [optional] 
-**PrimaryProtocol** | Pointer to **string** |  | [optional] 
-**Call** | Pointer to [**SearchEndpointCall**](SearchEndpointCall.md) |  | [optional] 
-**Price** | Pointer to [**SearchEndpointPrice**](SearchEndpointPrice.md) |  | [optional] 
-**Payment** | Pointer to [**[]SearchPaymentOffer**](SearchPaymentOffer.md) | The settlement routes this endpoint&#39;s own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of &#x60;call&#x60;: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider&#39;s own preference order. Honest-empty when the pipeline observed no challenge.  | [optional] 
-**OperatorType** | Pointer to **string** | Who you are actually paying. &#x60;first_party&#x60; &#x3D; operated by the provider that makes the capability; &#x60;reseller&#x60; &#x3D; resold, so the price carries someone else&#39;s margin. Null until the platform resolves the operator.  | [optional] 
-**OperatedById** | Pointer to **string** |  | [optional] 
-**SettledViaFacilitatorId** | Pointer to **string** |  | [optional] 
-**Settlements** | Pointer to **int32** | Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown.  | [optional] 
-**LastVerifiedAt** | Pointer to **time.Time** | When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification.  | [optional] 
-**LatencyP50Ms** | Pointer to **int32** | Median time-to-first-byte in ms across the endpoint&#39;s probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0).  | [optional] 
+**EndpointId** | Pointer to **string** |  | [optional]
+**Url** | Pointer to **string** |  | [optional]
+**ResourceType** | Pointer to **string** |  | [optional]
+**PrimaryProtocol** | Pointer to **string** |  | [optional]
+**Call** | Pointer to [**SearchEndpointCall**](SearchEndpointCall.md) |  | [optional]
+**Price** | Pointer to [**SearchEndpointPrice**](SearchEndpointPrice.md) |  | [optional]
+**Payment** | Pointer to [**[]SearchPaymentOffer**](SearchPaymentOffer.md) | The settlement routes this endpoint&#39;s own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of &#x60;call&#x60;: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider&#39;s own preference order. Honest-empty when the pipeline observed no challenge.  | [optional]
+**OperatorType** | Pointer to **string** | Who you are actually paying. &#x60;first_party&#x60; &#x3D; operated by the provider that makes the capability; &#x60;reseller&#x60; &#x3D; resold, so the price carries someone else&#39;s margin. Null until the platform resolves the operator.  | [optional]
+**OperatedById** | Pointer to **string** |  | [optional]
+**SettledViaFacilitatorId** | Pointer to **string** |  | [optional]
+**Settlements** | Pointer to **int32** | Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown.  | [optional]
+**LastVerifiedAt** | Pointer to **time.Time** | When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification.  | [optional]
+**LatencyP50Ms** | Pointer to **int32** | Median time-to-first-byte in ms across the endpoint&#39;s probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0).  | [optional]
 
 ## Methods
 
@@ -364,5 +364,3 @@ HasLatencyP50Ms returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

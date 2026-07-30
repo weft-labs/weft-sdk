@@ -1,7 +1,7 @@
 
 # SearchEndpointPrice
 
-Price + provenance + freshness for this (endpoint × capability) pairing. Always present; an unpriced endpoint carries null amounts rather than an absent block, so a caller never has to distinguish \"free\" from \"we do not know\". 
+Price + provenance + freshness for this (endpoint × capability) pairing. Always present; an unpriced endpoint carries null amounts rather than an absent block, so a caller never has to distinguish \"free\" from \"we do not know\".
 
 ## Properties
 
@@ -39,5 +39,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

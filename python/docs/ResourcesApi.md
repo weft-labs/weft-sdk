@@ -46,7 +46,7 @@ configuration = weft_sdk.generated.Configuration(
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = weft_sdk.generated.ResourcesApi(api_client)
-    resource_enrollment_request = weft_sdk.generated.ResourceEnrollmentRequest() # ResourceEnrollmentRequest | 
+    resource_enrollment_request = weft_sdk.generated.ResourceEnrollmentRequest() # ResourceEnrollmentRequest |
 
     try:
         # Self-enroll a ghost resource (public, no auth)
@@ -64,7 +64,7 @@ with weft_sdk.generated.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resource_enrollment_request** | [**ResourceEnrollmentRequest**](ResourceEnrollmentRequest.md)|  | 
+ **resource_enrollment_request** | [**ResourceEnrollmentRequest**](ResourceEnrollmentRequest.md)|  |
 
 ### Return type
 
@@ -88,4 +88,3 @@ No authorization required
 **429** | Rate limit exceeded (10 enrollments/hour/IP) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

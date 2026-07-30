@@ -46,4 +46,3 @@ Weft::Fetch403Response.build(data_that_doesnt_match)
 - `FetchErrorResponse`
 - `InsufficientScopeResponse`
 - `nil` (if no type matches)
-

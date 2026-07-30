@@ -1,7 +1,7 @@
 
 # EnrolledResource
 
-The `:created` view of a ghost resource. Adds `stats`, the single-use `claim_token`, and the `claim_url` to the base resource shape. The claim fields appear ONLY on this enrollment response — never in list or read views. 
+The `:created` view of a ghost resource. Adds `stats`, the single-use `claim_token`, and the `claim_url` to the base resource shape. The claim fields appear ONLY on this enrollment response — never in list or read views.
 
 ## Properties
 
@@ -57,5 +57,3 @@ console.log(exampleParsed)
 ```
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-

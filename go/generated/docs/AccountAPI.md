@@ -4,7 +4,7 @@ All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetMe**](AccountAPI.md#GetMe) | **Get** /api/v1/me | Get current account
+[**GetMe**](AccountAPI.md#GetMe) | **Get** /api/v1/me | Get the current credential principal
 
 
 
@@ -12,7 +12,9 @@ Method | HTTP request | Description
 
 > MeResponse GetMe(ctx).Execute()
 
-Get current account
+Get the current credential principal
+
+
 
 ### Example
 
@@ -65,4 +67,3 @@ Other parameters are passed through a pointer to a apiGetMeRequest struct via th
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
 [[Back to README]](../README.md)
-

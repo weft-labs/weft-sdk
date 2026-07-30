@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**email** | **str** |  | 
-**password** | **str** |  | 
-**password_confirmation** | **str** |  | 
+**email** | **str** |  |
+**password** | **str** |  |
+**password_confirmation** | **str** |  |
 
 ## Example
 
@@ -27,5 +27,3 @@ sign_up_request_dict = sign_up_request_instance.to_dict()
 sign_up_request_from_dict = SignUpRequest.from_dict(sign_up_request_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

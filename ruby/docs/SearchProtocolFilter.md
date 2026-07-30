@@ -17,4 +17,3 @@ instance = Weft::SearchProtocolFilter.new(
   _in: null
 )
 ```
-

@@ -25,5 +25,3 @@ fetch_request_body_dict = fetch_request_body_instance.to_dict()
 fetch_request_body_from_dict = FetchRequestBody.from_dict(fetch_request_body_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

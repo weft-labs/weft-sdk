@@ -39,4 +39,3 @@ instance = Weft::SearchEndpointHit.new(
   latency_p50_ms: null
 )
 ```
-

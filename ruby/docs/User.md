@@ -19,4 +19,3 @@ instance = Weft::User.new(
   status: null
 )
 ```
-

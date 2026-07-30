@@ -19,4 +19,3 @@ instance = Weft::InsufficientScopeResponse.new(
   scope: balance
 )
 ```
-

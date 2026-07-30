@@ -29,4 +29,3 @@ instance = Weft::SearchPaymentOffer.new(
   facilitator: null
 )
 ```
-

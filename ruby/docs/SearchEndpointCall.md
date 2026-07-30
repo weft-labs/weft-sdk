@@ -21,4 +21,3 @@ instance = Weft::SearchEndpointCall.new(
   example_response: null
 )
 ```
-

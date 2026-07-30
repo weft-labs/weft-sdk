@@ -5,11 +5,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | 
-**name** | **str** |  | [optional] 
-**created_at** | **datetime** |  | 
-**last_used_at** | **datetime** |  | [optional] 
-**created_by** | [**MeApiKeyCreator**](MeApiKeyCreator.md) |  | [optional] 
+**id** | **int** |  |
+**name** | **str** |  | [optional]
+**created_at** | **datetime** |  |
+**last_used_at** | **datetime** |  | [optional]
+**created_by** | [**MeApiKeyCreator**](MeApiKeyCreator.md) |  | [optional]
 
 ## Example
 
@@ -29,5 +29,3 @@ me_api_key_dict = me_api_key_instance.to_dict()
 me_api_key_from_dict = MeApiKey.from_dict(me_api_key_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

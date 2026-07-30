@@ -17,4 +17,3 @@ instance = Weft::SignInRequest.new(
   password: null
 )
 ```
-

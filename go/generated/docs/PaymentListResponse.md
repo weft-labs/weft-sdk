@@ -4,8 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Data** | [**[]Payment**](Payment.md) |  | 
-**Pagination** | [**Pagination**](Pagination.md) |  | 
+**Data** | [**[]Payment**](Payment.md) |  |
+**Pagination** | [**Pagination**](Pagination.md) |  |
 
 ## Methods
 
@@ -68,5 +68,3 @@ SetPagination sets Pagination field to given value.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

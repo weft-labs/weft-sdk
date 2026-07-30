@@ -13,7 +13,7 @@ All URIs are relative to *https://weft.network*
 
 Get wallet, spending policy, and current-window spend
 
-Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. `wallet.balance_usdc` is fetched live from Privy; if Privy is unreachable the field returns `\"0.00\"` rather than erroring the whole call.  Account-scoped: the bearer must be a buyer-scoped API key. 
+Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. `wallet.balance_usdc` is fetched live from Privy; if Privy is unreachable the field returns `\"0.00\"` rather than erroring the whole call.  Account-scoped: the bearer must be a buyer-scoped API key.
 
 ### Examples
 
@@ -71,4 +71,3 @@ This endpoint does not need any parameter.
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-
