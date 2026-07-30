@@ -95,4 +95,23 @@ describe("WeftClient", () => {
       client.fetch({ url: "https://merchant.example", maxCostUsd: "" }),
     ).toThrow("maxCostUsd is required");
   });
+
+  it("removes long trailing-slash runs from caller-provided base URLs", async () => {
+    const fetchApi = vi.fn(async () =>
+      jsonResponse({
+        data: { principal_type: "user", id: 1, email: "agent@example.com" },
+      }),
+    );
+    const client = new WeftClient({
+      apiKey: "wk_test",
+      baseUrl: `https://staging.example${"/".repeat(10_000)}`,
+      fetchApi,
+    });
+
+    await client.me();
+
+    expect(String(fetchApi.mock.calls[0]?.[0])).toBe(
+      "https://staging.example/api/v1/me",
+    );
+  });
 });

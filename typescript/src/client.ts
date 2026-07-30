@@ -33,6 +33,14 @@ export interface PurchaseListOptions {
   perPage?: number;
 }
 
+function withoutTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return value.slice(0, end);
+}
+
 /**
  * Stable buyer-facing façade over the generated API clients.
  *
@@ -54,7 +62,9 @@ export class WeftClient {
 
     const configuration = new Configuration({
       accessToken: apiKey,
-      basePath: (options.baseUrl ?? "https://weft.network").replace(/\/+$/, ""),
+      basePath: withoutTrailingSlashes(
+        options.baseUrl ?? "https://weft.network",
+      ),
       fetchApi: options.fetchApi,
     });
 
