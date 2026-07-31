@@ -87,7 +87,7 @@ example().catch(console.error);
 
 List buyer purchases
 
-Returns the authenticated buyer\&#39;s signing and settlement ledger. Unlike &#x60;/api/v1/payments&#x60;, this endpoint is User-scoped and backed by &#x60;signed_events&#x60;, so rejected and pending attempts are included.
+Returns the authenticated buyer\&#39;s signing and settlement ledger. Unlike &#x60;/api/v1/payments&#x60;, this endpoint is User-scoped and backed by &#x60;signed_events&#x60;, so rejected and pending attempts are included.  Scoped to the buyer\&#39;s own merchant spend, matching the dashboard\&#39;s Purchases page. Internal signings are excluded: the Tempo refill self-transfer (&#x60;rebalance&#x60;) and operator signings (&#x60;manual&#x60;) are not payments the buyer made and never appear here.
 
 ### Example
 
