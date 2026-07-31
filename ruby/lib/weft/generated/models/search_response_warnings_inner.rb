@@ -19,7 +19,7 @@ module Weft
 
     attr_accessor :message
 
-    # Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.
+    # Typed cause for codes that carry one. Null otherwise.
     attr_accessor :cause
 
     # Structured context for the warning. Null when the code carries none.

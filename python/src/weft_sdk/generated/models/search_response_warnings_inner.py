@@ -28,7 +28,7 @@ class SearchResponseWarningsInner(BaseModel):
     """ # noqa: E501
     code: StrictStr
     message: StrictStr
-    cause: Optional[StrictStr] = Field(default=None, description="Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.")
+    cause: Optional[StrictStr] = Field(default=None, description="Typed cause for codes that carry one. Null otherwise.")
     context: Optional[Dict[str, Any]] = Field(default=None, description="Structured context for the warning. Null when the code carries none.")
     __properties: ClassVar[List[str]] = ["code", "message", "cause", "context"]
 

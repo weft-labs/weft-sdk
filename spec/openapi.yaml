@@ -1735,11 +1735,8 @@ components:
             none were sent).
         decomposition_source:
           type: string
-          enum: [CALLER, CLASSIFIER, MERGED, FALLBACK]
-          description: |
-            Origin of `applied_filters`. `CALLER` today (the mock and the B1
-            platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
-            `FALLBACK` arrive additively when the decomposer lands.
+          enum: [CALLER]
+          description: Origin of `applied_filters`; always `CALLER`.
         embedder_model:
           type: string
         candidates_considered:
@@ -1758,7 +1755,7 @@ components:
               cause:
                 type: string
                 nullable: true
-                description: Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.
+                description: Typed cause for codes that carry one. Null otherwise.
               context:
                 type: object
                 nullable: true

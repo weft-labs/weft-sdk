@@ -42,7 +42,7 @@ class SearchResponse(BaseModel):
     stale: Optional[StrictBool] = Field(default=None, description="Whether the active search index has changed since these results were produced. `true` does not mean the results are wrong — it means they are a snapshot of an index that has since moved. Always `false` on a `live` serve. ")
     payment_note: Optional[StrictStr] = Field(default=None, description="How payment works across the catalog, stated once for the whole response rather than repeated in every endpoint's usage instructions. ")
     applied_filters: Optional[SearchFilterSpec] = Field(default=None, description="The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent). ")
-    decomposition_source: Optional[StrictStr] = Field(default=None, description="Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands. ")
+    decomposition_source: Optional[StrictStr] = Field(default=None, description="Origin of `applied_filters`; always `CALLER`.")
     embedder_model: StrictStr
     candidates_considered: Annotated[int, Field(strict=True, ge=0)]
     warnings: List[SearchResponseWarningsInner]
@@ -79,8 +79,8 @@ class SearchResponse(BaseModel):
         if value is None:
             return value
 
-        if value not in set(['CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK']):
-            raise ValueError("must be one of enum values ('CALLER', 'CLASSIFIER', 'MERGED', 'FALLBACK')")
+        if value not in set(['CALLER']):
+            raise ValueError("must be one of enum values ('CALLER')")
         return value
 
     @field_validator('match_quality')

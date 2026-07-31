@@ -32,7 +32,7 @@ export interface SearchResponseWarningsInner {
      */
     message: string;
     /**
-     * Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.
+     * Typed cause for codes that carry one. Null otherwise.
      * @type {string}
      * @memberof SearchResponseWarningsInner
      */
