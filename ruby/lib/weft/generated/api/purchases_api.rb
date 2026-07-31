@@ -81,7 +81,7 @@ module Weft
     end
 
     # List buyer purchases
-    # Returns the authenticated buyer's signing and settlement ledger. Unlike `/api/v1/payments`, this endpoint is User-scoped and backed by `signed_events`, so rejected and pending attempts are included.
+    # Returns the authenticated buyer's signing and settlement ledger. Unlike `/api/v1/payments`, this endpoint is User-scoped and backed by `signed_events`, so rejected and pending attempts are included.  Scoped to the buyer's own merchant spend, matching the dashboard's Purchases page. Internal signings are excluded: the Tempo refill self-transfer (`rebalance`) and operator signings (`manual`) are not payments the buyer made and never appear here.
     # @param [Hash] opts the optional parameters
     # @option opts [Integer] :page Page number (default to 1)
     # @option opts [Integer] :per_page Items per page (default to 25)
@@ -92,7 +92,7 @@ module Weft
     end
 
     # List buyer purchases
-    # Returns the authenticated buyer&#39;s signing and settlement ledger. Unlike &#x60;/api/v1/payments&#x60;, this endpoint is User-scoped and backed by &#x60;signed_events&#x60;, so rejected and pending attempts are included.
+    # Returns the authenticated buyer&#39;s signing and settlement ledger. Unlike &#x60;/api/v1/payments&#x60;, this endpoint is User-scoped and backed by &#x60;signed_events&#x60;, so rejected and pending attempts are included.  Scoped to the buyer&#39;s own merchant spend, matching the dashboard&#39;s Purchases page. Internal signings are excluded: the Tempo refill self-transfer (&#x60;rebalance&#x60;) and operator signings (&#x60;manual&#x60;) are not payments the buyer made and never appear here.
     # @param [Hash] opts the optional parameters
     # @option opts [Integer] :page Page number (default to 1)
     # @option opts [Integer] :per_page Items per page (default to 25)

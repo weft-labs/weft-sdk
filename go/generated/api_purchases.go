@@ -186,6 +186,11 @@ Returns the authenticated buyer's signing and settlement ledger. Unlike
 `/api/v1/payments`, this endpoint is User-scoped and backed by
 `signed_events`, so rejected and pending attempts are included.
 
+Scoped to the buyer's own merchant spend, matching the dashboard's
+Purchases page. Internal signings are excluded: the Tempo refill
+self-transfer (`rebalance`) and operator signings (`manual`) are not
+payments the buyer made and never appear here.
+
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiListPurchasesRequest
