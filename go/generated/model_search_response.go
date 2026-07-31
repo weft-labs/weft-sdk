@@ -41,7 +41,7 @@ type SearchResponse struct {
 	PaymentNote *string `json:"payment_note,omitempty"`
 	// The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent).
 	AppliedFilters *SearchFilterSpec `json:"applied_filters,omitempty"`
-	// Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands.
+	// Origin of `applied_filters`; always `CALLER`.
 	DecompositionSource *string `json:"decomposition_source,omitempty"`
 	EmbedderModel string `json:"embedder_model"`
 	CandidatesConsidered int32 `json:"candidates_considered"`

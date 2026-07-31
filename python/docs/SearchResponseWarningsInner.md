@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **code** | **str** |  |
 **message** | **str** |  |
-**cause** | **str** | Typed cause for codes that carry one (e.g. &#x60;DECOMPOSE_FALLBACK&#x60;). Null otherwise. | [optional]
+**cause** | **str** | Typed cause for codes that carry one. Null otherwise. | [optional]
 **context** | **object** | Structured context for the warning. Null when the code carries none. | [optional]
 
 ## Example

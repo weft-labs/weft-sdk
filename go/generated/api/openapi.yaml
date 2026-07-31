@@ -2448,15 +2448,9 @@ components:
             contract this is the caller's `filters` verbatim (empty object when
             none were sent).
         decomposition_source:
-          description: |
-            Origin of `applied_filters`. `CALLER` today (the mock and the B1
-            platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
-            `FALLBACK` arrive additively when the decomposer lands.
+          description: Origin of `applied_filters`; always `CALLER`.
           enum:
           - CALLER
-          - CLASSIFIER
-          - MERGED
-          - FALLBACK
           type: string
         embedder_model:
           type: string
@@ -3269,8 +3263,7 @@ components:
         message:
           type: string
         cause:
-          description: Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`).
-            Null otherwise.
+          description: Typed cause for codes that carry one. Null otherwise.
           type: string
           nullable: true
         context:

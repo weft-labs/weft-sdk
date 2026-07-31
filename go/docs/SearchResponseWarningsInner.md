@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Code** | **string** |  |
 **Message** | **string** |  |
-**Cause** | Pointer to **string** | Typed cause for codes that carry one (e.g. &#x60;DECOMPOSE_FALLBACK&#x60;). Null otherwise. | [optional]
+**Cause** | Pointer to **string** | Typed cause for codes that carry one. Null otherwise. | [optional]
 **Context** | Pointer to **map[string]interface{}** | Structured context for the warning. Null when the code carries none. | [optional]
 
 ## Methods

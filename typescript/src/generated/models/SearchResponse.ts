@@ -137,10 +137,7 @@ export interface SearchResponse {
      */
     appliedFilters?: SearchFilterSpec;
     /**
-     * Origin of `applied_filters`. `CALLER` today (the mock and the B1
-     * platform have no query decomposer yet); `CLASSIFIER` / `MERGED` /
-     * `FALLBACK` arrive additively when the decomposer lands.
-     *
+     * Origin of `applied_filters`; always `CALLER`.
      * @type {string}
      * @memberof SearchResponse
      */
@@ -246,10 +243,7 @@ export type SearchResponseServedFromEnum = typeof SearchResponseServedFromEnum[k
  * @export
  */
 export const SearchResponseDecompositionSourceEnum = {
-    Caller: 'CALLER',
-    Classifier: 'CLASSIFIER',
-    Merged: 'MERGED',
-    Fallback: 'FALLBACK'
+    Caller: 'CALLER'
 } as const;
 export type SearchResponseDecompositionSourceEnum = typeof SearchResponseDecompositionSourceEnum[keyof typeof SearchResponseDecompositionSourceEnum];
 

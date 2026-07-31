@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **Stale** | Pointer to **bool** | Whether the active search index has changed since these results were produced. &#x60;true&#x60; does not mean the results are wrong — it means they are a snapshot of an index that has since moved. Always &#x60;false&#x60; on a &#x60;live&#x60; serve.  | [optional]
 **PaymentNote** | Pointer to **string** | How payment works across the catalog, stated once for the whole response rather than repeated in every endpoint&#39;s usage instructions.  | [optional]
 **AppliedFilters** | Pointer to [**SearchFilterSpec**](SearchFilterSpec.md) | The &#x60;FilterSpec&#x60; actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller&#39;s &#x60;filters&#x60; verbatim (empty object when none were sent).  | [optional]
-**DecompositionSource** | Pointer to **string** | Origin of &#x60;applied_filters&#x60;. &#x60;CALLER&#x60; today (the mock and the B1 platform have no query decomposer yet); &#x60;CLASSIFIER&#x60; / &#x60;MERGED&#x60; / &#x60;FALLBACK&#x60; arrive additively when the decomposer lands.  | [optional]
+**DecompositionSource** | Pointer to **string** | Origin of &#x60;applied_filters&#x60;; always &#x60;CALLER&#x60;. | [optional]
 **EmbedderModel** | **string** |  |
 **CandidatesConsidered** | **int32** |  |
 **Warnings** | [**[]SearchResponseWarningsInner**](SearchResponseWarningsInner.md) |  |

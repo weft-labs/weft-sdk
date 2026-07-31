@@ -45,7 +45,7 @@ module Weft
     # The `FilterSpec` actually applied to recall, echoed back so the caller sees exactly what constrained the results. In the current contract this is the caller's `filters` verbatim (empty object when none were sent).
     attr_accessor :applied_filters
 
-    # Origin of `applied_filters`. `CALLER` today (the mock and the B1 platform have no query decomposer yet); `CLASSIFIER` / `MERGED` / `FALLBACK` arrive additively when the decomposer lands.
+    # Origin of `applied_filters`; always `CALLER`.
     attr_accessor :decomposition_source
 
     attr_accessor :embedder_model
@@ -319,7 +319,7 @@ module Weft
       return false if !@result_count.nil? && @result_count < 0
       served_from_validator = EnumAttributeValidator.new('String', ["live", "snapshot"])
       return false unless served_from_validator.valid?(@served_from)
-      decomposition_source_validator = EnumAttributeValidator.new('String', ["CALLER", "CLASSIFIER", "MERGED", "FALLBACK"])
+      decomposition_source_validator = EnumAttributeValidator.new('String', ["CALLER"])
       return false unless decomposition_source_validator.valid?(@decomposition_source)
       return false if @embedder_model.nil?
       return false if @candidates_considered.nil?
@@ -390,7 +390,7 @@ module Weft
     # Custom attribute writer method checking allowed values (enum).
     # @param [Object] decomposition_source Object to be assigned
     def decomposition_source=(decomposition_source)
-      validator = EnumAttributeValidator.new('String', ["CALLER", "CLASSIFIER", "MERGED", "FALLBACK"])
+      validator = EnumAttributeValidator.new('String', ["CALLER"])
       unless validator.valid?(decomposition_source)
         fail ArgumentError, "invalid value for \"decomposition_source\", must be one of #{validator.allowable_values}."
       end

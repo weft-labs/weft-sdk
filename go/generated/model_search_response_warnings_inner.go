@@ -23,7 +23,7 @@ var _ MappedNullable = &SearchResponseWarningsInner{}
 type SearchResponseWarningsInner struct {
 	Code string `json:"code"`
 	Message string `json:"message"`
-	// Typed cause for codes that carry one (e.g. `DECOMPOSE_FALLBACK`). Null otherwise.
+	// Typed cause for codes that carry one. Null otherwise.
 	Cause *string `json:"cause,omitempty"`
 	// Structured context for the warning. Null when the code carries none.
 	Context map[string]interface{} `json:"context,omitempty"`
