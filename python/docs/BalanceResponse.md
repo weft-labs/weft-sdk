@@ -8,8 +8,8 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **promo** | [**PromoBalance**](PromoBalance.md) |  |
 **wallet** | [**Wallet**](Wallet.md) |  |
-**spent_today_usd** | **str** | USD spent in the current calendar day (UTC). Up to 6 decimals with trailing zeros trimmed so sub-cent micro-payments survive (\&quot;0.0005\&quot;, \&quot;0.42\&quot;); a zero total renders as \&quot;0\&quot;. |
-**spent_week_usd** | **str** | USD spent in the current calendar week (UTC, Monday start). Up to 6 decimals with trailing zeros trimmed (\&quot;0.0005\&quot;, \&quot;3.10\&quot;); a zero total renders as \&quot;0\&quot;. |
+**spent_today_usd** | **str** | USD spent in the current calendar day (UTC). Exact to the micro-dollar so sub-cent micro-payments survive (\&quot;0.0005\&quot;, \&quot;0.42\&quot;), never narrower than two decimals; a zero total renders as \&quot;0.00\&quot;. |
+**spent_week_usd** | **str** | USD spent in the current calendar week (UTC, Monday start). Exact to the micro-dollar (\&quot;0.0005\&quot;, \&quot;3.10\&quot;), never narrower than two decimals; a zero total renders as \&quot;0.00\&quot;. |
 **policy** | [**SpendingPolicy**](SpendingPolicy.md) |  |
 
 ## Example
