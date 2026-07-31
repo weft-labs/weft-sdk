@@ -1,7 +1,7 @@
 
 # FetchResponse
 
-Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.
+Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0.00\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.  **Money string format.** Every USD amount on this surface is exact to the micro-dollar and never narrower than two decimals: a whole-cent amount renders \"0.50\", a sub-cent amount keeps its real precision (\"0.000892\"), and zero renders \"0.00\". Amounts are never rounded — an agent reconciling its own spend reads the truth, not a display value. Parse these as decimals; do NOT compare them as strings against a bare zero literal.
 
 ## Properties
 
