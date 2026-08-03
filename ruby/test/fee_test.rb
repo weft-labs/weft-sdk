@@ -1,4 +1,5 @@
 require 'minitest/autorun'
+require 'minitest/mock'
 require_relative '../lib/weft/facilitator/client'
 require_relative '../lib/weft/facilitator/fee'
 
