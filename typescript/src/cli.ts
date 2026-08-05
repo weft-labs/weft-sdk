@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ResponseError } from "./generated";
 import { WeftClient, type PaidFetchRequest } from "./client";
+import { WeftError } from "./error";
 
 export const EXIT_SUCCESS = 0;
 export const EXIT_USAGE = 2;
@@ -164,6 +165,15 @@ async function responseDetails(error: ResponseError): Promise<unknown> {
 
 async function normalizeError(error: unknown): Promise<CliError> {
   if (error instanceof CliError) return error;
+  if (error instanceof WeftError) {
+    const exitCode =
+      error.status === 401 || error.status === 403
+        ? EXIT_AUTH
+        : error.status >= 500
+          ? EXIT_INTERNAL
+          : EXIT_API;
+    return new CliError(exitCode, error.code, error.message, error.details);
+  }
   if (error instanceof ResponseError) {
     const details = await responseDetails(error);
     const body = details as

@@ -28,10 +28,16 @@ SPEC_VERSION="$(extract_first 's/^  version: ["'\'']?([^ "'\'']+)["'\'']?$/\1/p'
 
 require_file "${ROOT_DIR}/typescript/src/generated/index.ts" \
   "TypeScript generated SDK missing. Run ./scripts/generate-typescript.sh"
+require_file "${ROOT_DIR}/typescript/src/client.ts" \
+  "Hand-written TypeScript buyer client was removed during generation."
 require_file "${ROOT_DIR}/typescript/package-lock.json" \
   "TypeScript lockfile missing. Run npm install --package-lock-only in typescript/."
 require_file "${ROOT_DIR}/python/src/weft_sdk/generated/__init__.py" \
   "Python generated SDK missing. Run ./scripts/generate-python.sh"
+require_file "${ROOT_DIR}/python/src/weft_sdk/client.py" \
+  "Hand-written Python buyer client was removed during generation."
+grep -q '^from \.client import Client$' "${ROOT_DIR}/python/src/weft_sdk/__init__.py" ||
+  fail "Python package no longer exports the hand-written buyer Client."
 require_file "${ROOT_DIR}/ruby/lib/weft/generated/version.rb" \
   "Ruby generated SDK missing. Run ./scripts/generate-ruby.sh"
 require_file "${ROOT_DIR}/go/generated/client.go" \

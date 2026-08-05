@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from types import TracebackType
+from typing import Callable, TypeVar
 
+from .error import normalize_api_exception
 from .generated.api.account_api import AccountApi
 from .generated.api.balance_api import BalanceApi
 from .generated.api.fetch_api import FetchApi
@@ -11,6 +13,7 @@ from .generated.api.purchases_api import PurchasesApi
 from .generated.api.search_api import SearchApi
 from .generated.api_client import ApiClient
 from .generated.configuration import Configuration
+from .generated.exceptions import ApiException
 from .generated.models.balance_response import BalanceResponse
 from .generated.models.fetch_request import FetchRequest
 from .generated.models.fetch_response import FetchResponse
@@ -19,6 +22,8 @@ from .generated.models.purchase_list_response import PurchaseListResponse
 from .generated.models.purchase_response import PurchaseResponse
 from .generated.models.search_request import SearchRequest
 from .generated.models.search_response import SearchResponse
+
+T = TypeVar("T")
 
 
 class Client:
@@ -50,14 +55,22 @@ class Client:
         self._fetch = FetchApi(self._api_client)
         self._purchases = PurchasesApi(self._api_client)
 
+    def _call(self, operation: Callable[[], T]) -> T:
+        try:
+            return operation()
+        except ApiException as error:
+            raise normalize_api_exception(error) from error
+
     def me(self) -> MeResponse:
-        return self._account.get_me()
+        return self._call(self._account.get_me)
 
     def balance(self) -> BalanceResponse:
-        return self._balance.get_balance()
+        return self._call(self._balance.get_balance)
 
     def search(self, *, query: str, max_results: int = 10) -> SearchResponse:
-        return self._search.search(SearchRequest(query=query, max_results=max_results))
+        return self._call(
+            lambda: self._search.search(SearchRequest(query=query, max_results=max_results))
+        )
 
     def fetch(
         self,
@@ -72,15 +85,15 @@ class Client:
         if not idempotency_key.strip():
             raise ValueError("idempotency_key is required")
         request = FetchRequest(url=url, max_cost_usd=max_cost_usd, method=method.upper())
-        return self._fetch.fetch(request, idempotency_key=idempotency_key)
+        return self._call(lambda: self._fetch.fetch(request, idempotency_key=idempotency_key))
 
     def purchases(
         self, *, page: int | None = None, per_page: int | None = None
     ) -> PurchaseListResponse:
-        return self._purchases.list_purchases(page=page, per_page=per_page)
+        return self._call(lambda: self._purchases.list_purchases(page=page, per_page=per_page))
 
     def purchase(self, purchase_id: int) -> PurchaseResponse:
-        return self._purchases.get_purchase(purchase_id)
+        return self._call(lambda: self._purchases.get_purchase(purchase_id))
 
     def close(self) -> None:
         """Release client resources when the generated transport supports it."""
