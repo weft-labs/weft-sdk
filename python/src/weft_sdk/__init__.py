@@ -2,6 +2,7 @@
 Unified Weft SDK for the Weft API and x402 Facilitator.
 """
 
+from .client import Client
 from .facilitator.client import (
     X402_FACILITATOR_URL,
     X402_FACILITATOR_URL_ENV,
@@ -23,6 +24,7 @@ from .facilitator.middleware import (
 )
 
 __all__ = [
+    "Client",
     "X402_FACILITATOR_URL",
     "X402_FACILITATOR_URL_ENV",
     "WeftFacilitatorConfig",
