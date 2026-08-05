@@ -94,7 +94,7 @@ the status and the structured response body, and retain the server request ID
 when asking for support.
 
 ```js
-import { ResponseError, WeftClient } from "@weft-labs/sdk";
+import { WeftClient, WeftError } from "@weft-labs/sdk";
 
 const apiKey = process.env.WEFT_API_KEY;
 if (!apiKey) throw new Error("Set WEFT_API_KEY to a buyer wk_* API key");
@@ -104,15 +104,22 @@ const weft = new WeftClient({ apiKey });
 try {
   await weft.search({ query: "weather data API" });
 } catch (error) {
-  if (error instanceof ResponseError) {
-    const body = await error.response.json().catch(() => undefined);
-    console.error({ status: error.response.status, body });
+  if (error instanceof WeftError) {
+    console.error({
+      status: error.status,
+      code: error.code,
+      requestId: error.requestId,
+      retryable: error.retryable,
+      details: error.details,
+    });
   }
   throw error;
 }
 ```
 
-- `401`/`403`: confirm that `WEFT_API_KEY` contains a current buyer `wk_*` key.
+- `401`: confirm that `WEFT_API_KEY` contains a current buyer `wk_*` key.
+- `403`: inspect `code` and `details` for an insufficient balance or spending
+  policy denial before changing the request.
 - `409`: retry the same logical paid request with the same idempotency key.
 - `429`: honor `Retry-After` and back off.
 - `5xx`: retry transient failures with backoff; reuse the idempotency key for a
