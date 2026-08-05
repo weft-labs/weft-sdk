@@ -1,0 +1,43 @@
+name: Public artifact acceptance
+
+on:
+  pull_request:
+    paths:
+      - "typescript/**"
+      - "python/**"
+      - "ruby/**"
+      - "go/**"
+      - "scripts/test-public-quickstarts.sh"
+      - "scripts/test-typescript-quickstarts.mjs"
+      - ".github/workflows/artifact-acceptance.yml"
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  clean-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: ruby
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.23"
+      - name: Install build dependencies
+        run: |
+          cd typescript && npm ci
+          python -m pip install build
+      - name: Build and clean-install public artifacts
+        run: ./scripts/test-public-quickstarts.sh
