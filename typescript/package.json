@@ -52,11 +52,12 @@
   },
   "scripts": {
     "build": "tsup",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:quickstarts",
+    "test:quickstarts": "npm run build && node ../scripts/test-typescript-quickstarts.mjs",
     "lint": "eslint --fix",
     "lint:check": "eslint",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
     "generate": "../scripts/generate-typescript.sh",
     "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
     "prepublishOnly": "npm run build"
@@ -93,6 +94,7 @@
     "cli",
     "dist",
     "docs",
+    "examples",
     "README.md"
   ],
   "engines": {

@@ -32,7 +32,7 @@ function isCacheValid(): boolean {
 
 export async function getFeeInfo(
   config?: WeftFacilitatorConfig,
-  cacheConfig?: FeeCacheConfig
+  cacheConfig?: FeeCacheConfig,
 ): Promise<FeeInfo> {
   if (isCacheValid() && feeCache) {
     return feeCache.feeInfo;
