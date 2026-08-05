@@ -25,8 +25,10 @@ python3 -m venv "$TEMP_DIR/python-consumer"
   'import weft_sdk; from weft_sdk.generated import AccountApi; assert AccountApi'
 
 echo "Building and clean-installing the Ruby artifact..."
-gem build "$ROOT_DIR/ruby/weft-sdk.gemspec" \
-  --output "$TEMP_DIR/weft-sdk.gem" >/dev/null
+(
+  cd "$ROOT_DIR/ruby"
+  gem build weft-sdk.gemspec --output "$TEMP_DIR/weft-sdk.gem" >/dev/null
+)
 gem install "$TEMP_DIR/weft-sdk.gem" --install-dir "$TEMP_DIR/ruby-consumer" \
   --no-document >/dev/null
 GEM_HOME="$TEMP_DIR/ruby-consumer" GEM_PATH="$TEMP_DIR/ruby-consumer" \
