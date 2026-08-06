@@ -9,6 +9,15 @@ on:
   push:
     branches: ["main"]
     tags: ["v*", "go/v*"]
+    # release tags (v* / go/v*) are pushed by bump-version.sh which touches
+    # all four language dirs + spec — if that ever changes, revisit these push
+    # paths so publishing can't silently die. (Path filters are not evaluated
+    # for tag pushes, so the tags above always run; this only trims main
+    # pushes that don't touch the SDK.)
+    paths:
+      - "go/**"
+      - "spec/**"
+      - "scripts/**"
 
 # Default GITHUB_TOKEN is read-only for the whole workflow. The tag-check job
 # overrides this with its own job-level `permissions:` (id-token: write +
@@ -19,9 +28,18 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: go
@@ -51,6 +69,7 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/go/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write

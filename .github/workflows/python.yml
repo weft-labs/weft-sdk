@@ -9,6 +9,15 @@ on:
   push:
     branches: ["main"]
     tags: ["v*"]
+    # release tags (v* / go/v*) are pushed by bump-version.sh which touches
+    # all four language dirs + spec — if that ever changes, revisit these push
+    # paths so publishing can't silently die. (Path filters are not evaluated
+    # for tag pushes, so the tags above always run; this only trims main
+    # pushes that don't touch the SDK.)
+    paths:
+      - "python/**"
+      - "spec/**"
+      - "scripts/**"
 
 # Default GITHUB_TOKEN is read-only for the whole workflow. The publish job
 # overrides this with its own job-level `permissions:` (id-token: write for
@@ -19,9 +28,18 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: python
@@ -32,6 +50,8 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
       - name: Install dependencies
         run: |
           pip install hatchling
@@ -50,6 +70,7 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # id-token: write is required for both Trusted Publishing AND for the
     # Sigstore attestations the action emits (default-on under release/v1).
     # attestations: write makes the attestation visible on the repo's
@@ -68,6 +89,8 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
       - name: Install build tools
         run: pip install hatchling build
       - name: Verify committed generated SDK

@@ -18,9 +18,18 @@ on:
     types: ["weft-app-openapi-updated"]
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # All write operations (candidate branch push, PR create/edit, auto-merge
     # enable) go through a short-lived weft-release-bot GitHub App installation
     # token scoped to weft-sdk (`contents: write`, `pull-requests: write`), via

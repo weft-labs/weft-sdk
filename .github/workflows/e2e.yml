@@ -25,6 +25,14 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     # Scope the e2e job to candidate PRs. Other PRs (manual SDK tweaks,
@@ -32,6 +40,7 @@ jobs:
     # have the per-language build/test jobs as PR checks.
     if: startsWith(github.head_ref, 'sdk-candidate/')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
     steps:
@@ -48,6 +57,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
 
       - name: Compute expected OpenAPI SHA-256
         # The PR's `spec/openapi.yaml` is the source of truth for what the
@@ -62,7 +73,7 @@ jobs:
           echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
 
       - name: Install TypeScript dependencies
-        run: cd typescript && npm install
+        run: cd typescript && npm ci
 
       - name: Build TypeScript SDK
         run: cd typescript && npm run build
