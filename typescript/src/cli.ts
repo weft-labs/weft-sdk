@@ -215,6 +215,7 @@ export async function runCli(
   const writeErr =
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
+  let idempotencyKey: string | undefined;
 
   try {
     const parsed = parseArgs(args);
@@ -290,7 +291,7 @@ export async function runCli(
             : undefined,
       };
       const explicitKey = parsed.options.get("idempotency-key");
-      const idempotencyKey =
+      idempotencyKey =
         typeof explicitKey === "string"
           ? explicitKey
           : (dependencies.generateIdempotencyKey ?? randomUUID)();
@@ -343,6 +344,9 @@ export async function runCli(
             ? {}
             : { details: normalized.details }),
         },
+        ...(idempotencyKey === undefined
+          ? {}
+          : { meta: { idempotency_key: idempotencyKey } }),
       })}\n`,
     );
     return normalized.exitCode;
