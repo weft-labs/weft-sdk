@@ -21,8 +21,8 @@ python3 -m build --outdir "$TEMP_DIR/python-dist" "$ROOT_DIR/python"
 python3 -m venv "$TEMP_DIR/python-consumer"
 "$TEMP_DIR/python-consumer/bin/python" -m pip install --quiet \
   "$TEMP_DIR"/python-dist/*.whl
-"$TEMP_DIR/python-consumer/bin/python" -c \
-  'import weft_sdk; from weft_sdk.generated import AccountApi; assert AccountApi'
+"$TEMP_DIR/python-consumer/bin/python" \
+  "$ROOT_DIR/scripts/test-python-quickstart.py"
 
 echo "Building and clean-installing the Ruby artifact..."
 (

@@ -1,8 +1,9 @@
 # Weft SDK
 
-Build buyer applications and agents on Weft. The TypeScript SDK and its `weft`
-CLI are the supported application surfaces; the generated clients remain
-available when you need direct access to the OpenAPI contract.
+Build buyer applications and agents on Weft. The TypeScript SDK, its `weft`
+CLI, and the Python buyer client are the supported application surfaces;
+generated clients remain available when you need direct access to the OpenAPI
+contract.
 
 ## TypeScript quickstart
 
@@ -63,19 +64,19 @@ retrying an uncertain request.
 | Language | Package | Support level | Recommended surface |
 |---|---|---|---|
 | TypeScript | `@weft-labs/sdk` | Supported | `WeftClient` or the bundled `weft` CLI |
-| Python | `weft-sdk` | Generated client preview | Generated APIs; buyer façade in progress |
+| Python | `weft-sdk` | Supported | `Client` buyer façade |
 | Ruby | `weft-sdk` | Generated client preview | Generated APIs |
 | Go | `github.com/weft-labs/weft-sdk/go` | Generated client preview | Generated APIs |
 
 “Generated client preview” means the package is published and tracks the API
-contract, but has not yet passed the same clean-install buyer quickstart gate as
-TypeScript.
+contract, but has not yet passed a clean-install buyer quickstart gate.
 
 ## Reference and support
 
 - [API reference](https://weft.network/docs)
 - [OpenAPI document](https://weft.network/docs/openapi.yaml)
 - [TypeScript package guide](typescript/README.md)
+- [Python package guide](python/README.md)
 - [GitHub issues](https://github.com/weft-labs/weft-sdk/issues)
 
 ## Repository layout
