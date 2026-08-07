@@ -27,6 +27,22 @@ describe("Weft application errors", () => {
     });
   });
 
+  it("normalizes transport failures into the uncertain-outcome shape", async () => {
+    const client = new WeftClient({
+      apiKey: "wk_test",
+      fetchApi: async () => {
+        throw new TypeError("fetch failed: connection reset");
+      },
+    });
+
+    await expect(client.me()).rejects.toMatchObject<Partial<WeftError>>({
+      name: "WeftError",
+      status: 0,
+      code: "NETWORK_ERROR",
+      retryable: true,
+    });
+  });
+
   it("requires caller-owned retry identity for paid fetch", () => {
     const client = new WeftClient({ apiKey: "wk_test" });
     expect(() =>

@@ -120,10 +120,17 @@ try {
 - `401`: confirm that `WEFT_API_KEY` contains a current buyer `wk_*` key.
 - `403`: inspect `code` and `details` for an insufficient balance or spending
   policy denial before changing the request.
-- `409`: retry the same logical paid request with the same idempotency key.
+- `409` (`IDEMPOTENCY_CONFLICT`): this buyer already used the supplied
+  idempotency key for a different fetch request. Generate a new key for the
+  new operation; the original operation retries unchanged with its own key.
+  `retryable` is `false` — resending the conflicting request will conflict
+  again.
 - `429`: honor `Retry-After` and back off.
 - `5xx`: retry transient failures with backoff; reuse the idempotency key for a
   paid fetch.
+- `status: 0` (`NETWORK_ERROR`): the request failed before any Weft response,
+  so the outcome is uncertain. `retryable` is `true`; retry with backoff and
+  reuse the idempotency key for a paid fetch.
 
 ## Advanced generated APIs
 

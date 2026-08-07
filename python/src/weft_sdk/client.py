@@ -5,7 +5,9 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Callable, TypeVar
 
-from .error import normalize_api_exception
+from urllib3.exceptions import HTTPError as TransportError
+
+from .error import WeftError, normalize_api_exception
 from .generated.api.account_api import AccountApi
 from .generated.api.balance_api import BalanceApi
 from .generated.api.fetch_api import FetchApi
@@ -60,6 +62,18 @@ class Client:
             return operation()
         except ApiException as error:
             raise normalize_api_exception(error) from error
+        except TransportError as error:
+            # No HTTP response exists, so the outcome is uncertain. Callers
+            # retry with backoff and, for paid fetch, reuse the same
+            # idempotency key.
+            raise WeftError(
+                status=0,
+                code="NETWORK_ERROR",
+                message=f"Network failure before a Weft API response: {error}",
+                request_id=None,
+                retryable=True,
+                details=None,
+            ) from error
 
     def me(self) -> MeResponse:
         return self._call(self._account.get_me)

@@ -141,7 +141,7 @@ describe("weft CLI", () => {
     expect(JSON.parse(io.err[0])).toMatchObject({
       ok: false,
       command: "fetch",
-      error: { code: "INTERNAL_ERROR" },
+      error: { code: "NETWORK_ERROR" },
       meta: { idempotency_key: "retry-after-timeout" },
     });
   });

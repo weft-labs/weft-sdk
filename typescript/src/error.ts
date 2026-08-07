@@ -1,4 +1,4 @@
-import { ResponseError } from "./generated";
+import { FetchError, ResponseError } from "./generated";
 
 export interface WeftErrorOptions {
   status: number;
@@ -28,6 +28,19 @@ export class WeftError extends Error {
 }
 
 export async function normalizeWeftError(error: unknown): Promise<unknown> {
+  if (error instanceof FetchError) {
+    // No HTTP response exists, so the outcome is uncertain. Callers retry
+    // with backoff and, for paid fetch, reuse the same idempotency key.
+    return new WeftError({
+      status: 0,
+      code: "NETWORK_ERROR",
+      message: `Network failure before a Weft API response: ${
+        error.cause?.message ?? error.message
+      }`,
+      retryable: true,
+      details: error.cause,
+    });
+  }
   if (!(error instanceof ResponseError)) return error;
 
   let details: unknown;
