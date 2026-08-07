@@ -6,6 +6,9 @@ on:
       - "typescript/**"
       - "spec/**"
       - "scripts/**"
+      # Self-test: a change to this workflow must run this workflow, otherwise
+      # CI-config regressions land unexercised.
+      - ".github/workflows/typescript.yml"
   push:
     branches: ["main"]
     tags: ["v*"]

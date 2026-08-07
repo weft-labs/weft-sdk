@@ -6,6 +6,9 @@ on:
       - "go/**"
       - "spec/**"
       - "scripts/**"
+      # Self-test: a change to this workflow must run this workflow, otherwise
+      # CI-config regressions land unexercised.
+      - ".github/workflows/go.yml"
   push:
     branches: ["main"]
     tags: ["v*", "go/v*"]
