@@ -8,6 +8,7 @@ on:
       - "ruby/**"
       - "go/**"
       - "scripts/test-public-quickstarts.sh"
+      - "scripts/test-python-quickstart.py"
       - "scripts/test-typescript-quickstarts.mjs"
       - ".github/workflows/artifact-acceptance.yml"
   push:
