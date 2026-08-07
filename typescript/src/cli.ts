@@ -179,7 +179,8 @@ async function normalizeError(error: unknown): Promise<CliError> {
   if (error instanceof ResponseError) {
     const details = await responseDetails(error);
     const body = details as
-      { error?: { code?: string; message?: string } | string } | undefined;
+      | { error?: { code?: string; message?: string } | string }
+      | undefined;
     const nested = typeof body?.error === "object" ? body.error : undefined;
     const code =
       nested?.code ??

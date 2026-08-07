@@ -52,7 +52,8 @@ export async function normalizeWeftError(error: unknown): Promise<unknown> {
   const body = details as
     | {
         error?:
-          { code?: string; message?: string; request_id?: string } | string;
+          | { code?: string; message?: string; request_id?: string }
+          | string;
         code?: string;
         message?: string;
         request_id?: string;
