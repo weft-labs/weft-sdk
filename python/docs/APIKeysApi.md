@@ -14,6 +14,10 @@ Method | HTTP request | Description
 
 Create an API key
 
+Create an `ax_live_*` resource key for the authenticated seller
+Organization. Buyer `wk_*` keys are created in the buyer dashboard.
+
+
 ### Example
 
 * Bearer (APIKey) Authentication (bearerAuth):
@@ -92,6 +96,8 @@ Name | Type | Description  | Notes
 > ApiKeyListResponse list_api_keys()
 
 List API keys
+
+List `ax_live_*` resource keys for the seller Organization.
 
 ### Example
 
