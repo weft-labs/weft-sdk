@@ -21,11 +21,6 @@ a dual representation of one constraint: `price` in USD decimal strings
 (the reasoning form) XOR `price_atomic` in integer micro-USD (the
 settlement form) — mutually exclusive, set at most one.
 
-Backend selection is server-side via the `SEARCH_BACKEND` env var:
-`mock` (default, reads YAML fixtures and sets `_mock: true` in the
-response) or `platform` (proxies to the upstream search service).
-Both backends return the platform `SearchResponse` envelope.
-
 Account-scoped: the bearer token must be a buyer-scoped API key.
 Free for authenticated buyers in v1; billing is planned for a later
 release.
@@ -108,7 +103,7 @@ Name | Type | Description  | Notes
 **401** | Unauthorized — missing or non-buyer-scoped API key |  -  |
 **403** | The OAuth access token authenticated but lacks the &#x60;search&#x60; scope (RFC 6750 &#x60;insufficient_scope&#x60;). Carries a &#x60;WWW-Authenticate: Bearer error&#x3D;\&quot;insufficient_scope\&quot;, scope&#x3D;\&quot;search\&quot;&#x60; header. &#x60;wk_&#x60; API keys are unscoped and never see this.  |  -  |
 **422** | Invalid request — empty/missing &#x60;query&#x60;, out-of-range &#x60;max_results&#x60;, an unknown top-level parameter, or invalid &#x60;filters&#x60; (unknown filter key/operator, bad enum value, or a sub-filter without exactly one operator). See the &#x60;error&#x60; code.  |  -  |
-**502** | Upstream search backend error (platform backend only) |  -  |
-**500** | Backend misconfigured (&#x60;SEARCH_BACKEND&#x60; unset or unknown) |  -  |
+**502** | Search service unavailable |  -  |
+**500** | Internal server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

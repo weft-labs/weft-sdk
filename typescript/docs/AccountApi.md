@@ -14,7 +14,7 @@ All URIs are relative to *https://weft.network*
 
 Get the current credential principal
 
-Returns the Organization represented by a resource API key, or the User represented by an account API key or OAuth access token. Branch on &#x60;data.principal_type&#x60;; existing Organization fields remain unchanged.
+Returns the seller Organization represented by an &#x60;ax_live_*&#x60; resource key, or the buyer User represented by a &#x60;wk_*&#x60; account key or OAuth access token. Branch on &#x60;data.principal_type&#x60;.
 
 ### Example
 
