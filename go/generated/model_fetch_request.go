@@ -1,7 +1,7 @@
 /*
 Weft API
 
-The Weft API is the buyer-runtime surface that powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and any third-party agent that wants to discover and pay for paid resources on Weft. v1 covers five buyer concerns:    1. Account onboarding (`/api/v1/auth/_*`, `/api/v1/me`)   2. CLI authentication (`/api/v1/api_keys`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Seller-side concerns (agent management, payout analytics, webhook delivery, the public storefront for `data_api` resources) live in the dashboard and are intentionally not documented here. They will be split out into a separate, dashboard-scoped spec when they need to be SDK-consumable.  All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
+The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key or an OAuth access token with the relevant scope. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. The two key types are not interchangeable.  All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
 
 API version: 0.9.1
 */
@@ -30,6 +30,8 @@ type FetchRequest struct {
 	Body NullableFetchRequestBody `json:"body,omitempty"`
 	// Headers forwarded to the upstream. Up to 32 headers, 4 KB total. The following are silently stripped: `host`, `authorization`, `cookie`, `proxy-authorization`, `x-forwarded-*`, `x-real-ip`, `x-payment`, `connection`, `upgrade`.
 	Headers map[string]string `json:"headers,omitempty"`
+	// The `query_trace_id` from the `POST /api/v1/search` response that surfaced this URL. Optional and advisory: it attributes the purchase to the search that found it, and is used only for measurement.  It never affects payment, authorization, idempotency, or the response body — the buyer is always resolved from the credential, never from this field. A value that is not a well-formed handle is ignored rather than rejected, so an analytics mistake can never cost a fetch.
+	SearchId *string `json:"search_id,omitempty"`
 }
 
 type _FetchRequest FetchRequest
@@ -222,6 +224,38 @@ func (o *FetchRequest) SetHeaders(v map[string]string) {
 	o.Headers = v
 }
 
+// GetSearchId returns the SearchId field value if set, zero value otherwise.
+func (o *FetchRequest) GetSearchId() string {
+	if o == nil || IsNil(o.SearchId) {
+		var ret string
+		return ret
+	}
+	return *o.SearchId
+}
+
+// GetSearchIdOk returns a tuple with the SearchId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FetchRequest) GetSearchIdOk() (*string, bool) {
+	if o == nil || IsNil(o.SearchId) {
+		return nil, false
+	}
+	return o.SearchId, true
+}
+
+// HasSearchId returns a boolean if a field has been set.
+func (o *FetchRequest) HasSearchId() bool {
+	if o != nil && !IsNil(o.SearchId) {
+		return true
+	}
+
+	return false
+}
+
+// SetSearchId gets a reference to the given string and assigns it to the SearchId field.
+func (o *FetchRequest) SetSearchId(v string) {
+	o.SearchId = &v
+}
+
 func (o FetchRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -244,6 +278,9 @@ func (o FetchRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Headers) {
 		toSerialize["headers"] = o.Headers
+	}
+	if !IsNil(o.SearchId) {
+		toSerialize["search_id"] = o.SearchId
 	}
 	return toSerialize, nil
 }

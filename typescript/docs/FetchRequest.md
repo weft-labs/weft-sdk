@@ -11,6 +11,7 @@ Name | Type
 `method` | string
 `body` | [FetchRequestBody](FetchRequestBody.md)
 `headers` | { [key: string]: string; }
+`searchId` | string
 
 ## Example
 
@@ -24,6 +25,7 @@ const example = {
   "method": null,
   "body": null,
   "headers": {Accept=application/json, User-Agent=my-agent/1.0},
+  "searchId": 11111111-1111-4111-8111-111111111111,
 } satisfies FetchRequest
 
 console.log(example)
