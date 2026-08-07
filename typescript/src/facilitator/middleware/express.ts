@@ -37,7 +37,7 @@ type ExpressNextFunction = (err?: unknown) => void;
 export type ExpressMiddleware = (
   req: ExpressRequest,
   res: ExpressResponse,
-  next: ExpressNextFunction
+  next: ExpressNextFunction,
 ) => Promise<void> | void;
 
 export interface SchemeRegistration {
@@ -97,7 +97,7 @@ class ExpressAdapter implements HTTPAdapter {
 
 export function weftPaymentMiddleware(
   routes: RoutesConfig,
-  config?: WeftExpressMiddlewareConfig
+  config?: WeftExpressMiddlewareConfig,
 ): ExpressMiddleware {
   const facilitatorClient = createFacilitatorClient(config?.facilitator);
   const resourceServer = new x402ResourceServer(facilitatorClient);
@@ -119,13 +119,19 @@ export function weftPaymentMiddleware(
     ? httpServer.initialize()
     : null;
 
-  return async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+  return async (
+    req: ExpressRequest,
+    res: ExpressResponse,
+    next: ExpressNextFunction,
+  ) => {
     const adapter = new ExpressAdapter(req);
     const context: HTTPRequestContext = {
       adapter,
       path: req.path,
       method: req.method,
-      paymentHeader: adapter.getHeader("payment-signature") || adapter.getHeader("x-payment"),
+      paymentHeader:
+        adapter.getHeader("payment-signature") ||
+        adapter.getHeader("x-payment"),
     };
 
     if (!httpServer.requiresPayment(context)) {
@@ -137,7 +143,10 @@ export function weftPaymentMiddleware(
       initPromise = null;
     }
 
-    const result = await httpServer.processHTTPRequest(context, config?.paywallConfig);
+    const result = await httpServer.processHTTPRequest(
+      context,
+      config?.paywallConfig,
+    );
 
     switch (result.type) {
       case "no-payment-required":
@@ -147,7 +156,9 @@ export function weftPaymentMiddleware(
         const { response } = result;
         res.status(response.status);
         Object.entries(response.headers).forEach(([key, value]) => {
-          const headerValue = Array.isArray(value) ? value.join(",") : String(value);
+          const headerValue = Array.isArray(value)
+            ? value.join(",")
+            : String(value);
           res.setHeader(key, headerValue);
         });
         if (response.isHtml) {
@@ -236,7 +247,7 @@ export function weftPaymentMiddleware(
         try {
           const settleResult = await httpServer.processSettlement(
             paymentPayload,
-            paymentRequirements
+            paymentRequirements,
           );
 
           if (!settleResult.success) {
@@ -249,7 +260,9 @@ export function weftPaymentMiddleware(
           }
 
           Object.entries(settleResult.headers).forEach(([key, value]) => {
-            const headerValue = Array.isArray(value) ? value.join(",") : String(value);
+            const headerValue = Array.isArray(value)
+              ? value.join(",")
+              : String(value);
             res.setHeader(key, headerValue);
           });
         } catch (error) {

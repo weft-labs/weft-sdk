@@ -1,44 +1,91 @@
 # Weft SDK
 
-Unified SDK monorepo for Weft Labs. This repo ships four language SDKs that
-combine the Weft API client (generated from OpenAPI) and the x402 Facilitator
-client (hand-crafted wrappers).
+Build buyer applications and agents on Weft. The TypeScript SDK and its `weft`
+CLI are the supported application surfaces; the generated clients remain
+available when you need direct access to the OpenAPI contract.
 
-## Layout
+## TypeScript quickstart
 
-- `spec/openapi.yaml` — synced from `weft-app/docs/openapi.yaml`
+1. Sign in at [weft.network](https://weft.network).
+2. Create a buyer API key in
+   [Dashboard → API keys](https://weft.network/dashboard/buyer/api_keys). Copy
+   the one-time `wk_*` value and keep it out of source control.
+3. Install the SDK and set the key in your shell:
+
+   ```sh
+   npm install @weft-labs/sdk @x402/core
+   export WEFT_API_KEY="wk_..."
+   ```
+
+4. Create `quickstart.mjs`:
+
+   ```js
+   import { WeftClient } from "@weft-labs/sdk";
+
+   const apiKey = process.env.WEFT_API_KEY;
+   if (!apiKey) throw new Error("Set WEFT_API_KEY to a buyer wk_* API key");
+
+   const weft = new WeftClient({ apiKey });
+
+   const account = await weft.me();
+   const search = await weft.search({ query: "weather data API" });
+
+   console.log({ account: account.data, results: search.results });
+   ```
+
+   ```sh
+   node quickstart.mjs
+   ```
+
+`WeftClient` uses `https://weft.network` by default. See the
+[TypeScript guide](typescript/README.md) for bounded paid fetches, retries, error
+handling, the CLI, and low-level generated APIs. The executable source for the
+quickstart is shipped in the package at
+[`examples/quickstart.mjs`](typescript/examples/quickstart.mjs).
+
+## CLI quickstart
+
+The CLI is included in `@weft-labs/sdk`; there is no separate CLI package.
+
+```sh
+npx --package @weft-labs/sdk weft me
+npx --package @weft-labs/sdk weft search "weather data API"
+npx --package @weft-labs/sdk weft fetch "https://merchant.example/data" \
+  --max-cost-usd 0.05
+```
+
+`fetch` requires a maximum cost. The CLI also generates an idempotency key and
+returns it in `meta.idempotency_key`, so a caller can safely reuse it when
+retrying an uncertain request.
+
+## Language support
+
+| Language | Package | Support level | Recommended surface |
+|---|---|---|---|
+| TypeScript | `@weft-labs/sdk` | Supported | `WeftClient` or the bundled `weft` CLI |
+| Python | `weft-sdk` | Generated client preview | Generated APIs; buyer façade in progress |
+| Ruby | `weft-sdk` | Generated client preview | Generated APIs |
+| Go | `github.com/weft-labs/weft-sdk/go` | Generated client preview | Generated APIs |
+
+“Generated client preview” means the package is published and tracks the API
+contract, but has not yet passed the same clean-install buyer quickstart gate as
+TypeScript.
+
+## Reference and support
+
+- [API reference](https://weft.network/docs)
+- [OpenAPI document](https://weft.network/docs/openapi.yaml)
+- [TypeScript package guide](typescript/README.md)
+- [GitHub issues](https://github.com/weft-labs/weft-sdk/issues)
+
+## Repository layout
+
+- `spec/openapi.yaml` — canonical contract copy synchronized from `weft-app`
 - `typescript/` — npm package `@weft-labs/sdk`
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
 - `go/` — Go module `github.com/weft-labs/weft-sdk/go`
-- `skills/weft/` — Weft Skill (`SKILL.md` + install script) for Claude Code; installs the hosted Weft MCP server at `https://weft.network/mcp`. See `skills/weft/SKILL.md`.
-- `.github/workflows/` — per-language CI + spec sync workflow
+- `scripts/` — generation, conformance, and release checks
 
-## Versioning
-
-All language SDKs share a version tied to the OpenAPI spec version.
-Format: `{spec_major}.{spec_minor}.{patch}`.
-
-## Spec Sync
-
-The `sync-spec.yml` workflow listens for `repository_dispatch` events from
-`weft-app`, updates `spec/openapi.yaml`, regenerates clients, and opens a PR if
-changes are detected. Candidate branches are pushed with the shared GitHub App
-token, not the default `GITHUB_TOKEN`, so normal PR CI can run on bot-authored
-branches.
-
-## Release Candidates
-
-Each `weft-app-openapi-updated` dispatch opens an auto-PR on a deterministic
-`sdk-candidate/weft-app-<short_sha>` branch. The PR's required checks are the
-release gate:
-
-- Per-language build/test jobs (`typescript.yml` / `python.yml` / `ruby.yml` / `go.yml`).
-- The staging e2e job (`e2e.yml`), which builds the regenerated TypeScript SDK
-  from the PR head and exercises it against `https://staging.weft.network`:
-  fetches `/up/openapi` and asserts the SHA-256 matches the PR's spec, then
-  hits an authenticated endpoint and asserts a 401.
-
-The auto-PR is opened with `gh pr merge --auto --squash`, so it lands on `main`
-the moment all required checks pass. No `.release-candidates/` JSON marker is
-written or read anywhere in the pipeline — the PR's check status IS the gate.
+All language packages share a version tied to the OpenAPI version. Generated
+sources are updated by the spec-sync workflow and must not be edited manually.

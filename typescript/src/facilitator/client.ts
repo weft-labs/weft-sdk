@@ -15,7 +15,7 @@ export function validateUrl(url: string): void {
 
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     throw new Error(
-      `Invalid URL format: URL must start with http:// or https://, got: ${url}`
+      `Invalid URL format: URL must start with http:// or https://, got: ${url}`,
     );
   }
 }
@@ -25,7 +25,10 @@ export function resolveUrl(config?: WeftFacilitatorConfig): string {
     return config.url;
   }
 
-  if (typeof process !== "undefined" && process.env?.[X402_FACILITATOR_URL_ENV]) {
+  if (
+    typeof process !== "undefined" &&
+    process.env?.[X402_FACILITATOR_URL_ENV]
+  ) {
     return process.env[X402_FACILITATOR_URL_ENV]!;
   }
 
@@ -33,7 +36,7 @@ export function resolveUrl(config?: WeftFacilitatorConfig): string {
 }
 
 export function createFacilitatorClient(
-  config?: WeftFacilitatorConfig
+  config?: WeftFacilitatorConfig,
 ): HTTPFacilitatorClient {
   const url = resolveUrl(config);
   validateUrl(url);

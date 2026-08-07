@@ -30,7 +30,7 @@ interface HonoContext {
 
 export type HonoMiddleware = (
   c: HonoContext,
-  next: () => Promise<void>
+  next: () => Promise<void>,
 ) => Promise<Response | void>;
 
 export interface SchemeRegistration {
@@ -97,7 +97,7 @@ class HonoAdapter implements HTTPAdapter {
 
 export function weftPaymentMiddlewareHono(
   routes: RoutesConfig,
-  config?: WeftHonoMiddlewareConfig
+  config?: WeftHonoMiddlewareConfig,
 ): HonoMiddleware {
   const facilitatorClient = createFacilitatorClient(config?.facilitator);
   const resourceServer = new x402ResourceServer(facilitatorClient);
@@ -125,7 +125,9 @@ export function weftPaymentMiddlewareHono(
       adapter,
       path: c.req.path,
       method: c.req.method,
-      paymentHeader: adapter.getHeader("payment-signature") || adapter.getHeader("x-payment"),
+      paymentHeader:
+        adapter.getHeader("payment-signature") ||
+        adapter.getHeader("x-payment"),
     };
 
     if (!httpServer.requiresPayment(context)) {
@@ -137,7 +139,10 @@ export function weftPaymentMiddlewareHono(
       initPromise = null;
     }
 
-    const result = await httpServer.processHTTPRequest(context, config?.paywallConfig);
+    const result = await httpServer.processHTTPRequest(
+      context,
+      config?.paywallConfig,
+    );
 
     switch (result.type) {
       case "no-payment-required":
@@ -171,7 +176,7 @@ export function weftPaymentMiddlewareHono(
         try {
           const settleResult = await httpServer.processSettlement(
             paymentPayload,
-            paymentRequirements
+            paymentRequirements,
           );
 
           if (!settleResult.success) {
@@ -180,7 +185,7 @@ export function weftPaymentMiddlewareHono(
                 error: "Settlement failed",
                 details: settleResult.errorReason,
               },
-              402
+              402,
             );
           } else if (res) {
             Object.entries(settleResult.headers).forEach(([key, value]) => {
@@ -194,7 +199,7 @@ export function weftPaymentMiddlewareHono(
               error: "Settlement failed",
               details: error instanceof Error ? error.message : "Unknown error",
             },
-            402
+            402,
           );
         }
 
