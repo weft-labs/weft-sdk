@@ -6,6 +6,9 @@ on:
       - "go/**"
       - "spec/**"
       - "scripts/**"
+      # Self-test: a change to this workflow must run this workflow, otherwise
+      # CI-config regressions land unexercised.
+      - ".github/workflows/go.yml"
   push:
     branches: ["main"]
     tags: ["v*", "go/v*"]
@@ -32,8 +35,13 @@ defaults:
   run:
     shell: bash --noprofile --norc -euo pipefail {0}
 
+# github.workflow MUST stay in the group key. Every language workflow and the
+# e2e/sync workflows fire on the same ref; a group keyed on the ref alone puts
+# them all in one slot, so with cancel-in-progress the last run created cancels
+# the others before a single step executes. That shows up on the PR as a red
+# "build"/"publish" check that failed in 0s with no logs.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
