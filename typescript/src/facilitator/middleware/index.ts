@@ -1,21 +1,18 @@
-export {
-  weftPaymentMiddleware,
-  type ExpressMiddleware,
-  type WeftExpressMiddlewareConfig,
-  type SchemeRegistration,
-} from "./express";
-
-export {
-  weftPaymentMiddlewareHono,
-  type HonoMiddleware,
-  type WeftHonoMiddlewareConfig,
-} from "./hono";
-
 export type {
-  RoutesConfig,
-  RouteConfig,
   PaywallConfig,
   PaywallProvider,
+  RouteConfig,
+  RoutesConfig,
 } from "@x402/core/server";
-
 export type { Network, SchemeNetworkServer } from "@x402/core/types";
+export {
+  type ExpressMiddleware,
+  type SchemeRegistration,
+  type WeftExpressMiddlewareConfig,
+  weftPaymentMiddleware,
+} from "./express";
+export {
+  type HonoMiddleware,
+  type WeftHonoMiddlewareConfig,
+  weftPaymentMiddlewareHono,
+} from "./hono";

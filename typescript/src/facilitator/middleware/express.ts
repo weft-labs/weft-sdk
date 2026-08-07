@@ -1,14 +1,14 @@
 import {
-  HTTPRequestContext,
-  PaywallConfig,
-  PaywallProvider,
+  type HTTPAdapter,
+  type HTTPRequestContext,
+  type PaywallConfig,
+  type PaywallProvider,
+  type RoutesConfig,
   x402HTTPResourceServer,
   x402ResourceServer,
-  RoutesConfig,
-  HTTPAdapter,
 } from "@x402/core/server";
-import { SchemeNetworkServer, Network } from "@x402/core/types";
-import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
+import type { Network, SchemeNetworkServer } from "@x402/core/types";
+import { createFacilitatorClient, type WeftFacilitatorConfig } from "../client";
 
 interface ExpressRequest {
   method: string;
@@ -190,32 +190,32 @@ export function weftPaymentMiddleware(
           endCalled = resolve;
         });
 
-        res.writeHead = function (...args: unknown[]) {
+        res.writeHead = ((...args: unknown[]) => {
           if (!settled) {
             bufferedCalls.push(["writeHead", args]);
             return res;
           }
           return originalWriteHead(...args);
-        } as typeof res.writeHead;
+        }) as typeof res.writeHead;
 
-        res.write = function (...args: unknown[]) {
+        res.write = ((...args: unknown[]) => {
           if (!settled) {
             bufferedCalls.push(["write", args]);
             return true;
           }
           return originalWrite(...args);
-        } as typeof res.write;
+        }) as typeof res.write;
 
-        res.end = function (...args: unknown[]) {
+        res.end = ((...args: unknown[]) => {
           if (!settled) {
             bufferedCalls.push(["end", args]);
             endCalled();
             return res;
           }
           return originalEnd(...args);
-        } as typeof res.end;
+        }) as typeof res.end;
 
-        res.flushHeaders = function () {
+        res.flushHeaders = () => {
           if (!settled) {
             bufferedCalls.push(["flushHeaders", []]);
             return;

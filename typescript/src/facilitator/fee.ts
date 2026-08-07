@@ -1,4 +1,4 @@
-import { createFacilitatorClient, WeftFacilitatorConfig } from "./client";
+import { createFacilitatorClient, type WeftFacilitatorConfig } from "./client";
 
 export interface FeeInfo {
   amount: string;

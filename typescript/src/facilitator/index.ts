@@ -1,8 +1,6 @@
 export * from "@x402/core";
 export * from "@x402/core/types";
-
-export { X402_FACILITATOR_URL, createFacilitatorClient } from "./client";
 export type { WeftFacilitatorConfig } from "./client";
-
+export { createFacilitatorClient, X402_FACILITATOR_URL } from "./client";
+export type { FeeCacheConfig, FeeInfo } from "./fee";
 export { getFeeInfo, invalidateFeeCache } from "./fee";
-export type { FeeInfo, FeeCacheConfig } from "./fee";

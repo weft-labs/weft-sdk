@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { invalidateFeeCache, getFeeInfo } from "../src/facilitator/fee";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getFeeInfo, invalidateFeeCache } from "../src/facilitator/fee";
 
 // Mock the client module
 vi.mock("../src/facilitator/client", () => ({
@@ -65,7 +65,7 @@ describe("getFeeInfo", () => {
     mockGetSupported.mockResolvedValue({});
 
     await expect(getFeeInfo()).rejects.toThrow(
-      "Fee information not found in /supported response"
+      "Fee information not found in /supported response",
     );
   });
 

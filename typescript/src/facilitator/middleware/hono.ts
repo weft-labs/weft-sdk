@@ -1,14 +1,14 @@
 import {
-  HTTPRequestContext,
-  PaywallConfig,
-  PaywallProvider,
+  type HTTPAdapter,
+  type HTTPRequestContext,
+  type PaywallConfig,
+  type PaywallProvider,
+  type RoutesConfig,
   x402HTTPResourceServer,
   x402ResourceServer,
-  RoutesConfig,
-  HTTPAdapter,
 } from "@x402/core/server";
-import { SchemeNetworkServer, Network } from "@x402/core/types";
-import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
+import type { Network, SchemeNetworkServer } from "@x402/core/types";
+import { createFacilitatorClient, type WeftFacilitatorConfig } from "../client";
 
 interface HonoRequest {
   method: string;

@@ -52,12 +52,12 @@
   },
   "scripts": {
     "build": "tsup",
-    "test": "vitest run && npm run test:quickstarts",
-    "test:quickstarts": "npm run build && node ../scripts/test-typescript-quickstarts.mjs",
-    "lint": "eslint --fix",
-    "lint:check": "eslint",
-    "format": "prettier --write \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
+    "test": "vitest run && pnpm run test:quickstarts",
+    "test:quickstarts": "pnpm run build && node ../scripts/test-typescript-quickstarts.mjs",
+    "lint": "biome check --write",
+    "lint:check": "biome check",
+    "format": "biome format --write",
+    "format:check": "biome format",
     "generate": "../scripts/generate-typescript.sh",
     "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
     "prepublishOnly": "npm run build"
@@ -80,12 +80,9 @@
     "@x402/core": "^2.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.7",
     "@types/node": "^26.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
-    "eslint": "^10.4.1",
     "fast-check": "^4.8.0",
-    "prettier": "3.9.6",
     "tsup": "^8.4.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

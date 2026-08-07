@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  validateUrl,
   resolveUrl,
+  validateUrl,
   X402_FACILITATOR_URL,
   X402_FACILITATOR_URL_ENV,
 } from "../src/facilitator/client";
@@ -25,13 +25,13 @@ describe("validateUrl", () => {
 
   it("rejects URLs without protocol", () => {
     expect(() => validateUrl("x402.weft.network")).toThrow(
-      "URL must start with http:// or https://"
+      "URL must start with http:// or https://",
     );
   });
 
   it("rejects ftp protocol", () => {
     expect(() => validateUrl("ftp://x402.weft.network")).toThrow(
-      "URL must start with http:// or https://"
+      "URL must start with http:// or https://",
     );
   });
 });
@@ -50,7 +50,7 @@ describe("resolveUrl", () => {
 
   it("returns config URL when provided", () => {
     expect(resolveUrl({ url: "https://custom.example.com" })).toBe(
-      "https://custom.example.com"
+      "https://custom.example.com",
     );
   });
 
@@ -62,7 +62,7 @@ describe("resolveUrl", () => {
   it("prefers config URL over env var", () => {
     process.env[X402_FACILITATOR_URL_ENV] = "https://env.example.com";
     expect(resolveUrl({ url: "https://config.example.com" })).toBe(
-      "https://config.example.com"
+      "https://config.example.com",
     );
   });
 

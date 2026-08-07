@@ -1,4 +1,7 @@
-import { HTTPFacilitatorClient, FacilitatorConfig } from "@x402/core/server";
+import {
+  type FacilitatorConfig,
+  HTTPFacilitatorClient,
+} from "@x402/core/server";
 
 export const X402_FACILITATOR_URL = "https://x402.weft.network";
 export const X402_FACILITATOR_URL_ENV = "X402_FACILITATOR_URL";
