@@ -12,8 +12,10 @@ updates:
       development-dependencies:
         dependency-type: development
     ignore:
-      # TS 7 (Go-based compiler) is blocked upstream: @typescript-eslint peers cap at <6.1.0.
-      # Re-enable when typescript-eslint releases a version supporting TS 7.
+      # TS 7 (Go-based compiler) ships without a programmatic API — expected in
+      # TS 7.1. typescript-eslint cannot support it until then (tracking:
+      # typescript-eslint/typescript-eslint#10940). Re-enable when
+      # typescript-eslint peers include typescript >=7.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
     labels: ["dependencies", "typescript"]
