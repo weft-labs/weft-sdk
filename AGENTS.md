@@ -18,9 +18,9 @@ Polyglot client SDK monorepo for Weft Labs, consumed by external developers and 
 ```sh
 scripts/generate-all.sh                         # Regenerate all language SDKs from spec/openapi.yaml
 scripts/test-sdk.sh                             # Verify generated SDK outputs exist
-cd typescript && npm install && npm test        # TypeScript tests
-cd typescript && npm run lint:check             # TypeScript lint
-cd typescript && npm run format:check           # TypeScript formatting check
+cd typescript && pnpm install && pnpm test        # TypeScript tests
+cd typescript && pnpm run lint:check             # TypeScript lint
+cd typescript && pnpm run format:check           # TypeScript formatting check
 cd python && pip install -e . pytest pytest-asyncio ruff mypy && pytest
 cd python && ruff check . && mypy src           # Python lint + typecheck
 cd ruby && bundle install && bundle exec rake test

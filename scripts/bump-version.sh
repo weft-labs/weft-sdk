@@ -74,17 +74,18 @@ bump_file \
   "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" \
   "typescript/package.json"
 
-# 3. TypeScript — package-lock.json root package + lockfile version
-if [ ! -f "$ROOT_DIR/typescript/package-lock.json" ]; then
-  echo "Error: $ROOT_DIR/typescript/package-lock.json not found"
+# 3. TypeScript — package.json version + pnpm lockfile sync
+if [ ! -f "$ROOT_DIR/typescript/pnpm-lock.yaml" ]; then
+  echo "Error: $ROOT_DIR/typescript/pnpm-lock.yaml not found"
   errors=$((errors + 1))
 elif (
   cd "$ROOT_DIR/typescript"
-  npm version "$VERSION" --allow-same-version --no-git-tag-version --ignore-scripts >/dev/null
+  bump_file     "$ROOT_DIR/typescript/package.json"     "s/^  "version": ".*"/  "version": "$VERSION"/"
+  pnpm install --lockfile-only >/dev/null
 ); then
-  echo "Updated typescript/package-lock.json: $VERSION"
+  echo "Updated typescript version: $VERSION"
 else
-  echo "Error: Failed to update typescript/package-lock.json"
+  echo "Error: Failed to update typescript version"
   errors=$((errors + 1))
 fi
 

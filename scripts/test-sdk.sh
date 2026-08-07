@@ -30,8 +30,8 @@ require_file "${ROOT_DIR}/typescript/src/generated/index.ts" \
   "TypeScript generated SDK missing. Run ./scripts/generate-typescript.sh"
 require_file "${ROOT_DIR}/typescript/src/client.ts" \
   "Hand-written TypeScript buyer client was removed during generation."
-require_file "${ROOT_DIR}/typescript/package-lock.json" \
-  "TypeScript lockfile missing. Run npm install --package-lock-only in typescript/."
+require_file "${ROOT_DIR}/typescript/pnpm-lock.yaml" \
+  "TypeScript lockfile missing. Run pnpm install --lockfile-only in typescript/."
 require_file "${ROOT_DIR}/python/src/weft_sdk/generated/__init__.py" \
   "Python generated SDK missing. Run ./scripts/generate-python.sh"
 require_file "${ROOT_DIR}/python/src/weft_sdk/client.py" \

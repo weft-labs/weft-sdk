@@ -59,8 +59,8 @@
     "format": "biome format --write",
     "format:check": "biome format",
     "generate": "../scripts/generate-typescript.sh",
-    "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
-    "prepublishOnly": "npm run build"
+    "smoke": "pnpm run build && node ../scripts/weft-smoke.mjs",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "weft",
@@ -99,5 +99,6 @@
   },
   "overrides": {
     "esbuild": "^0.28.1"
-  }
+  },
+  "packageManager": "pnpm@10.33.4"
 }
