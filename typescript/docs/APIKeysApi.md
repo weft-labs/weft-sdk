@@ -16,6 +16,8 @@ All URIs are relative to *https://weft.network*
 
 Create an API key
 
+Create an &#x60;ax_live_*&#x60; resource key for the authenticated seller Organization. Buyer &#x60;wk_*&#x60; keys are created in the buyer dashboard.
+
 ### Example
 
 ```ts
@@ -86,6 +88,8 @@ example().catch(console.error);
 > ApiKeyListResponse listApiKeys()
 
 List API keys
+
+List &#x60;ax_live_*&#x60; resource keys for the seller Organization.
 
 ### Example
 
