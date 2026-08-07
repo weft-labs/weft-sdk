@@ -15,6 +15,8 @@ All URIs are relative to *https://weft.network*
 
 Create an API key
 
+Create an `ax_live_*` resource key for the authenticated seller Organization. Buyer `wk_*` keys are created in the buyer dashboard.
+
 ### Examples
 
 ```ruby
@@ -81,6 +83,8 @@ end
 > <ApiKeyListResponse> list_api_keys
 
 List API keys
+
+List `ax_live_*` resource keys for the seller Organization.
 
 ### Examples
 
