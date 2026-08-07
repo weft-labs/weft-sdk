@@ -47,4 +47,35 @@ artifact = weft.fetch(
 )
 ```
 
+## Handle API errors
+
+All buyer-client methods raise the same `WeftError` shape, including the HTTP
+status, stable error code, request ID, retry hint, and structured details.
+
+```python
+from weft_sdk import WeftError
+
+try:
+    results = weft.search(query="weather data API")
+except WeftError as error:
+    print(error.status, error.code, error.request_id, error.retryable)
+    print(error.details)
+    raise
+```
+
+- `401`: confirm that `WEFT_API_KEY` contains a current buyer `wk_*` key.
+- `403`: inspect `code` and `details` for an insufficient balance or spending
+  policy denial before changing the request.
+- `409` (`IDEMPOTENCY_CONFLICT`): this buyer already used the supplied
+  idempotency key for a different fetch request. Generate a new key for the
+  new operation; the original operation retries unchanged with its own key.
+  `retryable` is `False` — resending the conflicting request will conflict
+  again.
+- `429`: honor `Retry-After` and back off.
+- `5xx`: retry transient failures with backoff; reuse the idempotency key for a
+  paid fetch.
+- `status == 0` (`NETWORK_ERROR`): the request failed before any Weft
+  response, so the outcome is uncertain. `retryable` is `True`; retry with
+  backoff and reuse the idempotency key for a paid fetch.
+
 See the [API reference](https://weft.network/docs) for the complete contract.

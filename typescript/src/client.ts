@@ -15,6 +15,7 @@ import {
   type SearchRequest,
   type SearchResponse,
 } from "./generated";
+import { normalizeWeftError } from "./error";
 
 export interface WeftClientOptions {
   apiKey: string;
@@ -25,7 +26,7 @@ export interface WeftClientOptions {
 export type PaidFetchRequest = FetchRequest & { maxCostUsd: string };
 
 export interface FetchOptions {
-  idempotencyKey?: string;
+  idempotencyKey: string;
 }
 
 export interface PurchaseListOptions {
@@ -75,37 +76,50 @@ export class WeftClient {
     this.purchaseHistory = new PurchasesApi(configuration);
   }
 
+  private async call<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      throw await normalizeWeftError(error);
+    }
+  }
+
   me(): Promise<MeResponse> {
-    return this.account.getMe();
+    return this.call(() => this.account.getMe());
   }
 
   balance(): Promise<BalanceResponse> {
-    return this.balances.getBalance();
+    return this.call(() => this.balances.getBalance());
   }
 
   search(request: SearchRequest): Promise<SearchResponse> {
-    return this.searches.search({ searchRequest: request });
+    return this.call(() => this.searches.search({ searchRequest: request }));
   }
 
   fetch(
     request: PaidFetchRequest,
-    options: FetchOptions = {},
+    options: FetchOptions,
   ): Promise<FetchResponse> {
     if (!request.maxCostUsd.trim()) {
       throw new Error("maxCostUsd is required");
     }
+    if (!options.idempotencyKey.trim()) {
+      throw new Error("idempotencyKey is required");
+    }
 
-    return this.fetches.fetch({
-      fetchRequest: request,
-      idempotencyKey: options.idempotencyKey,
-    });
+    return this.call(() =>
+      this.fetches.fetch({
+        fetchRequest: request,
+        idempotencyKey: options.idempotencyKey,
+      }),
+    );
   }
 
   purchases(options: PurchaseListOptions = {}): Promise<PurchaseListResponse> {
-    return this.purchaseHistory.listPurchases(options);
+    return this.call(() => this.purchaseHistory.listPurchases(options));
   }
 
   purchase(id: number): Promise<PurchaseResponse> {
-    return this.purchaseHistory.getPurchase({ id });
+    return this.call(() => this.purchaseHistory.getPurchase({ id }));
   }
 }

@@ -118,6 +118,34 @@ describe("weft CLI", () => {
     });
   });
 
+  it("returns the paid-fetch retry identity after an uncertain failure", async () => {
+    const io = capture();
+    const fetchApi = vi.fn(async () => {
+      throw new Error("request timed out");
+    });
+
+    expect(
+      await runCli(
+        ["fetch", "https://merchant.example", "--max-cost-usd", "0.10"],
+        {
+          ...io,
+          env: { WEFT_API_KEY: "wk_test" },
+          fetchApi,
+          generateIdempotencyKey: () => "retry-after-timeout",
+        },
+      ),
+    ).toBe(EXIT_INTERNAL);
+    expect(
+      new Headers(fetchApi.mock.calls[0][1]?.headers).get("idempotency-key"),
+    ).toBe("retry-after-timeout");
+    expect(JSON.parse(io.err[0])).toMatchObject({
+      ok: false,
+      command: "fetch",
+      error: { code: "NETWORK_ERROR" },
+      meta: { idempotency_key: "retry-after-timeout" },
+    });
+  });
+
   it("preserves API error details and maps auth status to exit 3", async () => {
     const io = capture();
     const fetchApi = vi.fn(

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ResponseError } from "./generated";
 import { WeftClient, type PaidFetchRequest } from "./client";
+import { WeftError } from "./error";
 
 export const EXIT_SUCCESS = 0;
 export const EXIT_USAGE = 2;
@@ -164,6 +165,17 @@ async function responseDetails(error: ResponseError): Promise<unknown> {
 
 async function normalizeError(error: unknown): Promise<CliError> {
   if (error instanceof CliError) return error;
+  if (error instanceof WeftError) {
+    // status 0 is a transport failure with no API response; it exits like an
+    // internal failure, not an API rejection.
+    const exitCode =
+      error.status === 401 || error.status === 403
+        ? EXIT_AUTH
+        : error.status >= 500 || error.status === 0
+          ? EXIT_INTERNAL
+          : EXIT_API;
+    return new CliError(exitCode, error.code, error.message, error.details);
+  }
   if (error instanceof ResponseError) {
     const details = await responseDetails(error);
     const body = details as
@@ -205,6 +217,7 @@ export async function runCli(
   const writeErr =
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
+  let idempotencyKey: string | undefined;
 
   try {
     const parsed = parseArgs(args);
@@ -280,7 +293,7 @@ export async function runCli(
             : undefined,
       };
       const explicitKey = parsed.options.get("idempotency-key");
-      const idempotencyKey =
+      idempotencyKey =
         typeof explicitKey === "string"
           ? explicitKey
           : (dependencies.generateIdempotencyKey ?? randomUUID)();
@@ -333,6 +346,9 @@ export async function runCli(
             ? {}
             : { details: normalized.details }),
         },
+        ...(idempotencyKey === undefined
+          ? {}
+          : { meta: { idempotency_key: idempotencyKey } }),
       })}\n`,
     );
     return normalized.exitCode;
