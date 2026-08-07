@@ -1,25 +1,24 @@
 openapi: 3.1.0
 info:
   title: Weft API
-  version: 0.9.1
+  version: 0.10.0
   description: |
-    The Weft API is the buyer-runtime surface that powers the `weft` CLI,
-    the hosted MCP server (`weft.network/mcp`), and any third-party agent
-    that wants to discover and pay for paid resources on Weft. v1 covers
-    five buyer concerns:
+    The Weft API powers the `weft` CLI, the hosted MCP server
+    (`weft.network/mcp`), and third-party applications that discover and pay
+    for resources on Weft. The buyer runtime covers six concerns:
 
-      1. Account onboarding (`/api/v1/auth/*`, `/api/v1/me`)
-      2. CLI authentication (`/api/v1/api_keys`)
+      1. Account creation and recovery (`/api/v1/auth/*`)
+      2. Credential identity (`/api/v1/me`)
       3. Wallet visibility (`/api/v1/balance`)
       4. Discovery (`/api/v1/search`)
       5. Paid execution (`/api/v1/fetch`)
       6. Purchase history (`/api/v1/purchases`)
 
-    Seller-side concerns (agent management, payout analytics, webhook
-    delivery, the public storefront for `data_api` resources) live in the
-    dashboard and are intentionally not documented here. They will be
-    split out into a separate, dashboard-scoped spec when they need to be
-    SDK-consumable.
+    Buyer runtime calls require a dashboard-created `wk_*` account key or an
+    OAuth access token with the relevant scope. The organization-scoped API
+    key and payment operations in this document are seller administration
+    surfaces and require an `ax_live_*` resource key. The two key types are
+    not interchangeable.
 
     All errors share the envelope defined by `ErrorResponse`, except the
     buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke
@@ -31,7 +30,9 @@ tags:
   - name: Account
     description: Current user account information.
   - name: API Keys
-    description: Manage API keys used by the CLI and any direct HTTP caller.
+    description: |
+      Manage seller organization/resource keys (`ax_live_*`). Buyer runtime
+      keys (`wk_*`) are created and rotated in the buyer dashboard.
   - name: Balance
     description: |
       Read-only snapshot of the buyer's wallet, spending policy, and
@@ -40,10 +41,7 @@ tags:
     description: |
       Semantic search across the Weft index of paid agent resources.
       Returns A2A-shaped AgentCards with pricing, skills, ranking, and
-      endpoints. The mock backend (default while the search-platform is
-      unshipped) reads YAML fixtures from `db/seeds/mock-search/`; the
-      platform backend proxies to the upstream search service. Both share
-      the same response envelope.
+      endpoints.
   - name: Fetch
     description: |
       The universal x402 fetch proxy. POST any URL the agent wants to
@@ -65,10 +63,6 @@ tags:
 servers:
   - url: https://weft.network
     description: Production
-  - url: https://staging.weft.network
-    description: Staging
-  - url: http://localhost:3000
-    description: Development
 paths:
   /docs/openapi.yaml:
     get:
@@ -259,9 +253,9 @@ paths:
     get:
       summary: Get the current credential principal
       description: |
-        Returns the Organization represented by a resource API key, or the User
-        represented by an account API key or OAuth access token. Branch on
-        `data.principal_type`; existing Organization fields remain unchanged.
+        Returns the seller Organization represented by an `ax_live_*` resource
+        key, or the buyer User represented by a `wk_*` account key or OAuth
+        access token. Branch on `data.principal_type`.
       operationId: getMe
       tags: [Account]
       security:
@@ -282,6 +276,7 @@ paths:
   /api/v1/api_keys:
     get:
       summary: List API keys
+      description: List `ax_live_*` resource keys for the seller Organization.
       operationId: listApiKeys
       tags: [API Keys]
       security:
@@ -310,6 +305,9 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     post:
       summary: Create an API key
+      description: |
+        Create an `ax_live_*` resource key for the authenticated seller
+        Organization. Buyer `wk_*` keys are created in the buyer dashboard.
       operationId: createApiKey
       tags: [API Keys]
       security:
@@ -424,11 +422,6 @@ paths:
         (the reasoning form) XOR `price_atomic` in integer micro-USD (the
         settlement form) — mutually exclusive, set at most one.
 
-        Backend selection is server-side via the `SEARCH_BACKEND` env var:
-        `mock` (default, reads YAML fixtures and sets `_mock: true` in the
-        response) or `platform` (proxies to the upstream search service).
-        Both backends return the platform `SearchResponse` envelope.
-
         Account-scoped: the bearer token must be a buyer-scoped API key.
         Free for authenticated buyers in v1; billing is planned for a later
         release.
@@ -485,13 +478,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/SearchErrorResponse"
         "502":
-          description: Upstream search backend error (platform backend only)
+          description: Search service unavailable
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchErrorResponse"
         "500":
-          description: Backend misconfigured (`SEARCH_BACKEND` unset or unknown)
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -2090,6 +2083,20 @@ components:
           example:
             Accept: application/json
             User-Agent: my-agent/1.0
+        search_id:
+          type: string
+          format: uuid
+          description: |
+            The `query_trace_id` from the `POST /api/v1/search` response that
+            surfaced this URL. Optional and advisory: it attributes the purchase
+            to the search that found it, and is used only for measurement.
+
+            It never affects payment, authorization, idempotency, or the
+            response body — the buyer is always resolved from the credential,
+            never from this field. A value that is not a well-formed handle is
+            ignored rather than rejected, so an analytics mistake can never cost
+            a fetch.
+          example: "11111111-1111-4111-8111-111111111111"
     FetchResponse:
       type: object
       description: |

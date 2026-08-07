@@ -16,6 +16,8 @@ Method | HTTP request | Description
 
 Create an API key
 
+
+
 ### Example
 
 ```go
@@ -79,6 +81,8 @@ Name | Type | Description  | Notes
 > ApiKeyListResponse ListApiKeys(ctx).Execute()
 
 List API keys
+
+
 
 ### Example
 
