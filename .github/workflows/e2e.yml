@@ -19,8 +19,10 @@ name: Staging E2E
 # without burning staging time.
 
 on:
+  # Trigger for stacked PR bases too. The job-level condition keeps staging
+  # traffic scoped to generated candidates while still registering the
+  # required check on every stack layer.
   pull_request:
-    branches: ["main"]
 
 permissions:
   contents: read
@@ -43,6 +45,7 @@ jobs:
     timeout-minutes: 20
     env:
       WEFT_STAGING_BASE_URL: https://staging.weft.network
+      WEFT_API_KEY: ${{ secrets.E2E_BUYER_API_KEY }}
     steps:
       - name: Checkout PR head
         uses: actions/checkout@v7
