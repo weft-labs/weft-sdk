@@ -12,9 +12,9 @@ Method | HTTP request | Description
 
 Get the current credential principal
 
-Returns the Organization represented by a resource API key, or the User
-represented by an account API key or OAuth access token. Branch on
-`data.principal_type`; existing Organization fields remain unchanged.
+Returns the seller Organization represented by an `ax_live_*` resource
+key, or the buyer User represented by a `wk_*` account key or OAuth
+access token. Branch on `data.principal_type`.
 
 
 ### Example
