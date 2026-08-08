@@ -167,3 +167,63 @@ const fee = await getFeeInfo();
 
 The default facilitator URL is `https://x402.weft.network`; override it through
 the helper configuration or `X402_FACILITATOR_URL`.
+
+## Charging for your own API
+
+The payment middleware asks unpaid callers to pay and lets paid callers
+through. The money settles to your wallet; Weft never holds it.
+
+```js
+import express from "express";
+import { weftPaymentMiddleware } from "@weft-labs/sdk/facilitator/middleware";
+
+const app = express();
+
+app.use(
+  weftPaymentMiddleware(
+    {
+      "GET /v1/search": {
+        accepts: {
+          scheme: "exact",
+          network: "eip155:8453",
+          payTo: process.env.WALLET_ADDRESS,
+          price: "$0.01",
+        },
+      },
+    },
+    {
+      name: "Acme Pricing API",
+      type: "api",
+      tags: ["finance", "pricing"],
+    },
+  ),
+);
+```
+
+`weftPaymentMiddlewareHono` is the Hono equivalent and takes the same
+configuration.
+
+### Declaring your product
+
+`name`, `type`, `tags` and `iconUrl` describe the product once and apply to
+every protected route. They travel on the 402 challenge, are copied onto the
+buyer's payment, and arrive with the settlement — so your product appears in
+the Weft dashboard already named and categorised, with no form to fill in.
+
+| Field | Meaning |
+|---|---|
+| `name` | Display name, e.g. `"Acme Pricing API"`. Up to 32 characters. |
+| `type` | `"api"`, `"agent"` or `"mcp"`. |
+| `tags` | Up to four free-text tags of 32 characters each, or five if you omit `type`. |
+| `iconUrl` | Absolute URL of an icon. |
+
+Setting any of these on an individual route overrides the product-level value
+for that route only.
+
+`type` has no field of its own in the x402 protocol, so the SDK sends it as one
+reserved tag — `weft:type:api`, `weft:type:agent`, `weft:type:mcp`. That is why
+`tags` carries four of your own values rather than five: the protocol allows
+five in total. Tags that exceed the protocol's limits are dropped with a
+warning when the middleware is created, so an oversized tag never costs you the
+rest of them. Any `weft:type:*` value you pass in `tags` yourself is ignored in
+favour of `type`.

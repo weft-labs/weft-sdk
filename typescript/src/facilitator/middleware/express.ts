@@ -9,6 +9,7 @@ import {
 } from "@x402/core/server";
 import { SchemeNetworkServer, Network } from "@x402/core/types";
 import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
+import { applyProductIdentity, WeftProductIdentity } from "./product";
 
 interface ExpressRequest {
   method: string;
@@ -45,7 +46,13 @@ export interface SchemeRegistration {
   server: SchemeNetworkServer;
 }
 
-export interface WeftExpressMiddlewareConfig {
+/**
+ * Configuration for the Express payment middleware.
+ *
+ * Extends {@link WeftProductIdentity}, so `name`, `type`, `tags` and `iconUrl`
+ * are declared once here and applied to every protected route.
+ */
+export interface WeftExpressMiddlewareConfig extends WeftProductIdentity {
   facilitator?: WeftFacilitatorConfig;
   schemes?: SchemeRegistration[];
   paywallConfig?: PaywallConfig;
@@ -95,6 +102,17 @@ class ExpressAdapter implements HTTPAdapter {
   }
 }
 
+/**
+ * Create an Express middleware that requires x402 payment for the given routes.
+ *
+ * Product identity declared on `config` (`name`, `type`, `tags`, `iconUrl`) is
+ * merged into every route, so it travels on the 402 challenge's `resource` and
+ * from there onto the buyer's payment payload and the settlement event.
+ *
+ * @param routes - Route configuration, either a path map or a single route
+ * @param config - Facilitator, scheme, paywall and product identity settings
+ * @returns An Express middleware function
+ */
 export function weftPaymentMiddleware(
   routes: RoutesConfig,
   config?: WeftExpressMiddlewareConfig,
@@ -108,7 +126,10 @@ export function weftPaymentMiddleware(
     });
   }
 
-  const httpServer = new x402HTTPResourceServer(resourceServer, routes);
+  const httpServer = new x402HTTPResourceServer(
+    resourceServer,
+    applyProductIdentity(routes, config ?? {}),
+  );
 
   if (config?.paywall) {
     httpServer.registerPaywallProvider(config.paywall);

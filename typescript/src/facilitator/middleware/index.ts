@@ -11,6 +11,14 @@ export {
   type WeftHonoMiddlewareConfig,
 } from "./hono";
 
+export {
+  applyProductIdentity,
+  productTypeTag,
+  WEFT_TYPE_TAG_PREFIX,
+  type WeftProductIdentity,
+  type WeftProductType,
+} from "./product";
+
 export type {
   RoutesConfig,
   RouteConfig,
