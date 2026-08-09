@@ -4,12 +4,15 @@ import {
   PaywallProvider,
   x402HTTPResourceServer,
   x402ResourceServer,
-  RoutesConfig,
   HTTPAdapter,
 } from "@x402/core/server";
 import { SchemeNetworkServer, Network } from "@x402/core/types";
 import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
-import { applyProductIdentity, WeftProductIdentity } from "./product";
+import {
+  applyProductIdentity,
+  WeftProductIdentity,
+  WeftRoutesConfig,
+} from "./product";
 
 interface ExpressRequest {
   method: string;
@@ -109,12 +112,13 @@ class ExpressAdapter implements HTTPAdapter {
  * merged into every route, so it travels on the 402 challenge's `resource` and
  * from there onto the buyer's payment payload and the settlement event.
  *
- * @param routes - Route configuration, either a path map or a single route
+ * @param routes - Route configuration, either a path map or a single route;
+ *   each route may declare its own `type` to override the product's
  * @param config - Facilitator, scheme, paywall and product identity settings
  * @returns An Express middleware function
  */
 export function weftPaymentMiddleware(
-  routes: RoutesConfig,
+  routes: WeftRoutesConfig,
   config?: WeftExpressMiddlewareConfig,
 ): ExpressMiddleware {
   const facilitatorClient = createFacilitatorClient(config?.facilitator);

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
 import { parsePaymentRequired } from "@x402/core/schemas";
-import type { RouteConfig, RoutesConfig } from "@x402/core/server";
 import type {
   Network,
   PaymentRequirements,
@@ -15,6 +14,10 @@ import {
   weftPaymentMiddlewareHono,
   type WeftHonoMiddlewareConfig,
 } from "../src/facilitator/middleware/hono";
+import type {
+  WeftRouteConfig,
+  WeftRoutesConfig,
+} from "../src/facilitator/middleware/product";
 
 /**
  * End-to-end coverage for the 402 challenge our middleware actually emits.
@@ -41,7 +44,7 @@ const fakeScheme: SchemeNetworkServer = {
   },
 };
 
-const routes: RoutesConfig = {
+const routes: WeftRoutesConfig = {
   "GET /v1/search": {
     accepts: {
       scheme: "exact",
@@ -58,10 +61,10 @@ const routes: RoutesConfig = {
  * @param overrides - Fields to merge into the route config
  * @returns A routes config with the overrides applied
  */
-function routesWith(overrides: Partial<RouteConfig>): RoutesConfig {
+function routesWith(overrides: Partial<WeftRouteConfig>): WeftRoutesConfig {
   return {
     "GET /v1/search": {
-      ...(routes as Record<string, RouteConfig>)["GET /v1/search"],
+      ...(routes as Record<string, WeftRouteConfig>)["GET /v1/search"],
       ...overrides,
     },
   };
@@ -87,7 +90,7 @@ interface CapturedResponse {
  * @returns The captured HTTP response
  */
 async function callExpress(
-  routesConfig: RoutesConfig,
+  routesConfig: WeftRoutesConfig,
   config: WeftExpressMiddlewareConfig,
 ): Promise<CapturedResponse> {
   const middleware = weftPaymentMiddleware(routesConfig, config);
@@ -147,7 +150,7 @@ async function callExpress(
  * @returns The captured HTTP response
  */
 async function callHono(
-  routesConfig: RoutesConfig,
+  routesConfig: WeftRoutesConfig,
   config: WeftHonoMiddlewareConfig,
 ): Promise<CapturedResponse> {
   const middleware = weftPaymentMiddlewareHono(routesConfig, config);
@@ -190,18 +193,43 @@ async function callHono(
 }
 
 /**
- * Decode the 402 challenge exactly as a buyer's x402 client would.
+ * Decode the 402 challenge exactly as a buyer's x402 client would, and hold it
+ * to the x402 protocol's own validator on the way past.
+ *
+ * `parsePaymentRequired` is written upstream and applied by no code path our
+ * middleware runs, so it is a ground truth we did not generate. Running it here
+ * rather than in one opt-in test means no case in this file — present or future
+ * — can assert on a challenge without first proving the challenge is legal.
+ * That matters because the schema rejects the *whole* `PaymentRequired` when a
+ * single cosmetic field is out of bounds: a seller does not lose their product
+ * name, they lose the challenge.
  *
  * @param response - The captured HTTP response
- * @returns The `resource` block the buyer will copy onto its payment payload
+ * @returns The decoded `PaymentRequired`
  */
-function resourceFromChallenge(response: CapturedResponse) {
+function decodeChallenge(response: CapturedResponse) {
   expect(response.status).toBe(402);
 
   const header = response.headers["PAYMENT-REQUIRED"];
   expect(header).toBeDefined();
 
-  return decodePaymentRequiredHeader(header).resource;
+  const challenge = decodePaymentRequiredHeader(header);
+  const parsed = parsePaymentRequired(challenge);
+
+  expect(parsed.error).toBeUndefined();
+  expect(parsed.success).toBe(true);
+
+  return challenge;
+}
+
+/**
+ * Decode the 402 challenge and return the block a buyer copies onto its payment.
+ *
+ * @param response - The captured HTTP response
+ * @returns The `resource` block the buyer will copy onto its payment payload
+ */
+function resourceFromChallenge(response: CapturedResponse) {
+  return decodeChallenge(response).resource;
 }
 
 describe("402 challenge carries declared product identity", () => {
@@ -221,10 +249,15 @@ describe("402 challenge carries declared product identity", () => {
         return new Response(supported, { status: 200 });
       }),
     );
+
+    // Identity the protocol cannot carry is reported at construction; the
+    // point of these tests is what reaches the wire, not the boot log.
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("puts serviceName, tags and iconUrl on the Express challenge", async () => {
@@ -299,14 +332,25 @@ describe("402 challenge carries declared product identity", () => {
     expect(resource).not.toHaveProperty("iconUrl");
   });
 
+  it("carries a per-route type on the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routesWith({ type: "mcp" }), {
+        ...baseConfig,
+        type: "api",
+      }),
+    );
+
+    expect(resource.tags).toEqual(["weft:type:mcp"]);
+    expect(resource).not.toHaveProperty("type");
+  });
+
   it("still emits a payable challenge alongside the identity", async () => {
-    const response = await callExpress(routes, {
-      ...baseConfig,
-      name: "Acme Pricing API",
-      type: "api",
-    });
-    const challenge = decodePaymentRequiredHeader(
-      response.headers["PAYMENT-REQUIRED"],
+    const challenge = decodeChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        name: "Acme Pricing API",
+        type: "api",
+      }),
     );
 
     expect(challenge.accepts).toHaveLength(1);
@@ -318,52 +362,192 @@ describe("402 challenge carries declared product identity", () => {
       asset: ASSET,
     });
   });
+});
 
-  /**
-   * `parsePaymentRequired` is the x402 protocol's own validator, written
-   * upstream and applied by no code path our middleware runs. It is therefore
-   * a ground truth we did not generate: if the identity we add pushes the
-   * challenge out of spec, this fails even though every assertion above still
-   * passes.
-   */
-  it("emits a challenge the x402 schema accepts", async () => {
-    const response = await callExpress(routes, {
-      ...baseConfig,
-      name: "Acme Pricing API",
-      type: "api",
-      tags: ["finance", "pricing"],
-      iconUrl: "https://acme.test/icon.png",
+/**
+ * Identity a seller can plausibly write that the x402 schema will not carry.
+ *
+ * Each case here is one the middleware used to put on the wire verbatim, and
+ * `parsePaymentRequired` rejects the *entire* `PaymentRequired` on any one of
+ * them — `too_big`, `invalid_string`, `invalid_type` — not just the offending
+ * field. These are therefore the cases the oracle most needs to see, so they
+ * are named individually rather than left to the happy path.
+ */
+describe("402 challenge stays legal for identity the protocol cannot carry", () => {
+  beforeEach(() => {
+    const supported = JSON.stringify({
+      kinds: [{ x402Version: 2, scheme: "exact", network: NETWORK }],
+      extensions: [],
+      signers: {},
     });
 
-    const parsed = parsePaymentRequired(
-      decodePaymentRequiredHeader(response.headers["PAYMENT-REQUIRED"]),
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL) => {
+        if (!String(url).endsWith("/supported")) {
+          throw new Error(`unexpected fetch: ${String(url)}`);
+        }
+        return new Response(supported, { status: 200 });
+      }),
     );
-
-    expect(parsed.error).toBeUndefined();
-    expect(parsed.success).toBe(true);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
-  it("emits a challenge the x402 schema accepts when tags overflow", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
-    const response = await callExpress(routes, {
-      ...baseConfig,
-      name: "Acme Pricing API",
-      type: "api",
-      tags: ["one", "two", "three", "four", "five", "six"],
-    });
+  it("truncates an ordinary product name that exceeds the 32-char cap", async () => {
+    const name = "Acme Real Estate Property Records API";
+    expect(name.length).toBeGreaterThan(32);
 
-    const challenge = decodePaymentRequiredHeader(
-      response.headers["PAYMENT-REQUIRED"],
+    const resource = resourceFromChallenge(
+      await callExpress(routes, { ...baseConfig, name, type: "api" }),
     );
 
-    expect(challenge.resource.tags).toEqual([
+    expect(resource.serviceName).toBe("Acme Real Estate Property Record");
+  });
+
+  it("keeps a non-ASCII product name off the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, { ...baseConfig, name: "Acme Café" }),
+    );
+
+    expect(resource).not.toHaveProperty("serviceName");
+  });
+
+  it("keeps an illegal product type out of the tags", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        type: "Real Time Financial Market Data Feed" as never,
+        tags: ["finance"],
+      }),
+    );
+
+    expect(resource.tags).toEqual(["finance"]);
+  });
+
+  it("survives null identity fields", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        name: null,
+        type: null,
+        tags: null,
+        iconUrl: null,
+      } as never),
+    );
+
+    expect(resource).not.toHaveProperty("serviceName");
+    expect(resource).not.toHaveProperty("tags");
+    expect(resource).not.toHaveProperty("iconUrl");
+  });
+
+  it("survives tags that are not an array of strings", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        tags: "finance,pricing",
+      } as never),
+    );
+
+    expect(resource).not.toHaveProperty("tags");
+  });
+
+  it("keeps a javascript: iconUrl off the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        iconUrl: "javascript:alert(1)",
+      }),
+    );
+
+    expect(resource).not.toHaveProperty("iconUrl");
+  });
+
+  it("keeps an over-long iconUrl off the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        iconUrl: `https://acme.test/${"x".repeat(2048)}.png`,
+      }),
+    );
+
+    expect(resource).not.toHaveProperty("iconUrl");
+  });
+
+  it("clamps overflowing tags rather than emitting six", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routes, {
+        ...baseConfig,
+        name: "Acme Pricing API",
+        type: "api",
+        tags: ["one", "two", "three", "four", "five", "six"],
+      }),
+    );
+
+    expect(resource.tags).toEqual([
       "weft:type:api",
       "one",
       "two",
       "three",
       "four",
     ]);
-    expect(parsePaymentRequired(challenge).success).toBe(true);
+  });
+
+  it("keeps a malformed route-level tag off the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routesWith({ tags: ["search", "x".repeat(99)] }), {
+        ...baseConfig,
+        name: "Acme Pricing API",
+      }),
+    );
+
+    expect(resource.tags).toEqual(["search"]);
+  });
+
+  /**
+   * The route's own tags are already on the object being merged, so when the
+   * SDK drops *all* of them there is nothing left to overwrite them with. This
+   * is the case where a drop can look like it worked and quietly have not.
+   */
+  it("keeps a route-level tag off the challenge when it is the only one", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routesWith({ tags: ["x".repeat(99)] }), {
+        ...baseConfig,
+        name: "Acme Pricing API",
+      }),
+    );
+
+    expect(resource).not.toHaveProperty("tags");
+  });
+
+  it("keeps a malformed route-level iconUrl off the challenge", async () => {
+    const resource = resourceFromChallenge(
+      await callExpress(routesWith({ iconUrl: "javascript:alert(1)" }), {
+        ...baseConfig,
+        name: "Acme Pricing API",
+      }),
+    );
+
+    expect(resource).not.toHaveProperty("iconUrl");
+  });
+
+  it("holds the Hono challenge to the same schema", async () => {
+    const resource = resourceFromChallenge(
+      await callHono(routes, {
+        ...baseConfig,
+        name: "Acme Real Estate Property Records API",
+        type: "mcp",
+        tags: ["finance", "x".repeat(33)],
+        iconUrl: "javascript:alert(1)",
+      }),
+    );
+
+    expect(resource.serviceName).toBe("Acme Real Estate Property Record");
+    expect(resource.tags).toEqual(["weft:type:mcp", "finance"]);
+    expect(resource).not.toHaveProperty("iconUrl");
   });
 });

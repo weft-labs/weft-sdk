@@ -17,6 +17,8 @@ export {
   WEFT_TYPE_TAG_PREFIX,
   type WeftProductIdentity,
   type WeftProductType,
+  type WeftRouteConfig,
+  type WeftRoutesConfig,
 } from "./product";
 
 export type {

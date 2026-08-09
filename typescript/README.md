@@ -212,18 +212,53 @@ the Weft dashboard already named and categorised, with no form to fill in.
 
 | Field | Meaning |
 |---|---|
-| `name` | Display name, e.g. `"Acme Pricing API"`. Up to 32 characters. |
+| `name` | Display name, e.g. `"Acme Pricing API"`. |
 | `type` | `"api"`, `"agent"` or `"mcp"`. |
-| `tags` | Up to four free-text tags of 32 characters each, or five if you omit `type`. |
-| `iconUrl` | Absolute URL of an icon. |
+| `tags` | Up to four free-text tags, or five if you omit `type`. |
+| `iconUrl` | Absolute `http`/`https` URL of an icon. |
 
 Setting any of these on an individual route overrides the product-level value
-for that route only.
+for that route only — `type` included, so an API with an MCP endpoint beside it
+can say so per route:
+
+```js
+weftPaymentMiddleware(
+  {
+    "GET /v1/search": { accepts },
+    "POST /mcp": { accepts, type: "mcp" },
+  },
+  { name: "Acme Pricing API", type: "api" },
+);
+```
 
 `type` has no field of its own in the x402 protocol, so the SDK sends it as one
 reserved tag — `weft:type:api`, `weft:type:agent`, `weft:type:mcp`. That is why
 `tags` carries four of your own values rather than five: the protocol allows
-five in total. Tags that exceed the protocol's limits are dropped with a
-warning when the middleware is created, so an oversized tag never costs you the
-rest of them. Any `weft:type:*` value you pass in `tags` yourself is ignored in
-favour of `type`.
+five in total. Any `weft:type:*` value you put in `tags` yourself is dropped
+with a warning — declare `type` instead.
+
+#### What the SDK trims, and why
+
+The x402 protocol's `ResourceInfo` is narrow, and a buyer that validates the
+challenge rejects **the whole challenge** over one out-of-bounds field: you
+would not lose your product name, you would lose the sale. So the SDK keeps
+what it emits inside the protocol's bounds, and tells you at startup — one
+`[weft]` line per problem — what changed. Nothing is reported per request, and
+nothing throws; a payment server should not refuse to boot over a display name.
+
+| Limit | What the SDK does |
+|---|---|
+| `name` over 32 characters | Truncates it to 32. `"Acme Real Estate Property Records API"` ships as `"Acme Real Estate Property Record"`. 32 is tight for real product names, so check what yours becomes. |
+| A tag over 32 characters | Drops that tag, keeps the rest. |
+| More tags than the protocol carries | Drops the extras; a declared `type` always survives. |
+| A `name` or tag that is not printable ASCII | Drops it. `"Acme Café"` does not travel. |
+| An `iconUrl` that is not an absolute `http`/`https` URL, or is over 2048 characters | Drops it. A dashboard renders this URL, so no other scheme is relayed. |
+| A `type` outside `api`/`agent`/`mcp`, or any field of the wrong type | Ignores it and says so. Your other tags are unaffected. |
+
+The ASCII restriction is the protocol's, not Weft's — the Weft facilitator
+relays a name in any script. The SDK enforces it anyway, because the challenge
+reaches buyers before it reaches any facilitator and a buyer running the
+published schema throws the whole challenge out. That cost falls on sellers
+whose names are not expressible in ASCII. The fix belongs in the x402 schema;
+until it lands, spell `name` in ASCII and put the rest in the route's
+`description`.
