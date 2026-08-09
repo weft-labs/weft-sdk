@@ -14,7 +14,10 @@ export {
 export {
   applyProductIdentity,
   productTypeTag,
+  WEFT_PRODUCT_EXTENSION_KEY,
+  WEFT_PRODUCT_INFO_SCHEMA,
   WEFT_TYPE_TAG_PREFIX,
+  type WeftProductDeclaration,
   type WeftProductIdentity,
   type WeftProductType,
   type WeftRouteConfig,

@@ -11,7 +11,7 @@ import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
 import { buildFacilitatorAuthHeaders } from "./handshake";
 import {
   applyProductIdentity,
-  WeftProductIdentity,
+  WeftProductDeclaration,
   WeftRoutesConfig,
 } from "./product";
 
@@ -63,10 +63,11 @@ export interface SchemeRegistration {
 /**
  * Configuration for the Express payment middleware.
  *
- * Extends {@link WeftProductIdentity}, so `name`, `type`, `tags` and `iconUrl`
- * are declared once here and applied to every protected route.
+ * Extends {@link WeftProductDeclaration}, so `name`, `type`, `tags`,
+ * `iconUrl`, `productId` and `manifestHash` are declared once here and
+ * applied to every protected route.
  */
-export interface WeftExpressMiddlewareConfig extends WeftProductIdentity {
+export interface WeftExpressMiddlewareConfig extends WeftProductDeclaration {
   /**
    * The seller's Weft API key.
    *
