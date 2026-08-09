@@ -386,6 +386,32 @@ describe("the 402 challenge declares weft.product", () => {
     });
   });
 
+  it("ships product ids trimmed, so exact-string joins hold", async () => {
+    const middleware = weftPaymentMiddleware(routes, {
+      ...baseConfig,
+      productId: " prod_9f2c ",
+      manifestHash: " sha256:6ad9 ",
+    });
+    const challenge = decodeChallenge(await driveExpress(middleware));
+
+    expect(challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY]).toEqual({
+      info: { product_id: "prod_9f2c", manifest_hash: "sha256:6ad9" },
+      schema: WEFT_PRODUCT_INFO_SCHEMA,
+    });
+  });
+
+  it("publishes additionalProperties: false as the info contract", async () => {
+    const middleware = weftPaymentMiddleware(routes, DECLARED);
+    const challenge = decodeChallenge(await driveExpress(middleware));
+
+    const extension = challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY] as {
+      schema: Record<string, unknown>;
+    };
+    // A contract statement for consumers, not an enforcement: it is the
+    // declared basis for stripping buyer-added fields downstream.
+    expect(extension.schema.additionalProperties).toBe(false);
+  });
+
   it("lets a route-level weft.product declaration win over the config", async () => {
     const routeDeclared = {
       info: { kind: "agent", product_id: "prod_route" },
@@ -425,6 +451,34 @@ describe("the 402 challenge declares weft.product", () => {
     expect(challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY]).toEqual(
       EXPECTED_EXTENSION,
     );
+  });
+});
+
+describe("junk route extensions follow the pass-through contract", () => {
+  it("leaves the junk on the route, skips the declaration, and says exactly that", () => {
+    const warnings: string[] = [];
+    vi.spyOn(console, "warn").mockImplementation((message: unknown) => {
+      warnings.push(String(message));
+    });
+
+    const junk = "not-an-object";
+    const merged = applyProductIdentity(
+      {
+        "GET /v1/search": {
+          ...(routes as Record<string, never>)["GET /v1/search"],
+          extensions: junk as never,
+        },
+      } as WeftRoutesConfig,
+      { productId: "prod_9f2c" },
+    ) as Record<string, { extensions?: unknown }>;
+
+    // The junk ships to @x402/core untouched — that is the pass-through
+    // contract — and the warning must describe that, not claim it was
+    // ignored.
+    expect(merged["GET /v1/search"].extensions).toBe(junk);
+    const warning = warnings.find((line) => line.includes("extensions"));
+    expect(warning).toContain("leaving them untouched");
+    expect(warning).toContain(`skipping the ${WEFT_PRODUCT_EXTENSION_KEY}`);
   });
 });
 
@@ -482,6 +536,48 @@ describe("a real @x402/core buyer echoes the extension", () => {
         EXPECTED_EXTENSION,
       );
     }
+  });
+
+  /**
+   * The trust boundary, pinned as behaviour: upstream's echo check is a
+   * subset match, so a buyer may ADD unadvertised fields to the echoed
+   * `info` and still settle. This is exactly why consumers must treat
+   * echoed extension contents as unauthenticated buyer input and key
+   * attribution on the seller-authenticated join instead (weft-app #635
+   * freezes payments.product_id from the settling API key, never from
+   * this payload). If an @x402/core bump ever tightens this, the test
+   * fails loudly and the contract note should be revisited.
+   */
+  it("documents that buyer-added info fields pass the echo check and reach the wire", async () => {
+    const middleware = weftPaymentMiddleware(routes, {
+      ...baseConfig,
+      type: "api",
+    });
+    const challenge = decodeChallenge(await driveExpress(middleware));
+    const payload = (await buyerClient().createPaymentPayload(
+      challenge,
+    )) as PaymentPayload & {
+      extensions: Record<string, { info: Record<string, unknown> }>;
+    };
+    payload.extensions[WEFT_PRODUCT_EXTENSION_KEY].info.product_id =
+      "prod_forged_by_buyer";
+
+    const paid = await driveExpress(middleware, {
+      headers: { "payment-signature": encodePaymentSignatureHeader(payload) },
+      handler: true,
+    });
+
+    expect(paid.status).toBe(200);
+    const verify = recorded.find((request) => request.url.endsWith("/verify"));
+    const body = verify?.body as {
+      paymentPayload: {
+        extensions: Record<string, { info: Record<string, unknown> }>;
+      };
+    };
+    expect(
+      body.paymentPayload.extensions[WEFT_PRODUCT_EXTENSION_KEY].info
+        .product_id,
+    ).toBe("prod_forged_by_buyer");
   });
 
   it("rejects a tampered echo before the facilitator is ever asked", async () => {

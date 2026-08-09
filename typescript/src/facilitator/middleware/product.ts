@@ -126,10 +126,21 @@ export const WEFT_PRODUCT_EXTENSION_KEY = "weft.product";
  *
  * Ships verbatim as the extension's `schema` member, per the x402 v2
  * extensions shape `{info, schema}`. Every field is optional because absent
- * declarations are omitted from `info` rather than sent empty, and the schema
- * deliberately leaves additional properties open: the client-side echo may
- * add fields, and the server-side echo check only requires the advertised
- * `info` to be preserved.
+ * declarations are omitted from `info` rather than sent empty.
+ *
+ * `additionalProperties: false` is a **published contract statement, not an
+ * enforcement**. Upstream's echo check is a subset match — advertised `info`
+ * fields must be preserved, but a buyer may *add* fields to the echoed
+ * `info` and pass, and when a route advertises no extensions the check never
+ * runs. So an echoed `weft.product` proves nothing about fields the seller
+ * did not advertise: by the time it reaches a consumer it is unauthenticated
+ * buyer input. A buyer has no legitimate reason to add fields to a seller
+ * claim, and this flag is the declared basis for consumers to strip
+ * anything unadvertised — but the stripping, and the deeper rule, are the
+ * consumer's job. Attribution must never key on echoed extension contents;
+ * it keys on seller-authenticated joins — the API key that settled the
+ * payment (weft-app #635 freezes `payments.product_id` from exactly that at
+ * settlement time) or the S1 handshake's authenticated declaration.
  */
 export const WEFT_PRODUCT_INFO_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -139,6 +150,7 @@ export const WEFT_PRODUCT_INFO_SCHEMA = {
     product_id: { type: "string", minLength: 1 },
     manifest_hash: { type: "string", minLength: 1 },
   },
+  additionalProperties: false,
 } as const;
 
 /**
@@ -591,12 +603,14 @@ function resolveIconUrl(
  *
  * `product_id` and `manifest_hash` have no protocol bound to clamp to, but an
  * empty value is not a declaration — the contract is that absent fields are
- * omitted from `info`, never sent empty.
+ * omitted from `info`, never sent empty. The value ships trimmed: these ids
+ * exist to be joined against dashboard records by exact string, and padding
+ * from a sloppy env var would silently fail that join.
  *
  * @param field - Field name, for the diagnostic
  * @param value - The declared value
  * @param warn - Sink for anything that will not ship
- * @returns The string, or undefined when absent, blank or unusable
+ * @returns The trimmed string, or undefined when absent, blank or unusable
  */
 function resolveOpaqueString(
   field: string,
@@ -607,11 +621,12 @@ function resolveOpaqueString(
   if (declared === undefined) {
     return undefined;
   }
-  if (declared.trim() === "") {
+  const trimmed = declared.trim();
+  if (trimmed === "") {
     warn(`ignoring empty ${field}`);
     return undefined;
   }
-  return declared;
+  return trimmed;
 }
 
 /**
@@ -662,9 +677,13 @@ function resolveProductExtensions(
       routeExtensions === null ||
       Array.isArray(routeExtensions)
     ) {
+      // Pass-through contract: what a seller puts in an upstream RouteConfig
+      // field is between them and @x402/core, so the junk value stays on the
+      // route untouched — the warning must not claim otherwise.
       warn(
-        `ignoring route extensions ${show(routeExtensions)}: expected an ` +
-          `object, got ${typeName(routeExtensions)}`,
+        `route extensions ${show(routeExtensions)} are ${typeName(routeExtensions)}, ` +
+          `not an object; leaving them untouched and skipping the ` +
+          `${WEFT_PRODUCT_EXTENSION_KEY} declaration for this route`,
       );
       return undefined;
     }
