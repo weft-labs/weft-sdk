@@ -616,6 +616,42 @@ function hasRouteIdentity(routes: WeftRoutesConfig): boolean {
 }
 
 /**
+ * Resolve the product-level identity to exactly what the wire will carry.
+ *
+ * The construction-time facilitator handshake declares the product too, and a
+ * dashboard fed from both sources must never see two different products. So
+ * the handshake reuses the resolvers the 402 challenge goes through — same
+ * clamping, same drops — with one difference: the product type is returned as
+ * its own field rather than folded into `tags`, because the handshake payload
+ * has a field for it and the challenge does not.
+ *
+ * Silent by design: `applyProductIdentity` already warns about these same
+ * values at construction time, and one warning per problem is enough.
+ *
+ * @param identity - Product-level identity from the middleware config
+ * @returns The identity as it ships, or an empty object when nothing survives
+ */
+export function sanitizeProductIdentity(
+  identity: WeftProductIdentity,
+): WeftProductIdentity {
+  const silent: Warn = () => undefined;
+
+  const type = resolveType(identity.type, "type", silent);
+  const name = resolveServiceName(undefined, identity.name, silent);
+  const iconUrl = resolveIconUrl(undefined, identity.iconUrl, silent);
+  const tags = resolveTags(undefined, identity.tags, type, silent)?.filter(
+    (tag) => !isReservedTypeTag(tag),
+  );
+
+  return {
+    ...(name !== undefined && { name }),
+    ...(type !== undefined && { type }),
+    ...(tags !== undefined && tags.length > 0 && { tags }),
+    ...(iconUrl !== undefined && { iconUrl }),
+  };
+}
+
+/**
  * Merge product-level identity into every protected route.
  *
  * A per-route value always wins over the product-level default, so a seller

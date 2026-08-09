@@ -35,14 +35,71 @@ export function resolveUrl(config?: WeftFacilitatorConfig): string {
   return X402_FACILITATOR_URL;
 }
 
+type AuthHeadersByPath = Awaited<
+  ReturnType<NonNullable<FacilitatorConfig["createAuthHeaders"]>>
+>;
+
+/**
+ * Reject a flat headers object the way `@x402/core` itself would.
+ *
+ * Upstream's `HTTPFacilitatorClient` throws when `createAuthHeaders` returns
+ * `{ Authorization: ... }` instead of `{ supported: { Authorization: ... } }`,
+ * because silently dropping auth on every request is worse than failing loud.
+ * Merging the handshake's own `supported` headers in would mask that check —
+ * the merged object always has a path key — so the check runs here first,
+ * with the same failure mode a misconfigured seller sees today.
+ *
+ * @param headers - What the seller's `createAuthHeaders` returned
+ */
+function assertPathKeyedAuthHeaders(headers: AuthHeadersByPath): void {
+  const isHeaderObject = (value: unknown): boolean =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+  const hasPathKey = ["verify", "settle", "supported", "bazaar"].some((key) =>
+    isHeaderObject(headers[key as keyof AuthHeadersByPath]),
+  );
+  const looksFlat =
+    !hasPathKey &&
+    Object.values(headers).some((value) => !isHeaderObject(value));
+
+  if (looksFlat) {
+    throw new Error(
+      "createAuthHeaders must return an object keyed by facilitator path, " +
+        'e.g. { verify: { Authorization: "..." }, settle: { ... }, ' +
+        "supported: { ... } }, but received a flat headers object.",
+    );
+  }
+}
+
 export function createFacilitatorClient(
   config?: WeftFacilitatorConfig,
+  supportedHeaders?: Record<string, string>,
 ): HTTPFacilitatorClient {
   const url = resolveUrl(config);
   validateUrl(url);
 
+  const sellerCreateAuthHeaders = config?.createAuthHeaders;
+
+  const createAuthHeaders =
+    supportedHeaders && Object.keys(supportedHeaders).length > 0
+      ? async (): Promise<AuthHeadersByPath> => {
+          const sellerHeaders = sellerCreateAuthHeaders
+            ? await sellerCreateAuthHeaders()
+            : undefined;
+          if (sellerHeaders) {
+            assertPathKeyedAuthHeaders(sellerHeaders);
+          }
+          // The seller's own headers win on conflict: an explicit
+          // createAuthHeaders is a more deliberate act than `apiKey`.
+          return {
+            ...sellerHeaders,
+            supported: { ...supportedHeaders, ...sellerHeaders?.supported },
+          };
+        }
+      : sellerCreateAuthHeaders;
+
   return new HTTPFacilitatorClient({
     url,
-    createAuthHeaders: config?.createAuthHeaders,
+    createAuthHeaders,
   });
 }

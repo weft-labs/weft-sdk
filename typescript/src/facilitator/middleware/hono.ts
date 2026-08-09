@@ -8,6 +8,7 @@ import {
 } from "@x402/core/server";
 import { SchemeNetworkServer, Network } from "@x402/core/types";
 import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
+import { buildHandshakeHeaders } from "./handshake";
 import {
   applyProductIdentity,
   WeftProductIdentity,
@@ -49,6 +50,15 @@ export interface SchemeRegistration {
  * are declared once here and applied to every protected route.
  */
 export interface WeftHonoMiddlewareConfig extends WeftProductIdentity {
+  /**
+   * The seller's Weft API key.
+   *
+   * Sent as `Authorization: Bearer <key>` on the construction-time
+   * `/supported` handshake, which is how the dashboard learns an SDK is
+   * deployed before any payment has happened. Optional: without it the
+   * handshake is anonymous and everything else works unchanged.
+   */
+  apiKey?: string;
   facilitator?: WeftFacilitatorConfig;
   schemes?: SchemeRegistration[];
   paywallConfig?: PaywallConfig;
@@ -121,7 +131,10 @@ export function weftPaymentMiddlewareHono(
   routes: WeftRoutesConfig,
   config?: WeftHonoMiddlewareConfig,
 ): HonoMiddleware {
-  const facilitatorClient = createFacilitatorClient(config?.facilitator);
+  const facilitatorClient = createFacilitatorClient(
+    config?.facilitator,
+    buildHandshakeHeaders("hono", config?.apiKey, config ?? {}),
+  );
   const resourceServer = new x402ResourceServer(facilitatorClient);
 
   if (config?.schemes) {
@@ -139,10 +152,39 @@ export function weftPaymentMiddlewareHono(
     httpServer.registerPaywallProvider(config.paywall);
   }
 
+  // The construction-time facilitator sync doubles as the identity handshake,
+  // so its failure modes are held to handshake rules: it must never crash the
+  // process (a rejection with no handler attached would, under Node's default
+  // unhandled-rejection policy) and must never brick the middleware. The
+  // returned promise therefore cannot reject, and a failed sync is retried in
+  // the background off later protected requests until one attempt succeeds.
+  // A request the sync still cannot serve rejects into Hono's own onError.
   const syncOnStart = config?.syncFacilitatorOnStart ?? true;
-  let initPromise: Promise<void> | null = syncOnStart
-    ? httpServer.initialize()
-    : null;
+  let facilitatorSynced = false;
+  let syncInFlight: Promise<void> | null = null;
+
+  const syncFacilitator = (): Promise<void> => {
+    syncInFlight ??= httpServer
+      .initialize()
+      .then(
+        () => {
+          facilitatorSynced = true;
+        },
+        (error: unknown) => {
+          console.warn(
+            "[weft] facilitator sync failed; payment-protected routes " +
+              "degrade until a later attempt succeeds: " +
+              (error instanceof Error ? error.message : String(error)),
+          );
+        },
+      )
+      .finally(() => {
+        syncInFlight = null;
+      });
+    return syncInFlight;
+  };
+
+  let bootSync: Promise<void> | null = syncOnStart ? syncFacilitator() : null;
 
   return async (c: HonoContext, next: () => Promise<void>) => {
     const adapter = new HonoAdapter(c);
@@ -159,9 +201,16 @@ export function weftPaymentMiddlewareHono(
       return next();
     }
 
-    if (initPromise) {
-      await initPromise;
-      initPromise = null;
+    if (bootSync) {
+      // The pre-existing first-request barrier: with a healthy facilitator
+      // this resolves once and never runs again. It cannot throw.
+      await bootSync;
+      bootSync = null;
+    }
+    if (syncOnStart && !facilitatorSynced) {
+      // Heal a failed boot sync without delaying anyone: the retry is kicked
+      // fire-and-forget (one in flight at most) and this request proceeds.
+      void syncFacilitator();
     }
 
     const result = await httpServer.processHTTPRequest(
