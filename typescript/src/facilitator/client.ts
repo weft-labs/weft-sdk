@@ -90,11 +90,23 @@ export function createFacilitatorClient(
             assertPathKeyedAuthHeaders(sellerHeaders);
           }
           // The seller's own headers win on conflict: an explicit
-          // createAuthHeaders is a more deliberate act than `apiKey`.
-          return {
-            ...sellerHeaders,
-            supported: { ...supportedHeaders, ...sellerHeaders?.supported },
-          };
+          // createAuthHeaders is a more deliberate act than `apiKey`. The
+          // conflict check is case-insensitive because header names are —
+          // a plain spread would keep both spellings as distinct keys, and
+          // the HTTP layer folds those into one comma-joined value, garbling
+          // the credential the seller meant to send.
+          const supported: Record<string, string> = { ...supportedHeaders };
+          for (const [name, value] of Object.entries(
+            sellerHeaders?.supported ?? {},
+          )) {
+            for (const existing of Object.keys(supported)) {
+              if (existing.toLowerCase() === name.toLowerCase()) {
+                delete supported[existing];
+              }
+            }
+            supported[name] = value;
+          }
+          return { ...sellerHeaders, supported };
         }
       : sellerCreateAuthHeaders;
 

@@ -62,10 +62,25 @@ function declaredIdentityValue(
 }
 
 /**
+ * Characters that may appear in the `Authorization` value the handshake sends.
+ *
+ * Printable ASCII excluding space — no real credential contains anything
+ * else. The bound exists for log hygiene, not pedantry: a value outside it
+ * survives to `fetch`, where undici rejects the header with a `TypeError`
+ * that quotes the **entire value**, and upstream `initialize()` prints that
+ * error via its own `console.warn` — a live key in the seller's boot output,
+ * through a path this SDK cannot intercept. So anything that could trip that
+ * error is refused here, before it can become a header.
+ */
+const HEADER_SAFE = /^[\x21-\x7e]+$/;
+
+/**
  * Read a declared API key, refusing anything that cannot be a credential.
  *
- * The key's value is never logged: a warning that quoted it would put a live
- * credential in the seller's boot output.
+ * The key's value is never logged — not by the warnings here, which name the
+ * field and never quote it, and not by anything downstream, because a value
+ * that would make the HTTP layer throw (and echo the key back) never leaves
+ * this function.
  *
  * @param apiKey - The declared API key, usually from env at runtime
  * @returns The trimmed key, or undefined when absent or unusable
@@ -83,6 +98,13 @@ function resolveApiKey(apiKey: unknown): string | undefined {
   const trimmed = apiKey.trim();
   if (trimmed === "") {
     console.warn("[weft] ignoring empty apiKey");
+    return undefined;
+  }
+  if (!HEADER_SAFE.test(trimmed)) {
+    console.warn(
+      "[weft] ignoring apiKey: it contains whitespace or non-printable " +
+        "characters that cannot travel in an HTTP header",
+    );
     return undefined;
   }
   return trimmed;

@@ -39,6 +39,16 @@ interface ExpressResponse {
 
 type ExpressNextFunction = (err?: unknown) => void;
 
+/**
+ * Floor between background facilitator re-sync attempts.
+ *
+ * Without it, a sustained facilitator outage on a busy server couples retry
+ * (and warn) volume to request rate: a refused connection settles in
+ * milliseconds, so every protected request would launch a fresh `/supported`
+ * call for the whole outage. One attempt per floor interval bounds both.
+ */
+const FACILITATOR_SYNC_RETRY_FLOOR_MS = 30_000;
+
 export type ExpressMiddleware = (
   req: ExpressRequest,
   res: ExpressResponse,
@@ -161,6 +171,7 @@ export function weftPaymentMiddleware(
   const syncOnStart = config?.syncFacilitatorOnStart ?? true;
   let facilitatorSynced = false;
   let syncInFlight: Promise<void> | null = null;
+  let lastFailedSyncAt = 0;
 
   const syncFacilitator = (): Promise<void> => {
     syncInFlight ??= httpServer
@@ -170,6 +181,7 @@ export function weftPaymentMiddleware(
           facilitatorSynced = true;
         },
         (error: unknown) => {
+          lastFailedSyncAt = Date.now();
           console.warn(
             "[weft] facilitator sync failed; payment-protected routes " +
               "degrade until a later attempt succeeds: " +
@@ -210,9 +222,14 @@ export function weftPaymentMiddleware(
       await bootSync;
       bootSync = null;
     }
-    if (syncOnStart && !facilitatorSynced) {
+    if (
+      syncOnStart &&
+      !facilitatorSynced &&
+      Date.now() - lastFailedSyncAt >= FACILITATOR_SYNC_RETRY_FLOOR_MS
+    ) {
       // Heal a failed boot sync without delaying anyone: the retry is kicked
-      // fire-and-forget (one in flight at most) and this request proceeds.
+      // fire-and-forget (one in flight at most, one attempt per floor
+      // interval) and this request proceeds.
       void syncFacilitator();
     }
 

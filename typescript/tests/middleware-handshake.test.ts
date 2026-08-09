@@ -182,6 +182,7 @@ async function handshakeSeenBy(
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("handshake headers on the /supported call", () => {
@@ -291,6 +292,40 @@ describe("handshake headers on the /supported call", () => {
     expect(supported.headers.authorization).toBeUndefined();
     expect(warnings.some((line) => line.includes("apiKey"))).toBe(true);
   });
+
+  /**
+   * The leak path this guards: a key with an interior invalid character used
+   * to survive to `headers["Authorization"]`, undici rejected the header with
+   * a TypeError quoting the full value, and upstream `initialize()` printed
+   * that error — a live credential in the seller's boot output, through a
+   * code path the SDK does not own. The only fix is to refuse the key before
+   * it can become a header.
+   */
+  it("keeps a key with interior invalid header characters out of headers and logs", async () => {
+    const secret = "wk_live_SECRET_KEY\ninterior";
+    const logged: string[] = [];
+    for (const level of ["warn", "error", "log"] as const) {
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        logged.push(args.map(String).join(" "));
+      });
+    }
+
+    const supported = await handshakeSeenBy({
+      ...baseConfig,
+      apiKey: secret,
+    });
+
+    // The handshake still goes out — anonymously.
+    expect(supported.headers.authorization).toBeUndefined();
+    expect(supported.headers["user-agent"]).toBe(
+      `weft-sdk-express/${SDK_VERSION}`,
+    );
+    // No log line, ours or anyone's, contains any part of the key.
+    expect(logged.some((line) => line.includes("wk_live_SECRET_KEY"))).toBe(
+      false,
+    );
+    expect(logged.some((line) => line.includes("apiKey"))).toBe(true);
+  });
 });
 
 describe("handshake merges with a seller's own createAuthHeaders", () => {
@@ -338,6 +373,30 @@ describe("handshake merges with a seller's own createAuthHeaders", () => {
     expect((await client.createAuthHeaders("supported")).headers).toEqual({
       "User-Agent": "weft-sdk-express/test",
     });
+  });
+
+  it("lets the seller win case-insensitively, sending exactly one credential", async () => {
+    const client = createFacilitatorClient(
+      {
+        url: FACILITATOR_URL,
+        createAuthHeaders: async () => ({
+          supported: { authorization: "Bearer seller-token" },
+        }),
+      },
+      { Authorization: "Bearer weft-key", "User-Agent": "weft-sdk-express/test" },
+    );
+
+    const { headers } = await client.createAuthHeaders("supported");
+
+    // A plain spread would keep both spellings; undici folds those into one
+    // comma-joined header and the facilitator sees a garbled credential.
+    expect(headers).toEqual({
+      authorization: "Bearer seller-token",
+      "User-Agent": "weft-sdk-express/test",
+    });
+    expect(new Headers(headers).get("authorization")).toBe(
+      "Bearer seller-token",
+    );
   });
 
   it("still rejects a flat createAuthHeaders object loudly", async () => {
@@ -411,6 +470,7 @@ describe("the handshake never takes a seller's server down with it", () => {
   });
 
   it("serves 402s again once the facilitator recovers, without a restart", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
     let facilitatorUp = false;
     stubFacilitator(async () => {
       if (!facilitatorUp) {
@@ -427,12 +487,38 @@ describe("the handshake never takes a seller's server down with it", () => {
     expect(degraded.next).toHaveBeenCalledTimes(1);
 
     facilitatorUp = true;
-    // The degraded request kicked a background re-sync; another request may
-    // arrive before that retry has succeeded, so poll until healed.
+    // Step past the retry floor so the next request may kick a re-sync;
+    // another request can still arrive before it succeeds, so poll.
+    vi.setSystemTime(Date.now() + 31_000);
     await vi.waitFor(async () => {
       const healed = await driveExpress(middleware);
       expect(healed.status).toBe(402);
     });
+  });
+
+  it("floors background retries to one attempt per interval during an outage", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    stubFacilitator(async () => {
+      throw new Error("connect ECONNREFUSED");
+    });
+
+    const middleware = weftPaymentMiddleware(routes, baseConfig);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(recorded).toHaveLength(1); // the boot attempt
+
+    // A refused connection settles in ~1ms, so without the floor each of
+    // these would launch a fresh /supported call.
+    await driveExpress(middleware);
+    await driveExpress(middleware);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(recorded).toHaveLength(1);
+
+    vi.setSystemTime(Date.now() + 31_000);
+    await driveExpress(middleware);
+    await new Promise((resolve) => setImmediate(resolve));
+    await driveExpress(middleware); // inside the re-armed interval
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(recorded).toHaveLength(2);
   });
 
   it("constructs immediately while the facilitator hangs, and unprotected traffic flows", async () => {
