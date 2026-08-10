@@ -111,14 +111,18 @@ function resolveApiKey(apiKey: unknown): string | undefined {
 }
 
 /**
- * Header the Weft facilitator reads the seller's API key from on `/settle`.
+ * Header the Weft facilitator reads the seller's API key from on `/settle`
+ * and `/verify`.
  *
  * The facilitator's `/settle` handler validates this header and returns 401
  * without it, so a seller who sets `apiKey` and nothing else must have it
  * here or every settlement — the step that credits their wallet — fails.
- * `/verify` is unauthenticated today, and `/supported` carries the same key
- * as a bearer for the handshake, so one key travels under two header names by
- * the facilitator's own design, not the SDK's whim.
+ * `/verify` does not require the key, but the facilitator reads it when
+ * present and stamps the verification event with the key's digest; the SDK
+ * sends it there too so the seller's funnel attributes verification attempts
+ * instead of counting settlements against zero. `/supported` carries the same
+ * key as a bearer for the handshake, so one key travels under two header names
+ * by the facilitator's own design, not the SDK's whim.
  */
 export const WEFT_API_KEY_HEADER = "X-API-Key";
 
@@ -126,13 +130,17 @@ export const WEFT_API_KEY_HEADER = "X-API-Key";
  * Auth headers the SDK derives from `apiKey`, keyed by the facilitator path
  * each belongs to — the shape `@x402/core`'s `createAuthHeaders` expects.
  *
- * `supported` always carries at least a `User-Agent`. `settle` is present
- * only when a usable key was configured, because an empty `X-API-Key` is a
- * failed settlement dressed up as a configured one.
+ * `supported` always carries at least a `User-Agent`. `settle` and `verify`
+ * are present only when a usable key was configured — they carry the same
+ * `X-API-Key`, so the facilitator credits the wallet on `/settle` and
+ * attributes the verification funnel on `/verify` from one credential. An
+ * empty `X-API-Key` is a failed settlement dressed up as a configured one, so
+ * neither is present without a usable key.
  */
 export interface WeftFacilitatorAuthHeaders {
   supported: Record<string, string>;
   settle?: Record<string, string>;
+  verify?: Record<string, string>;
 }
 
 /**
@@ -142,9 +150,9 @@ export interface WeftFacilitatorAuthHeaders {
  * junk key, junk identity — may ever make it throw. Anything unusable is
  * dropped with a warning and the calls go out without it.
  *
- * The key is validated once here and reused for both header names, so a
- * malformed key warns a single time and reaches neither the `/supported`
- * bearer nor the `/settle` `X-API-Key`.
+ * The key is validated once here and reused across every path, so a
+ * malformed key warns a single time and reaches none of the `/supported`
+ * bearer, the `/settle` `X-API-Key`, or the `/verify` `X-API-Key`.
  *
  * @param adapter - Which middleware adapter is calling home
  * @param apiKey - The seller's Weft API key, when configured
@@ -171,6 +179,11 @@ export function buildFacilitatorAuthHeaders(
   }
 
   const settle = key !== undefined ? { [WEFT_API_KEY_HEADER]: key } : undefined;
+  const verify = key !== undefined ? { [WEFT_API_KEY_HEADER]: key } : undefined;
 
-  return { supported, ...(settle !== undefined && { settle }) };
+  return {
+    supported,
+    ...(settle !== undefined && { settle }),
+    ...(verify !== undefined && { verify }),
+  };
 }

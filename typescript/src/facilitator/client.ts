@@ -110,8 +110,9 @@ export function createFacilitatorClient(
   const sellerCreateAuthHeaders = config?.createAuthHeaders;
 
   // Only the paths the SDK actually derived headers for — `supported` always,
-  // `settle` when an apiKey was configured. Empty paths are dropped so a
-  // caller with no derived headers is byte-identical to passing none.
+  // `settle` and `verify` when an apiKey was configured. Empty paths are
+  // dropped so a caller with no derived headers is byte-identical to passing
+  // none.
   const derivedByPath = Object.entries(weftAuthHeaders ?? {}).filter(
     ([, headers]) => headers !== undefined && Object.keys(headers).length > 0,
   ) as Array<[keyof AuthHeadersByPath, Record<string, string>]>;

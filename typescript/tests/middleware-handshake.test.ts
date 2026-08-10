@@ -370,8 +370,10 @@ describe("handshake merges with a seller's own createAuthHeaders", () => {
       { supported: { "User-Agent": "weft-sdk-express/test" } },
     );
 
-    // The SDK derives nothing for verify, so the seller's headers are the
-    // whole story there.
+    // This call passes no derived verify header, so the seller's verify
+    // headers are the whole story. When an apiKey is configured the SDK now
+    // derives an `X-API-Key` here so the facilitator can attribute the funnel,
+    // and the seller still wins — see the apiKey attribution tests below.
     expect((await client.createAuthHeaders("verify")).headers).toEqual({
       Authorization: "Bearer verify-token",
     });
@@ -594,15 +596,19 @@ describe("exported handshake constants", () => {
 });
 
 /**
- * The money-path guarantee: `apiKey` alone must authenticate settlement.
+ * The money-path guarantee: `apiKey` alone must authenticate settlement and
+ * attribute verification.
  *
  * The Weft facilitator's `/settle` handler validates `X-API-Key` and 401s
  * without it, so a seller who sets `apiKey` and hand-writes no facilitator
  * auth used to get a working handshake and a working verify, then a 401 on
  * every settle — the step that credits their wallet. `apiKey` exists to make
- * that impossible.
+ * that impossible. The facilitator also reads `X-API-Key` on `/verify` — not
+ * to gate the call, but to stamp the verification event with the key's digest
+ * — so `apiKey` must ride `/verify` too, or the seller's funnel counts
+ * settlements against zero verification attempts.
  */
-describe("apiKey authenticates the settlement call", () => {
+describe("apiKey authenticates settlement and attributes verification", () => {
   /**
    * The kind advertised by `/supported`, used to build a payable challenge.
    */
@@ -747,6 +753,23 @@ describe("apiKey authenticates the settlement call", () => {
     return (settle as RecordedFetch).headers;
   }
 
+  /**
+   * Drive the same unpaid-then-paid exchange and return the headers the
+   * `/verify` request carried. `/verify` runs before `/settle` in one paid
+   * call, so the drive that records the settle headers records these too.
+   *
+   * @param config - Middleware configuration under test
+   * @returns The headers the `/verify` request carried
+   */
+  async function verifyHeadersFor(
+    config: WeftExpressMiddlewareConfig,
+  ): Promise<Record<string, string>> {
+    await settleHeadersFor(config);
+    const verify = recorded.find((request) => request.url.endsWith("/verify"));
+    expect(verify).toBeDefined();
+    return (verify as RecordedFetch).headers;
+  }
+
   beforeEach(() => {
     stubPayableFacilitator();
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -800,5 +823,55 @@ describe("apiKey authenticates the settlement call", () => {
     );
 
     expect((await client.createAuthHeaders("settle")).headers).toEqual({});
+  });
+
+  it("sends the configured apiKey as X-API-Key on /verify with no hand-written auth", async () => {
+    const verifyHeaders = await verifyHeadersFor({
+      ...baseConfig,
+      apiKey: "wk_live_verify_me",
+    });
+
+    expect(verifyHeaders["x-api-key"]).toBe("wk_live_verify_me");
+  });
+
+  it("lets a seller's own verify auth win over the apiKey default", async () => {
+    const verifyHeaders = await verifyHeadersFor({
+      ...baseConfig,
+      apiKey: "wk_live_config_key",
+      facilitator: {
+        url: FACILITATOR_URL,
+        createAuthHeaders: async () => ({
+          verify: { "X-API-Key": "wk_live_seller_key" },
+        }),
+      },
+    });
+
+    expect(verifyHeaders["x-api-key"]).toBe("wk_live_seller_key");
+  });
+
+  it("sends no X-API-Key on /verify when no apiKey is configured", async () => {
+    const verifyHeaders = await verifyHeadersFor(baseConfig);
+
+    expect(verifyHeaders["x-api-key"]).toBeUndefined();
+  });
+
+  it("derives an X-API-Key verify header directly from a configured key", async () => {
+    const client = createFacilitatorClient(
+      { url: FACILITATOR_URL },
+      buildFacilitatorAuthHeaders("express", "wk_live_direct", {}),
+    );
+
+    expect((await client.createAuthHeaders("verify")).headers).toEqual({
+      "X-API-Key": "wk_live_direct",
+    });
+  });
+
+  it("derives no verify auth at all without an apiKey", async () => {
+    const client = createFacilitatorClient(
+      { url: FACILITATOR_URL },
+      buildFacilitatorAuthHeaders("express", undefined, {}),
+    );
+
+    expect((await client.createAuthHeaders("verify")).headers).toEqual({});
   });
 });
