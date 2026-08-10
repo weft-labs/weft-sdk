@@ -217,6 +217,16 @@ the Weft dashboard already named and categorised, with no form to fill in.
 | `type` | `"api"`, `"agent"` or `"mcp"`. |
 | `tags` | Up to four free-text tags, or five if you omit `type`. |
 | `iconUrl` | Absolute `http`/`https` URL of an icon. |
+| `productId` | Identifier of the dashboard product this deployment claims to be. |
+| `manifestHash` | Hash of the product manifest this deployment was built from. |
+
+`type`, `productId` and `manifestHash` additionally travel in the x402
+extensions channel as `extensions["weft.product"]` — `{info, schema}`, with
+`info` holding `kind`, `product_id` and `manifest_hash` and `schema` the JSON
+Schema describing it. Buyers on `@x402/core` echo the declaration onto their
+payment, so it arrives with the settlement; fields you do not declare are
+omitted, never sent empty. A route that declares its own
+`extensions["weft.product"]` keeps it.
 
 `apiKey` is the one secret in the config: the API key minted with your product
 in the Weft dashboard. It does two jobs. It **authenticates settlement** — the

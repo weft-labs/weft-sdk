@@ -111,6 +111,78 @@ export interface WeftProductIdentity {
 }
 
 /**
+ * Extension key under which the product declaration travels on the wire.
+ *
+ * Unlike the identity fields, which ride `ResourceInfo`, the product
+ * declaration rides x402 v2 `extensions`: declared by the server on the 402
+ * challenge, echoed by the buyer's client onto `PaymentPayload`, validated
+ * against the advertisement at verify time, and relayed by the facilitator on
+ * the settlement event.
+ */
+export const WEFT_PRODUCT_EXTENSION_KEY = "weft.product";
+
+/**
+ * JSON Schema (Draft 2020-12) for the `weft.product` extension's `info`.
+ *
+ * Ships verbatim as the extension's `schema` member, per the x402 v2
+ * extensions shape `{info, schema}`. Every field is optional because absent
+ * declarations are omitted from `info` rather than sent empty.
+ *
+ * `additionalProperties: false` is a **published contract statement, not an
+ * enforcement**. Upstream's echo check is a subset match — advertised `info`
+ * fields must be preserved, but a buyer may *add* fields to the echoed
+ * `info` and pass, and when a route advertises no extensions the check never
+ * runs. So an echoed `weft.product` proves nothing about fields the seller
+ * did not advertise: by the time it reaches a consumer it is unauthenticated
+ * buyer input. A buyer has no legitimate reason to add fields to a seller
+ * claim, and this flag is the declared basis for consumers to strip
+ * anything unadvertised — but the stripping, and the deeper rule, are the
+ * consumer's job. Attribution must never key on echoed extension contents;
+ * it keys on seller-authenticated joins — the API key that settled the
+ * payment (weft-app #635 freezes `payments.product_id` from exactly that at
+ * settlement time) or the S1 handshake's authenticated declaration.
+ */
+export const WEFT_PRODUCT_INFO_SCHEMA = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  type: "object",
+  properties: {
+    kind: { type: "string", enum: [...PRODUCT_TYPES] },
+    product_id: { type: "string", minLength: 1 },
+    manifest_hash: { type: "string", minLength: 1 },
+  },
+  additionalProperties: false,
+} as const;
+
+/**
+ * Product-level declaration: the identity plus the product reference fields.
+ *
+ * `productId` and `manifestHash` are not cosmetic identity — they are the
+ * seller's claim about *which* dashboard product this deployment is and what
+ * manifest it was built from. They travel in the `weft.product` extension,
+ * never in `ResourceInfo`, so they extend the identity type rather than
+ * joining it.
+ */
+export interface WeftProductDeclaration extends WeftProductIdentity {
+  /**
+   * Identifier of the dashboard product this deployment claims to be.
+   *
+   * Travels as `extensions["weft.product"].info.product_id` on the 402
+   * challenge and, echoed by the buyer, on the payment payload the
+   * facilitator settles.
+   */
+  productId?: string;
+
+  /**
+   * Hash of the product manifest this deployment was built from.
+   *
+   * Travels as `extensions["weft.product"].info.manifest_hash`, next to
+   * {@link WeftProductDeclaration.productId}. Opaque to the SDK: no format is
+   * enforced beyond being a non-empty string.
+   */
+  manifestHash?: string;
+}
+
+/**
  * A route config that may also declare the product kind for that route alone.
  *
  * `RouteConfig` comes from `@x402/core` and has no field for a product kind.
@@ -527,20 +599,121 @@ function resolveIconUrl(
 }
 
 /**
+ * Read a declared opaque reference string, refusing blanks.
+ *
+ * `product_id` and `manifest_hash` have no protocol bound to clamp to, but an
+ * empty value is not a declaration — the contract is that absent fields are
+ * omitted from `info`, never sent empty. The value ships trimmed: these ids
+ * exist to be joined against dashboard records by exact string, and padding
+ * from a sloppy env var would silently fail that join.
+ *
+ * @param field - Field name, for the diagnostic
+ * @param value - The declared value
+ * @param warn - Sink for anything that will not ship
+ * @returns The trimmed string, or undefined when absent, blank or unusable
+ */
+function resolveOpaqueString(
+  field: string,
+  value: unknown,
+  warn: Warn,
+): string | undefined {
+  const declared = asString(field, value, warn);
+  if (declared === undefined) {
+    return undefined;
+  }
+  const trimmed = declared.trim();
+  if (trimmed === "") {
+    warn(`ignoring empty ${field}`);
+    return undefined;
+  }
+  return trimmed;
+}
+
+/**
+ * Build the `extensions` object for one route, declaring `weft.product`.
+ *
+ * The declaration is emitted only when it would say something — a resolved
+ * kind, product id or manifest hash — and each absent field is omitted from
+ * `info`, never sent empty. A route that already declares `weft.product` in
+ * its own `extensions` keeps its declaration: per-route always wins over the
+ * product level, exactly as it does for `serviceName`.
+ *
+ * @param routeExtensions - The route's own `extensions`, if any
+ * @param type - The already-resolved product kind for this route, if any
+ * @param declaration - Product-level declaration from the middleware config
+ * @param warn - Sink for anything that will not ship
+ * @returns The extensions to put on the route, or undefined to leave them alone
+ */
+function resolveProductExtensions(
+  routeExtensions: RouteConfig["extensions"],
+  type: WeftProductType | undefined,
+  declaration: WeftProductDeclaration,
+  warn: Warn,
+): RouteConfig["extensions"] | undefined {
+  const productId = resolveOpaqueString(
+    "productId",
+    declaration.productId,
+    warn,
+  );
+  const manifestHash = resolveOpaqueString(
+    "manifestHash",
+    declaration.manifestHash,
+    warn,
+  );
+
+  const info = {
+    ...(type !== undefined && { kind: type }),
+    ...(productId !== undefined && { product_id: productId }),
+    ...(manifestHash !== undefined && { manifest_hash: manifestHash }),
+  };
+
+  if (Object.keys(info).length === 0) {
+    return undefined;
+  }
+
+  if (routeExtensions !== undefined) {
+    if (
+      typeof routeExtensions !== "object" ||
+      routeExtensions === null ||
+      Array.isArray(routeExtensions)
+    ) {
+      // Pass-through contract: what a seller puts in an upstream RouteConfig
+      // field is between them and @x402/core, so the junk value stays on the
+      // route untouched — the warning must not claim otherwise.
+      warn(
+        `route extensions ${show(routeExtensions)} are ${typeName(routeExtensions)}, ` +
+          `not an object; leaving them untouched and skipping the ` +
+          `${WEFT_PRODUCT_EXTENSION_KEY} declaration for this route`,
+      );
+      return undefined;
+    }
+    if (WEFT_PRODUCT_EXTENSION_KEY in routeExtensions) {
+      return undefined;
+    }
+  }
+
+  return {
+    ...routeExtensions,
+    [WEFT_PRODUCT_EXTENSION_KEY]: { info, schema: WEFT_PRODUCT_INFO_SCHEMA },
+  };
+}
+
+/**
  * Apply product-level identity to a single route.
  *
  * A per-route value always wins over the product-level default. The route's
  * own `type` is consumed here and never forwarded: `RouteConfig` upstream has
- * no such field, and the value's only destination is the reserved tag.
+ * no such field, and the value's only destination is the reserved tag and the
+ * `weft.product` extension's `kind`.
  *
  * @param route - The seller's route configuration
- * @param identity - Product-level identity from the middleware config
+ * @param identity - Product-level declaration from the middleware config
  * @param warn - Sink for anything that will not ship as declared
  * @returns A new route config; the input is never mutated
  */
 function applyToRoute(
   route: WeftRouteConfig,
-  identity: WeftProductIdentity,
+  identity: WeftProductDeclaration,
   warn: Warn,
 ): RouteConfig {
   if (typeof route !== "object" || route === null) {
@@ -574,27 +747,36 @@ function applyToRoute(
   );
   const iconUrl = resolveIconUrl(declaredIconUrl, identity.iconUrl, warn);
   const tags = resolveTags(declaredTags, identity.tags, type, warn);
+  const extensions = resolveProductExtensions(
+    rest.extensions,
+    type,
+    identity,
+    warn,
+  );
 
   return {
     ...rest,
     ...(serviceName !== undefined && { serviceName }),
     ...(tags !== undefined && { tags }),
     ...(iconUrl !== undefined && { iconUrl }),
+    ...(extensions !== undefined && { extensions }),
   };
 }
 
 /**
- * Whether any identity field was actually declared.
+ * Whether any product-level field was actually declared.
  *
- * @param identity - Product-level identity from the middleware config
+ * @param identity - Product-level declaration from the middleware config
  * @returns True when at least one field is set to something other than null
  */
-function hasProductIdentity(identity: WeftProductIdentity): boolean {
+function hasProductIdentity(identity: WeftProductDeclaration): boolean {
   return (
     isDeclared(identity.name) ||
     isDeclared(identity.type) ||
     isDeclared(identity.tags) ||
-    isDeclared(identity.iconUrl)
+    isDeclared(identity.iconUrl) ||
+    isDeclared(identity.productId) ||
+    isDeclared(identity.manifestHash)
   );
 }
 
@@ -670,12 +852,12 @@ export function sanitizeProductIdentity(
  * `@x402/core`.
  *
  * @param routes - Route configuration passed by the caller
- * @param identity - Product-level identity from the middleware config
+ * @param identity - Product-level declaration from the middleware config
  * @returns Route configuration with identity applied; the input is never mutated
  */
 export function applyProductIdentity(
   routes: WeftRoutesConfig,
-  identity: WeftProductIdentity,
+  identity: WeftProductDeclaration,
 ): RoutesConfig {
   if (typeof routes !== "object" || routes === null) {
     return routes;

@@ -11,7 +11,7 @@ import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
 import { buildFacilitatorAuthHeaders } from "./handshake";
 import {
   applyProductIdentity,
-  WeftProductIdentity,
+  WeftProductDeclaration,
   WeftRoutesConfig,
 } from "./product";
 
@@ -56,10 +56,11 @@ export interface SchemeRegistration {
 /**
  * Configuration for the Hono payment middleware.
  *
- * Extends {@link WeftProductIdentity}, so `name`, `type`, `tags` and `iconUrl`
- * are declared once here and applied to every protected route.
+ * Extends {@link WeftProductDeclaration}, so `name`, `type`, `tags`,
+ * `iconUrl`, `productId` and `manifestHash` are declared once here and
+ * applied to every protected route.
  */
-export interface WeftHonoMiddlewareConfig extends WeftProductIdentity {
+export interface WeftHonoMiddlewareConfig extends WeftProductDeclaration {
   /**
    * The seller's Weft API key.
    *
