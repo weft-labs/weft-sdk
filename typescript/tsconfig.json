@@ -6,6 +6,7 @@
     "types": ["node"],
     "declaration": true,
     "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "outDir": "dist",
     "strict": true,
     "skipLibCheck": true,

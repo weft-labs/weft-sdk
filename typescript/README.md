@@ -192,6 +192,7 @@ app.use(
       },
     },
     {
+      apiKey: process.env.WEFT_API_KEY,
       name: "Acme Pricing API",
       type: "api",
       tags: ["finance", "pricing"],
@@ -216,6 +217,18 @@ the Weft dashboard already named and categorised, with no form to fill in.
 | `type` | `"api"`, `"agent"` or `"mcp"`. |
 | `tags` | Up to four free-text tags, or five if you omit `type`. |
 | `iconUrl` | Absolute `http`/`https` URL of an icon. |
+
+`apiKey` is the one secret in the config: the API key minted with your product
+in the Weft dashboard. It does two jobs. It **authenticates settlement** — the
+facilitator requires it on every settle call that credits your wallet, so
+without it (and without your own `facilitator.createAuthHeaders`) paid requests
+fail at the money step. And it **announces the product** at boot — one
+authenticated call carrying the identity above, so the dashboard shows your
+product connected, named and typed before the first payment arrives. If you
+supply your own `createAuthHeaders`, yours wins; `apiKey` never overrides it.
+The announcement can never block or break your server: a facilitator that is
+down or slow at boot costs you nothing, and payment-protected routes recover on
+their own once it is reachable again.
 
 Setting any of these on an individual route overrides the product-level value
 for that route only — `type` included, so an API with an MCP endpoint beside it

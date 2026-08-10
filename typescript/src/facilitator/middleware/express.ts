@@ -8,6 +8,7 @@ import {
 } from "@x402/core/server";
 import { SchemeNetworkServer, Network } from "@x402/core/types";
 import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
+import { buildFacilitatorAuthHeaders } from "./handshake";
 import {
   applyProductIdentity,
   WeftProductIdentity,
@@ -38,6 +39,16 @@ interface ExpressResponse {
 
 type ExpressNextFunction = (err?: unknown) => void;
 
+/**
+ * Floor between background facilitator re-sync attempts.
+ *
+ * Without it, a sustained facilitator outage on a busy server couples retry
+ * (and warn) volume to request rate: a refused connection settles in
+ * milliseconds, so every protected request would launch a fresh `/supported`
+ * call for the whole outage. One attempt per floor interval bounds both.
+ */
+const FACILITATOR_SYNC_RETRY_FLOOR_MS = 30_000;
+
 export type ExpressMiddleware = (
   req: ExpressRequest,
   res: ExpressResponse,
@@ -56,6 +67,17 @@ export interface SchemeRegistration {
  * are declared once here and applied to every protected route.
  */
 export interface WeftExpressMiddlewareConfig extends WeftProductIdentity {
+  /**
+   * The seller's Weft API key.
+   *
+   * Authenticates the facilitator calls that need it: `X-API-Key` on
+   * `/settle` — which the facilitator requires, or every settlement 401s —
+   * and `Authorization: Bearer <key>` on the construction-time `/supported`
+   * handshake, which is how the dashboard learns an SDK is deployed before
+   * any payment. Optional, but a seller who omits it must supply their own
+   * `facilitator.createAuthHeaders` or settlement fails.
+   */
+  apiKey?: string;
   facilitator?: WeftFacilitatorConfig;
   schemes?: SchemeRegistration[];
   paywallConfig?: PaywallConfig;
@@ -121,7 +143,10 @@ export function weftPaymentMiddleware(
   routes: WeftRoutesConfig,
   config?: WeftExpressMiddlewareConfig,
 ): ExpressMiddleware {
-  const facilitatorClient = createFacilitatorClient(config?.facilitator);
+  const facilitatorClient = createFacilitatorClient(
+    config?.facilitator,
+    buildFacilitatorAuthHeaders("express", config?.apiKey, config ?? {}),
+  );
   const resourceServer = new x402ResourceServer(facilitatorClient);
 
   if (config?.schemes) {
@@ -139,10 +164,40 @@ export function weftPaymentMiddleware(
     httpServer.registerPaywallProvider(config.paywall);
   }
 
+  // The construction-time facilitator sync doubles as the identity handshake,
+  // so its failure modes are held to handshake rules: it must never crash the
+  // process (a rejection with no handler attached would, under Node's default
+  // unhandled-rejection policy) and must never brick the middleware. The
+  // returned promise therefore cannot reject, and a failed sync is retried in
+  // the background off later protected requests until one attempt succeeds.
   const syncOnStart = config?.syncFacilitatorOnStart ?? true;
-  let initPromise: Promise<void> | null = syncOnStart
-    ? httpServer.initialize()
-    : null;
+  let facilitatorSynced = false;
+  let syncInFlight: Promise<void> | null = null;
+  let lastFailedSyncAt = 0;
+
+  const syncFacilitator = (): Promise<void> => {
+    syncInFlight ??= httpServer
+      .initialize()
+      .then(
+        () => {
+          facilitatorSynced = true;
+        },
+        (error: unknown) => {
+          lastFailedSyncAt = Date.now();
+          console.warn(
+            "[weft] facilitator sync failed; payment-protected routes " +
+              "degrade until a later attempt succeeds: " +
+              (error instanceof Error ? error.message : String(error)),
+          );
+        },
+      )
+      .finally(() => {
+        syncInFlight = null;
+      });
+    return syncInFlight;
+  };
+
+  let bootSync: Promise<void> | null = syncOnStart ? syncFacilitator() : null;
 
   return async (
     req: ExpressRequest,
@@ -163,15 +218,36 @@ export function weftPaymentMiddleware(
       return next();
     }
 
-    if (initPromise) {
-      await initPromise;
-      initPromise = null;
+    if (bootSync) {
+      // The pre-existing first-request barrier: with a healthy facilitator
+      // this resolves once and never runs again. It cannot throw.
+      await bootSync;
+      bootSync = null;
+    }
+    if (
+      syncOnStart &&
+      !facilitatorSynced &&
+      Date.now() - lastFailedSyncAt >= FACILITATOR_SYNC_RETRY_FLOOR_MS
+    ) {
+      // Heal a failed boot sync without delaying anyone: the retry is kicked
+      // fire-and-forget (one in flight at most, one attempt per floor
+      // interval) and this request proceeds.
+      void syncFacilitator();
     }
 
-    const result = await httpServer.processHTTPRequest(
-      context,
-      config?.paywallConfig,
-    );
+    let result;
+    try {
+      result = await httpServer.processHTTPRequest(
+        context,
+        config?.paywallConfig,
+      );
+    } catch (error) {
+      // Express 4 does not catch a rejection from an async middleware; under
+      // Node's default policy that takes the whole process down. Routing the
+      // failure through next(error) keeps it inside Express's own error
+      // handling, whatever left the resource server unable to answer.
+      return next(error);
+    }
 
     switch (result.type) {
       case "no-payment-required":

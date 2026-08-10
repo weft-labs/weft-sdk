@@ -35,14 +35,108 @@ export function resolveUrl(config?: WeftFacilitatorConfig): string {
   return X402_FACILITATOR_URL;
 }
 
+type AuthHeadersByPath = Awaited<
+  ReturnType<NonNullable<FacilitatorConfig["createAuthHeaders"]>>
+>;
+
+/**
+ * Reject a flat headers object the way `@x402/core` itself would.
+ *
+ * Upstream's `HTTPFacilitatorClient` throws when `createAuthHeaders` returns
+ * `{ Authorization: ... }` instead of `{ supported: { Authorization: ... } }`,
+ * because silently dropping auth on every request is worse than failing loud.
+ * Merging the handshake's own `supported` headers in would mask that check —
+ * the merged object always has a path key — so the check runs here first,
+ * with the same failure mode a misconfigured seller sees today.
+ *
+ * @param headers - What the seller's `createAuthHeaders` returned
+ */
+function assertPathKeyedAuthHeaders(headers: AuthHeadersByPath): void {
+  const isHeaderObject = (value: unknown): boolean =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+  const hasPathKey = ["verify", "settle", "supported", "bazaar"].some((key) =>
+    isHeaderObject(headers[key as keyof AuthHeadersByPath]),
+  );
+  const looksFlat =
+    !hasPathKey &&
+    Object.values(headers).some((value) => !isHeaderObject(value));
+
+  if (looksFlat) {
+    throw new Error(
+      "createAuthHeaders must return an object keyed by facilitator path, " +
+        'e.g. { verify: { Authorization: "..." }, settle: { ... }, ' +
+        "supported: { ... } }, but received a flat headers object.",
+    );
+  }
+}
+
+/**
+ * Merge SDK-derived headers under a seller's, case-insensitively, seller wins.
+ *
+ * Header names are case-insensitive, but object keys are not: a plain spread
+ * would keep a derived `Authorization` and a seller `authorization` as two
+ * keys, and the HTTP layer folds those into one comma-joined value — a
+ * garbled credential. So a seller header replaces any derived header of the
+ * same name whatever its case, and the seller's spelling is the one sent.
+ *
+ * @param derived - Headers the SDK derived from config for one path
+ * @param seller - The seller's own headers for that path, if any
+ * @returns The merged headers, the seller's winning on conflict
+ */
+function mergeSellerWins(
+  derived: Record<string, string>,
+  seller: Record<string, string> | undefined,
+): Record<string, string> {
+  const merged: Record<string, string> = { ...derived };
+  for (const [name, value] of Object.entries(seller ?? {})) {
+    for (const existing of Object.keys(merged)) {
+      if (existing.toLowerCase() === name.toLowerCase()) {
+        delete merged[existing];
+      }
+    }
+    merged[name] = value;
+  }
+  return merged;
+}
+
 export function createFacilitatorClient(
   config?: WeftFacilitatorConfig,
+  weftAuthHeaders?: AuthHeadersByPath,
 ): HTTPFacilitatorClient {
   const url = resolveUrl(config);
   validateUrl(url);
 
+  const sellerCreateAuthHeaders = config?.createAuthHeaders;
+
+  // Only the paths the SDK actually derived headers for — `supported` always,
+  // `settle` when an apiKey was configured. Empty paths are dropped so a
+  // caller with no derived headers is byte-identical to passing none.
+  const derivedByPath = Object.entries(weftAuthHeaders ?? {}).filter(
+    ([, headers]) => headers !== undefined && Object.keys(headers).length > 0,
+  ) as Array<[keyof AuthHeadersByPath, Record<string, string>]>;
+
+  const createAuthHeaders =
+    derivedByPath.length > 0
+      ? async (): Promise<AuthHeadersByPath> => {
+          const sellerHeaders = sellerCreateAuthHeaders
+            ? await sellerCreateAuthHeaders()
+            : undefined;
+          if (sellerHeaders) {
+            assertPathKeyedAuthHeaders(sellerHeaders);
+          }
+          // The seller's own headers win on conflict: an explicit
+          // createAuthHeaders is a more deliberate act than `apiKey`.
+          const merged: AuthHeadersByPath = { ...sellerHeaders };
+          for (const [path, derived] of derivedByPath) {
+            merged[path] = mergeSellerWins(derived, sellerHeaders?.[path]);
+          }
+          return merged;
+        }
+      : sellerCreateAuthHeaders;
+
   return new HTTPFacilitatorClient({
     url,
-    createAuthHeaders: config?.createAuthHeaders,
+    createAuthHeaders,
   });
 }
