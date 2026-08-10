@@ -71,17 +71,53 @@ function assertPathKeyedAuthHeaders(headers: AuthHeadersByPath): void {
   }
 }
 
+/**
+ * Merge SDK-derived headers under a seller's, case-insensitively, seller wins.
+ *
+ * Header names are case-insensitive, but object keys are not: a plain spread
+ * would keep a derived `Authorization` and a seller `authorization` as two
+ * keys, and the HTTP layer folds those into one comma-joined value — a
+ * garbled credential. So a seller header replaces any derived header of the
+ * same name whatever its case, and the seller's spelling is the one sent.
+ *
+ * @param derived - Headers the SDK derived from config for one path
+ * @param seller - The seller's own headers for that path, if any
+ * @returns The merged headers, the seller's winning on conflict
+ */
+function mergeSellerWins(
+  derived: Record<string, string>,
+  seller: Record<string, string> | undefined,
+): Record<string, string> {
+  const merged: Record<string, string> = { ...derived };
+  for (const [name, value] of Object.entries(seller ?? {})) {
+    for (const existing of Object.keys(merged)) {
+      if (existing.toLowerCase() === name.toLowerCase()) {
+        delete merged[existing];
+      }
+    }
+    merged[name] = value;
+  }
+  return merged;
+}
+
 export function createFacilitatorClient(
   config?: WeftFacilitatorConfig,
-  supportedHeaders?: Record<string, string>,
+  weftAuthHeaders?: AuthHeadersByPath,
 ): HTTPFacilitatorClient {
   const url = resolveUrl(config);
   validateUrl(url);
 
   const sellerCreateAuthHeaders = config?.createAuthHeaders;
 
+  // Only the paths the SDK actually derived headers for — `supported` always,
+  // `settle` when an apiKey was configured. Empty paths are dropped so a
+  // caller with no derived headers is byte-identical to passing none.
+  const derivedByPath = Object.entries(weftAuthHeaders ?? {}).filter(
+    ([, headers]) => headers !== undefined && Object.keys(headers).length > 0,
+  ) as Array<[keyof AuthHeadersByPath, Record<string, string>]>;
+
   const createAuthHeaders =
-    supportedHeaders && Object.keys(supportedHeaders).length > 0
+    derivedByPath.length > 0
       ? async (): Promise<AuthHeadersByPath> => {
           const sellerHeaders = sellerCreateAuthHeaders
             ? await sellerCreateAuthHeaders()
@@ -90,23 +126,12 @@ export function createFacilitatorClient(
             assertPathKeyedAuthHeaders(sellerHeaders);
           }
           // The seller's own headers win on conflict: an explicit
-          // createAuthHeaders is a more deliberate act than `apiKey`. The
-          // conflict check is case-insensitive because header names are —
-          // a plain spread would keep both spellings as distinct keys, and
-          // the HTTP layer folds those into one comma-joined value, garbling
-          // the credential the seller meant to send.
-          const supported: Record<string, string> = { ...supportedHeaders };
-          for (const [name, value] of Object.entries(
-            sellerHeaders?.supported ?? {},
-          )) {
-            for (const existing of Object.keys(supported)) {
-              if (existing.toLowerCase() === name.toLowerCase()) {
-                delete supported[existing];
-              }
-            }
-            supported[name] = value;
+          // createAuthHeaders is a more deliberate act than `apiKey`.
+          const merged: AuthHeadersByPath = { ...sellerHeaders };
+          for (const [path, derived] of derivedByPath) {
+            merged[path] = mergeSellerWins(derived, sellerHeaders?.[path]);
           }
-          return { ...sellerHeaders, supported };
+          return merged;
         }
       : sellerCreateAuthHeaders;
 

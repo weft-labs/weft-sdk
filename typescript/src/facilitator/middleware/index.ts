@@ -21,7 +21,11 @@ export {
   type WeftRoutesConfig,
 } from "./product";
 
-export { WEFT_DECLARED_HEADER, type WeftAdapterName } from "./handshake";
+export {
+  WEFT_API_KEY_HEADER,
+  WEFT_DECLARED_HEADER,
+  type WeftAdapterName,
+} from "./handshake";
 
 export type {
   RoutesConfig,

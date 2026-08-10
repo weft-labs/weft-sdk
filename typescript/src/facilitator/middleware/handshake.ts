@@ -111,35 +111,66 @@ function resolveApiKey(apiKey: unknown): string | undefined {
 }
 
 /**
- * Build the headers the construction-time `/supported` handshake carries.
+ * Header the Weft facilitator reads the seller's API key from on `/settle`.
+ *
+ * The facilitator's `/settle` handler validates this header and returns 401
+ * without it, so a seller who sets `apiKey` and nothing else must have it
+ * here or every settlement — the step that credits their wallet — fails.
+ * `/verify` is unauthenticated today, and `/supported` carries the same key
+ * as a bearer for the handshake, so one key travels under two header names by
+ * the facilitator's own design, not the SDK's whim.
+ */
+export const WEFT_API_KEY_HEADER = "X-API-Key";
+
+/**
+ * Auth headers the SDK derives from `apiKey`, keyed by the facilitator path
+ * each belongs to — the shape `@x402/core`'s `createAuthHeaders` expects.
+ *
+ * `supported` always carries at least a `User-Agent`. `settle` is present
+ * only when a usable key was configured, because an empty `X-API-Key` is a
+ * failed settlement dressed up as a configured one.
+ */
+export interface WeftFacilitatorAuthHeaders {
+  supported: Record<string, string>;
+  settle?: Record<string, string>;
+}
+
+/**
+ * Build the auth headers the SDK adds to the facilitator calls it drives.
  *
  * Total by design: this runs in a payment server's boot path, so no input —
  * junk key, junk identity — may ever make it throw. Anything unusable is
- * dropped with a warning and the handshake goes out without it.
+ * dropped with a warning and the calls go out without it.
+ *
+ * The key is validated once here and reused for both header names, so a
+ * malformed key warns a single time and reaches neither the `/supported`
+ * bearer nor the `/settle` `X-API-Key`.
  *
  * @param adapter - Which middleware adapter is calling home
  * @param apiKey - The seller's Weft API key, when configured
  * @param identity - Product-level identity from the middleware config
- * @returns Headers to send on the `/supported` call
+ * @returns Per-path auth headers for the facilitator calls
  */
-export function buildHandshakeHeaders(
+export function buildFacilitatorAuthHeaders(
   adapter: WeftAdapterName,
   apiKey: unknown,
   identity: WeftProductIdentity,
-): Record<string, string> {
-  const headers: Record<string, string> = {
+): WeftFacilitatorAuthHeaders {
+  const key = resolveApiKey(apiKey);
+
+  const supported: Record<string, string> = {
     "User-Agent": `weft-sdk-${adapter}/${SDK_VERSION}`,
   };
-
-  const key = resolveApiKey(apiKey);
   if (key !== undefined) {
-    headers["Authorization"] = `Bearer ${key}`;
+    supported["Authorization"] = `Bearer ${key}`;
   }
 
   const declared = declaredIdentityValue(identity);
   if (declared !== undefined) {
-    headers[WEFT_DECLARED_HEADER] = declared;
+    supported[WEFT_DECLARED_HEADER] = declared;
   }
 
-  return headers;
+  const settle = key !== undefined ? { [WEFT_API_KEY_HEADER]: key } : undefined;
+
+  return { supported, ...(settle !== undefined && { settle }) };
 }

@@ -8,7 +8,7 @@ import {
 } from "@x402/core/server";
 import { SchemeNetworkServer, Network } from "@x402/core/types";
 import { createFacilitatorClient, WeftFacilitatorConfig } from "../client";
-import { buildHandshakeHeaders } from "./handshake";
+import { buildFacilitatorAuthHeaders } from "./handshake";
 import {
   applyProductIdentity,
   WeftProductIdentity,
@@ -70,10 +70,12 @@ export interface WeftExpressMiddlewareConfig extends WeftProductIdentity {
   /**
    * The seller's Weft API key.
    *
-   * Sent as `Authorization: Bearer <key>` on the construction-time
-   * `/supported` handshake, which is how the dashboard learns an SDK is
-   * deployed before any payment has happened. Optional: without it the
-   * handshake is anonymous and everything else works unchanged.
+   * Authenticates the facilitator calls that need it: `X-API-Key` on
+   * `/settle` — which the facilitator requires, or every settlement 401s —
+   * and `Authorization: Bearer <key>` on the construction-time `/supported`
+   * handshake, which is how the dashboard learns an SDK is deployed before
+   * any payment. Optional, but a seller who omits it must supply their own
+   * `facilitator.createAuthHeaders` or settlement fails.
    */
   apiKey?: string;
   facilitator?: WeftFacilitatorConfig;
@@ -143,7 +145,7 @@ export function weftPaymentMiddleware(
 ): ExpressMiddleware {
   const facilitatorClient = createFacilitatorClient(
     config?.facilitator,
-    buildHandshakeHeaders("express", config?.apiKey, config ?? {}),
+    buildFacilitatorAuthHeaders("express", config?.apiKey, config ?? {}),
   );
   const resourceServer = new x402ResourceServer(facilitatorClient);
 

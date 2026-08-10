@@ -8,11 +8,18 @@ import {
   weftPaymentMiddlewareHono,
   type WeftHonoMiddlewareConfig,
 } from "../src/facilitator/middleware/hono";
-import { WEFT_DECLARED_HEADER } from "../src/facilitator/middleware/handshake";
+import {
+  buildFacilitatorAuthHeaders,
+  WEFT_API_KEY_HEADER,
+  WEFT_DECLARED_HEADER,
+} from "../src/facilitator/middleware/handshake";
 import { createFacilitatorClient } from "../src/facilitator/client";
+import { x402Client } from "@x402/core/client";
+import { encodePaymentSignatureHeader } from "@x402/core/http";
 import type {
   Network,
   PaymentRequirements,
+  SchemeNetworkClient,
   SchemeNetworkServer,
 } from "@x402/core/types";
 import type { WeftRoutesConfig } from "../src/facilitator/middleware/product";
@@ -352,23 +359,21 @@ describe("handshake merges with a seller's own createAuthHeaders", () => {
     );
   });
 
-  it("passes verify and settle headers through untouched", async () => {
+  it("passes a seller's verify headers through untouched", async () => {
     const client = createFacilitatorClient(
       {
         url: FACILITATOR_URL,
         createAuthHeaders: async () => ({
           verify: { Authorization: "Bearer verify-token" },
-          settle: { Authorization: "Bearer settle-token" },
         }),
       },
-      { "User-Agent": "weft-sdk-express/test" },
+      { supported: { "User-Agent": "weft-sdk-express/test" } },
     );
 
+    // The SDK derives nothing for verify, so the seller's headers are the
+    // whole story there.
     expect((await client.createAuthHeaders("verify")).headers).toEqual({
       Authorization: "Bearer verify-token",
-    });
-    expect((await client.createAuthHeaders("settle")).headers).toEqual({
-      Authorization: "Bearer settle-token",
     });
     expect((await client.createAuthHeaders("supported")).headers).toEqual({
       "User-Agent": "weft-sdk-express/test",
@@ -383,7 +388,12 @@ describe("handshake merges with a seller's own createAuthHeaders", () => {
           supported: { authorization: "Bearer seller-token" },
         }),
       },
-      { Authorization: "Bearer weft-key", "User-Agent": "weft-sdk-express/test" },
+      {
+        supported: {
+          Authorization: "Bearer weft-key",
+          "User-Agent": "weft-sdk-express/test",
+        },
+      },
     );
 
     const { headers } = await client.createAuthHeaders("supported");
@@ -407,7 +417,7 @@ describe("handshake merges with a seller's own createAuthHeaders", () => {
           Authorization: "Bearer flat",
         })) as never,
       },
-      { "User-Agent": "weft-sdk-express/test" },
+      { supported: { "User-Agent": "weft-sdk-express/test" } },
     );
 
     await expect(client.createAuthHeaders("supported")).rejects.toThrow(
@@ -576,5 +586,219 @@ describe("the handshake never takes a seller's server down with it", () => {
 describe("exported handshake constants", () => {
   it("names the declared-identity header", () => {
     expect(WEFT_DECLARED_HEADER).toBe("X-Weft-Declared");
+  });
+
+  it("names the facilitator API-key header", () => {
+    expect(WEFT_API_KEY_HEADER).toBe("X-API-Key");
+  });
+});
+
+/**
+ * The money-path guarantee: `apiKey` alone must authenticate settlement.
+ *
+ * The Weft facilitator's `/settle` handler validates `X-API-Key` and 401s
+ * without it, so a seller who sets `apiKey` and hand-writes no facilitator
+ * auth used to get a working handshake and a working verify, then a 401 on
+ * every settle — the step that credits their wallet. `apiKey` exists to make
+ * that impossible.
+ */
+describe("apiKey authenticates the settlement call", () => {
+  /**
+   * The kind advertised by `/supported`, used to build a payable challenge.
+   */
+  const supportedBody = JSON.stringify({
+    kinds: [{ x402Version: 2, scheme: "exact", network: NETWORK }],
+    extensions: [],
+    signers: {},
+  });
+
+  /**
+   * Stub a facilitator that answers /supported, /verify and /settle, and
+   * records the headers each request carried.
+   */
+  function stubPayableFacilitator(): void {
+    recorded = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        const headers: Record<string, string> = {};
+        for (const [name, value] of Object.entries(init?.headers ?? {})) {
+          headers[name.toLowerCase()] = String(value);
+        }
+        const target = String(url);
+        recorded.push({ url: target, headers });
+
+        if (target.endsWith("/supported")) {
+          return new Response(supportedBody, { status: 200 });
+        }
+        if (target.endsWith("/verify")) {
+          return new Response(JSON.stringify({ isValid: true }), {
+            status: 200,
+          });
+        }
+        if (target.endsWith("/settle")) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              transaction: "0xabc",
+              network: NETWORK,
+            }),
+            { status: 200 },
+          );
+        }
+        throw new Error(`unexpected fetch: ${target}`);
+      }),
+    );
+  }
+
+  /**
+   * Build the real `@x402/core` buyer client with a stub signing scheme.
+   *
+   * @returns A client that turns a challenge into a payment payload
+   */
+  function buyerClient(): x402Client {
+    const fakeClientScheme: SchemeNetworkClient = {
+      scheme: "exact",
+      async createPaymentPayload() {
+        return {
+          x402Version: 2,
+          payload: { signature: "0xsig", authorization: {} },
+        };
+      },
+    };
+    return new x402Client().register(NETWORK, fakeClientScheme);
+  }
+
+  /**
+   * Drive one full unpaid-then-paid exchange through the Express middleware.
+   *
+   * @param config - Middleware configuration under test
+   * @returns The headers the `/settle` request carried
+   */
+  async function settleHeadersFor(
+    config: WeftExpressMiddlewareConfig,
+  ): Promise<Record<string, string>> {
+    const middleware = weftPaymentMiddleware(routes, config);
+
+    // First request: unpaid. Decode the challenge it emits.
+    const headers: Record<string, string> = { host: "api.acme.test" };
+    const captured = { status: 0, headers: {} as Record<string, string> };
+    const unpaidReq = {
+      method: "GET",
+      path: "/v1/search",
+      protocol: "https",
+      headers,
+      query: {},
+      header: (name: string) => headers[name.toLowerCase()],
+    };
+    const res = {
+      statusCode: 0,
+      status(code: number) {
+        captured.status = code;
+        res.statusCode = code;
+        return res;
+      },
+      setHeader(name: string, value: string) {
+        captured.headers[name] = value;
+        return res;
+      },
+      send: () => res,
+      json: () => res,
+      writeHead: (() => res) as (...args: unknown[]) => typeof res,
+      write: (() => true) as (...args: unknown[]) => boolean,
+      end: (() => res) as (...args: unknown[]) => typeof res,
+      flushHeaders: () => undefined,
+    };
+    await middleware(unpaidReq, res, vi.fn());
+
+    const challengeHeader = captured.headers["PAYMENT-REQUIRED"];
+    const { decodePaymentRequiredHeader } = await import("@x402/core/http");
+    const challenge = decodePaymentRequiredHeader(challengeHeader);
+    const payload = await buyerClient().createPaymentPayload(challenge);
+
+    // Second request: paid. This is the one that reaches /settle.
+    const paidHeaders: Record<string, string> = {
+      host: "api.acme.test",
+      "payment-signature": encodePaymentSignatureHeader(payload),
+    };
+    const paidReq = {
+      method: "GET",
+      path: "/v1/search",
+      protocol: "https",
+      headers: paidHeaders,
+      query: {},
+      header: (name: string) => paidHeaders[name.toLowerCase()],
+    };
+    const paidRes = {
+      ...res,
+      statusCode: 0,
+      status(code: number) {
+        paidRes.statusCode = code;
+        return paidRes;
+      },
+    };
+    await middleware(paidReq, paidRes, () => {
+      paidRes.statusCode = 200;
+      paidRes.end();
+    });
+
+    const settle = recorded.find((request) => request.url.endsWith("/settle"));
+    expect(settle).toBeDefined();
+    return (settle as RecordedFetch).headers;
+  }
+
+  beforeEach(() => {
+    stubPayableFacilitator();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
+  it("sends the configured apiKey as X-API-Key on /settle with no hand-written auth", async () => {
+    const settleHeaders = await settleHeadersFor({
+      ...baseConfig,
+      apiKey: "wk_live_settle_me",
+    });
+
+    expect(settleHeaders["x-api-key"]).toBe("wk_live_settle_me");
+  });
+
+  it("lets a seller's own settle auth win over the apiKey default", async () => {
+    const settleHeaders = await settleHeadersFor({
+      ...baseConfig,
+      apiKey: "wk_live_config_key",
+      facilitator: {
+        url: FACILITATOR_URL,
+        createAuthHeaders: async () => ({
+          settle: { "X-API-Key": "wk_live_seller_key" },
+        }),
+      },
+    });
+
+    expect(settleHeaders["x-api-key"]).toBe("wk_live_seller_key");
+  });
+
+  it("sends no X-API-Key on /settle when no apiKey is configured", async () => {
+    const settleHeaders = await settleHeadersFor(baseConfig);
+
+    expect(settleHeaders["x-api-key"]).toBeUndefined();
+  });
+
+  it("derives an X-API-Key settle header directly from a configured key", async () => {
+    const client = createFacilitatorClient(
+      { url: FACILITATOR_URL },
+      buildFacilitatorAuthHeaders("express", "wk_live_direct", {}),
+    );
+
+    expect((await client.createAuthHeaders("settle")).headers).toEqual({
+      "X-API-Key": "wk_live_direct",
+    });
+  });
+
+  it("derives no settle auth at all without an apiKey", async () => {
+    const client = createFacilitatorClient(
+      { url: FACILITATOR_URL },
+      buildFacilitatorAuthHeaders("express", undefined, {}),
+    );
+
+    expect((await client.createAuthHeaders("settle")).headers).toEqual({});
   });
 });
