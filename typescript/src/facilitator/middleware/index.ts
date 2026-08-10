@@ -11,6 +11,25 @@ export {
   type WeftHonoMiddlewareConfig,
 } from "./hono";
 
+export {
+  applyProductIdentity,
+  productTypeTag,
+  WEFT_PRODUCT_EXTENSION_KEY,
+  WEFT_PRODUCT_INFO_SCHEMA,
+  WEFT_TYPE_TAG_PREFIX,
+  type WeftProductDeclaration,
+  type WeftProductIdentity,
+  type WeftProductType,
+  type WeftRouteConfig,
+  type WeftRoutesConfig,
+} from "./product";
+
+export {
+  WEFT_API_KEY_HEADER,
+  WEFT_DECLARED_HEADER,
+  type WeftAdapterName,
+} from "./handshake";
+
 export type {
   RoutesConfig,
   RouteConfig,

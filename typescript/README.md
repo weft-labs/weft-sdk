@@ -167,3 +167,121 @@ const fee = await getFeeInfo();
 
 The default facilitator URL is `https://x402.weft.network`; override it through
 the helper configuration or `X402_FACILITATOR_URL`.
+
+## Charging for your own API
+
+The payment middleware asks unpaid callers to pay and lets paid callers
+through. The money settles to your wallet; Weft never holds it.
+
+```js
+import express from "express";
+import { weftPaymentMiddleware } from "@weft-labs/sdk/facilitator/middleware";
+
+const app = express();
+
+app.use(
+  weftPaymentMiddleware(
+    {
+      "GET /v1/search": {
+        accepts: {
+          scheme: "exact",
+          network: "eip155:8453",
+          payTo: process.env.WALLET_ADDRESS,
+          price: "$0.01",
+        },
+      },
+    },
+    {
+      apiKey: process.env.WEFT_API_KEY,
+      name: "Acme Pricing API",
+      type: "api",
+      tags: ["finance", "pricing"],
+    },
+  ),
+);
+```
+
+`weftPaymentMiddlewareHono` is the Hono equivalent and takes the same
+configuration.
+
+### Declaring your product
+
+`name`, `type`, `tags` and `iconUrl` describe the product once and apply to
+every protected route. They travel on the 402 challenge, are copied onto the
+buyer's payment, and arrive with the settlement — so your product appears in
+the Weft dashboard already named and categorised, with no form to fill in.
+
+| Field | Meaning |
+|---|---|
+| `name` | Display name, e.g. `"Acme Pricing API"`. |
+| `type` | `"api"`, `"agent"` or `"mcp"`. |
+| `tags` | Up to four free-text tags, or five if you omit `type`. |
+| `iconUrl` | Absolute `http`/`https` URL of an icon. |
+| `productId` | Identifier of the dashboard product this deployment claims to be. |
+| `manifestHash` | Hash of the product manifest this deployment was built from. |
+
+`type`, `productId` and `manifestHash` additionally travel in the x402
+extensions channel as `extensions["weft.product"]` — `{info, schema}`, with
+`info` holding `kind`, `product_id` and `manifest_hash` and `schema` the JSON
+Schema describing it. Buyers on `@x402/core` echo the declaration onto their
+payment, so it arrives with the settlement; fields you do not declare are
+omitted, never sent empty. A route that declares its own
+`extensions["weft.product"]` keeps it.
+
+`apiKey` is the one secret in the config: the API key minted with your product
+in the Weft dashboard. It does two jobs. It **authenticates settlement** — the
+facilitator requires it on every settle call that credits your wallet, so
+without it (and without your own `facilitator.createAuthHeaders`) paid requests
+fail at the money step. And it **announces the product** at boot — one
+authenticated call carrying the identity above, so the dashboard shows your
+product connected, named and typed before the first payment arrives. If you
+supply your own `createAuthHeaders`, yours wins; `apiKey` never overrides it.
+The announcement can never block or break your server: a facilitator that is
+down or slow at boot costs you nothing, and payment-protected routes recover on
+their own once it is reachable again.
+
+Setting any of these on an individual route overrides the product-level value
+for that route only — `type` included, so an API with an MCP endpoint beside it
+can say so per route:
+
+```js
+weftPaymentMiddleware(
+  {
+    "GET /v1/search": { accepts },
+    "POST /mcp": { accepts, type: "mcp" },
+  },
+  { name: "Acme Pricing API", type: "api" },
+);
+```
+
+`type` has no field of its own in the x402 protocol, so the SDK sends it as one
+reserved tag — `weft:type:api`, `weft:type:agent`, `weft:type:mcp`. That is why
+`tags` carries four of your own values rather than five: the protocol allows
+five in total. Any `weft:type:*` value you put in `tags` yourself is dropped
+with a warning — declare `type` instead.
+
+#### What the SDK trims, and why
+
+The x402 protocol's `ResourceInfo` is narrow, and a buyer that validates the
+challenge rejects **the whole challenge** over one out-of-bounds field: you
+would not lose your product name, you would lose the sale. So the SDK keeps
+what it emits inside the protocol's bounds, and tells you at startup — one
+`[weft]` line per problem — what changed. Nothing is reported per request, and
+nothing throws; a payment server should not refuse to boot over a display name.
+
+| Limit | What the SDK does |
+|---|---|
+| `name` over 32 characters | Truncates it to 32. `"Acme Real Estate Property Records API"` ships as `"Acme Real Estate Property Record"`. 32 is tight for real product names, so check what yours becomes. |
+| A tag over 32 characters | Drops that tag, keeps the rest. |
+| More tags than the protocol carries | Drops the extras; a declared `type` always survives. |
+| A `name` or tag that is not printable ASCII | Drops it. `"Acme Café"` does not travel. |
+| An `iconUrl` that is not an absolute `http`/`https` URL, or is over 2048 characters | Drops it. A dashboard renders this URL, so no other scheme is relayed. |
+| A `type` outside `api`/`agent`/`mcp`, or any field of the wrong type | Ignores it and says so. Your other tags are unaffected. |
+
+The ASCII restriction is the protocol's, not Weft's — the Weft facilitator
+relays a name in any script. The SDK enforces it anyway, because the challenge
+reaches buyers before it reaches any facilitator and a buyer running the
+published schema throws the whole challenge out. That cost falls on sellers
+whose names are not expressible in ASCII. The fix belongs in the x402 schema;
+until it lands, spell `name` in ASCII and put the rest in the route's
+`description`.
