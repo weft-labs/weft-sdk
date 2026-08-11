@@ -1,7 +1,7 @@
 
 # SearchResponse
 
-The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`.
+The weft-search-platform `POST /v1/search` response envelope.
 
 ## Properties
 
@@ -25,7 +25,6 @@ Name | Type
 `reason` | string
 `suggestion` | string
 `results` | [Array&lt;SearchResult&gt;](SearchResult.md)
-`mock` | boolean
 
 ## Example
 
@@ -52,7 +51,6 @@ const example = {
   "reason": null,
   "suggestion": null,
   "results": null,
-  "mock": null,
 } satisfies SearchResponse
 
 console.log(example)
