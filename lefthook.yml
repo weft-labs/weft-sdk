@@ -6,20 +6,21 @@ pre-commit:
   commands:
     typescript-eslint:
       glob: "typescript/**/*.{ts,js,mjs}"
-      run: mise exec -- typescript/node_modules/.bin/eslint --fix {staged_files}
-      stage_fixed: true
+      run: mise exec -- typescript/node_modules/.bin/eslint {staged_files}
       fail_text: "Run the TypeScript ESLint fixer"
     python-ruff:
       glob: "python/**/*.py"
       run: >-
         mise exec -- ruff check --config python/pyproject.toml
-        --exclude python/src/weft_sdk/generated --fix {staged_files}
-      stage_fixed: true
+        --exclude python/src/weft_sdk/generated {staged_files}
       fail_text: "Run the Python Ruff fixer"
     gofmt:
       glob: "go/**/*.go"
-      run: mise exec -- gofmt -w {staged_files}
-      stage_fixed: true
+      run: >-
+        mise exec -- sh -c
+        'files=$(gofmt -l "$@");
+        [ -z "$files" ] || { printf "%s\n" "$files"; exit 1; }'
+        sh {staged_files}
       fail_text: "Run gofmt on changed Go files"
 
 pre-push:
