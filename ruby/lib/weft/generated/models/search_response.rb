@@ -14,7 +14,7 @@ require 'date'
 require 'time'
 
 module Weft
-  # The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`.
+  # The weft-search-platform `POST /v1/search` response envelope.
   class SearchResponse < ApiModelBase
     # Opaque trace id for the served query, matching the platform `query_trace_id` — and the `search_id` that re-reads it. Deliberately the same id rather than a second handle: one serve, one name.
     attr_accessor :query_trace_id
@@ -66,9 +66,6 @@ module Weft
     # Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match.
     attr_accessor :results
 
-    # Present and `true` only when served by the mock backend.
-    attr_accessor :_mock
-
     class EnumAttributeValidator
       attr_reader :datatype
       attr_reader :allowable_values
@@ -111,8 +108,7 @@ module Weft
         :'match_quality' => :'match_quality',
         :'reason' => :'reason',
         :'suggestion' => :'suggestion',
-        :'results' => :'results',
-        :'_mock' => :'_mock'
+        :'results' => :'results'
       }
     end
 
@@ -146,8 +142,7 @@ module Weft
         :'match_quality' => :'String',
         :'reason' => :'String',
         :'suggestion' => :'String',
-        :'results' => :'Array<SearchResult>',
-        :'_mock' => :'Boolean'
+        :'results' => :'Array<SearchResult>'
       }
     end
 
@@ -261,10 +256,6 @@ module Weft
         end
       else
         self.results = nil
-      end
-
-      if attributes.key?(:'_mock')
-        self._mock = attributes[:'_mock']
       end
     end
 
@@ -483,8 +474,7 @@ module Weft
           match_quality == o.match_quality &&
           reason == o.reason &&
           suggestion == o.suggestion &&
-          results == o.results &&
-          _mock == o._mock
+          results == o.results
     end
 
     # @see the `==` method
@@ -496,7 +486,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [query_trace_id, query, format, markdown, result_count, served_from, as_of, stale, payment_note, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, match_quality, reason, suggestion, results, _mock].hash
+      [query_trace_id, query, format, markdown, result_count, served_from, as_of, stale, payment_note, applied_filters, decomposition_source, embedder_model, candidates_considered, warnings, match_quality, reason, suggestion, results].hash
     end
 
     # Builds the object from hash

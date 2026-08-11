@@ -30,7 +30,7 @@ from typing_extensions import Self
 
 class SearchResponse(BaseModel):
     """
-    The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`.
+    The weft-search-platform `POST /v1/search` response envelope.
     """ # noqa: E501
     query_trace_id: UUID = Field(description="Opaque trace id for the served query, matching the platform `query_trace_id` — and the `search_id` that re-reads it. Deliberately the same id rather than a second handle: one serve, one name. ")
     query: StrictStr
@@ -50,8 +50,7 @@ class SearchResponse(BaseModel):
     reason: Optional[StrictStr] = Field(default=None, description="Machine-readable cause of an empty result set, non-null exactly when `match_quality` is `none`. `below_relevance_floor`: candidates ranked but the best scored under the floor. `filter_collapsed_pool`: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. `no_catalog_coverage`: recall returned no candidates at all on an unfiltered query. `unsupported_filter_value`: a CATEGORICAL filter value (`type` / `protocol`) matches zero stored values, so it could never have matched — categorical only, since a continuous bound like `price` that matches nothing is reported as `filter_collapsed_pool` instead (the bound needs raising, the dimension is not unsupported). `index_unavailable`: no active index — an operational fault, paired with the `EMPTY_INDEX` warning. ")
     suggestion: Optional[StrictStr] = Field(default=None, description="Human/agent-readable explanation of `reason`, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when `reason` is. ")
     results: List[SearchResult] = Field(description="Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match. ")
-    mock: Optional[StrictBool] = Field(default=None, description="Present and `true` only when served by the mock backend.", alias="_mock")
-    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "format", "markdown", "result_count", "served_from", "as_of", "stale", "payment_note", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "match_quality", "reason", "suggestion", "results", "_mock"]
+    __properties: ClassVar[List[str]] = ["query_trace_id", "query", "format", "markdown", "result_count", "served_from", "as_of", "stale", "payment_note", "applied_filters", "decomposition_source", "embedder_model", "candidates_considered", "warnings", "match_quality", "reason", "suggestion", "results"]
 
     @field_validator('format')
     def format_validate_enum(cls, value):
@@ -188,7 +187,6 @@ class SearchResponse(BaseModel):
             "match_quality": obj.get("match_quality") if obj.get("match_quality") is not None else 'none',
             "reason": obj.get("reason"),
             "suggestion": obj.get("suggestion"),
-            "results": [SearchResult.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None,
-            "_mock": obj.get("_mock")
+            "results": [SearchResult.from_dict(_item) for _item in obj["results"]] if obj.get("results") is not None else None
         })
         return _obj

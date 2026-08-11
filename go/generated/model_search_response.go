@@ -20,7 +20,7 @@ import (
 // checks if the SearchResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &SearchResponse{}
 
-// SearchResponse The weft-search-platform `POST /v1/search` response envelope. The mock backend emits the same shape and adds `_mock: true`.
+// SearchResponse The weft-search-platform `POST /v1/search` response envelope.
 type SearchResponse struct {
 	// Opaque trace id for the served query, matching the platform `query_trace_id` — and the `search_id` that re-reads it. Deliberately the same id rather than a second handle: one serve, one name.
 	QueryTraceId string `json:"query_trace_id"`
@@ -54,8 +54,6 @@ type SearchResponse struct {
 	Suggestion *string `json:"suggestion,omitempty"`
 	// Ranked `(Provider + Capability)` results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a `reason` is the honest answer, not a list of near-misses in the same shape as a genuine match.
 	Results []SearchResult `json:"results"`
-	// Present and `true` only when served by the mock backend.
-	Mock *bool `json:"_mock,omitempty"`
 }
 
 type _SearchResponse SearchResponse
@@ -615,38 +613,6 @@ func (o *SearchResponse) SetResults(v []SearchResult) {
 	o.Results = v
 }
 
-// GetMock returns the Mock field value if set, zero value otherwise.
-func (o *SearchResponse) GetMock() bool {
-	if o == nil || IsNil(o.Mock) {
-		var ret bool
-		return ret
-	}
-	return *o.Mock
-}
-
-// GetMockOk returns a tuple with the Mock field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SearchResponse) GetMockOk() (*bool, bool) {
-	if o == nil || IsNil(o.Mock) {
-		return nil, false
-	}
-	return o.Mock, true
-}
-
-// HasMock returns a boolean if a field has been set.
-func (o *SearchResponse) HasMock() bool {
-	if o != nil && !IsNil(o.Mock) {
-		return true
-	}
-
-	return false
-}
-
-// SetMock gets a reference to the given bool and assigns it to the Mock field.
-func (o *SearchResponse) SetMock(v bool) {
-	o.Mock = &v
-}
-
 func (o SearchResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -699,9 +665,6 @@ func (o SearchResponse) ToMap() (map[string]interface{}, error) {
 		toSerialize["suggestion"] = o.Suggestion
 	}
 	toSerialize["results"] = o.Results
-	if !IsNil(o.Mock) {
-		toSerialize["_mock"] = o.Mock
-	}
 	return toSerialize, nil
 }
 

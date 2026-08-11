@@ -22,7 +22,6 @@ Name | Type | Description | Notes
 **Reason** | Pointer to **string** | Machine-readable cause of an empty result set, non-null exactly when &#x60;match_quality&#x60; is &#x60;none&#x60;. &#x60;below_relevance_floor&#x60;: candidates ranked but the best scored under the floor. &#x60;filter_collapsed_pool&#x60;: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. &#x60;no_catalog_coverage&#x60;: recall returned no candidates at all on an unfiltered query. &#x60;unsupported_filter_value&#x60;: a CATEGORICAL filter value (&#x60;type&#x60; / &#x60;protocol&#x60;) matches zero stored values, so it could never have matched — categorical only, since a continuous bound like &#x60;price&#x60; that matches nothing is reported as &#x60;filter_collapsed_pool&#x60; instead (the bound needs raising, the dimension is not unsupported). &#x60;index_unavailable&#x60;: no active index — an operational fault, paired with the &#x60;EMPTY_INDEX&#x60; warning.  | [optional]
 **Suggestion** | Pointer to **string** | Human/agent-readable explanation of &#x60;reason&#x60;, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when &#x60;reason&#x60; is.  | [optional]
 **Results** | [**[]SearchResult**](SearchResult.md) | Ranked &#x60;(Provider + Capability)&#x60; results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a &#x60;reason&#x60; is the honest answer, not a list of near-misses in the same shape as a genuine match.  |
-**Mock** | Pointer to **bool** | Present and &#x60;true&#x60; only when served by the mock backend. | [optional]
 
 ## Methods
 
@@ -462,31 +461,6 @@ and a boolean to check if the value has been set.
 
 SetResults sets Results field to given value.
 
-
-### GetMock
-
-`func (o *SearchResponse) GetMock() bool`
-
-GetMock returns the Mock field if non-nil, zero value otherwise.
-
-### GetMockOk
-
-`func (o *SearchResponse) GetMockOk() (*bool, bool)`
-
-GetMockOk returns a tuple with the Mock field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMock
-
-`func (o *SearchResponse) SetMock(v bool)`
-
-SetMock sets Mock field to given value.
-
-### HasMock
-
-`func (o *SearchResponse) HasMock() bool`
-
-HasMock returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -36,9 +36,7 @@ import {
 } from './SearchResponseWarningsInner';
 
 /**
- * The weft-search-platform `POST /v1/search` response envelope. The
- * mock backend emits the same shape and adds `_mock: true`.
- *
+ * The weft-search-platform `POST /v1/search` response envelope.
  * @export
  * @interface SearchResponse
  */
@@ -212,12 +210,6 @@ export interface SearchResponse {
      * @memberof SearchResponse
      */
     results: Array<SearchResult>;
-    /**
-     * Present and `true` only when served by the mock backend.
-     * @type {boolean}
-     * @memberof SearchResponse
-     */
-    mock?: boolean;
 }
 
 
@@ -311,7 +303,6 @@ export function SearchResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
         'reason': json['reason'] == null ? undefined : json['reason'],
         'suggestion': json['suggestion'] == null ? undefined : json['suggestion'],
         'results': ((json['results'] as Array<any>).map(SearchResultFromJSON)),
-        'mock': json['_mock'] == null ? undefined : json['_mock'],
     };
 }
 
@@ -344,6 +335,5 @@ export function SearchResponseToJSONTyped(value?: SearchResponse | null, ignoreD
         'reason': value['reason'],
         'suggestion': value['suggestion'],
         'results': ((value['results'] as Array<any>).map(SearchResultToJSON)),
-        '_mock': value['mock'],
     };
 }

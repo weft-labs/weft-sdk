@@ -2165,13 +2165,10 @@ components:
           minItems: 1
           type: array
     SearchResponse:
-      description: |
-        The weft-search-platform `POST /v1/search` response envelope. The
-        mock backend emits the same shape and adds `_mock: true`.
+      description: The weft-search-platform `POST /v1/search` response envelope.
       example:
         reason: below_relevance_floor
         query_trace_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-        _mock: true
         query: query
         warnings:
         - code: code
@@ -2514,9 +2511,6 @@ components:
           items:
             $ref: "#/components/schemas/SearchResult"
           type: array
-        _mock:
-          description: Present and `true` only when served by the mock backend.
-          type: boolean
       required:
       - candidates_considered
       - embedder_model

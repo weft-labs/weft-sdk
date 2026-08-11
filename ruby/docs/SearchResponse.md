@@ -22,7 +22,6 @@
 | **reason** | **String** | Machine-readable cause of an empty result set, non-null exactly when &#x60;match_quality&#x60; is &#x60;none&#x60;. &#x60;below_relevance_floor&#x60;: candidates ranked but the best scored under the floor. &#x60;filter_collapsed_pool&#x60;: a caller filter cut the pool before ranking and nothing relevant survived — relax the filter. &#x60;no_catalog_coverage&#x60;: recall returned no candidates at all on an unfiltered query. &#x60;unsupported_filter_value&#x60;: a CATEGORICAL filter value (&#x60;type&#x60; / &#x60;protocol&#x60;) matches zero stored values, so it could never have matched — categorical only, since a continuous bound like &#x60;price&#x60; that matches nothing is reported as &#x60;filter_collapsed_pool&#x60; instead (the bound needs raising, the dimension is not unsupported). &#x60;index_unavailable&#x60;: no active index — an operational fault, paired with the &#x60;EMPTY_INDEX&#x60; warning.  | [optional] |
 | **suggestion** | **String** | Human/agent-readable explanation of &#x60;reason&#x60;, carrying the concrete numbers behind it (pool sizes, the best discarded score against the floor, the values actually stored for a filter). Non-null exactly when &#x60;reason&#x60; is.  | [optional] |
 | **results** | [**Array&lt;SearchResult&gt;**](SearchResult.md) | Ranked &#x60;(Provider + Capability)&#x60; results; empty when the index is empty or nothing cleared the relevance floor. Results BELOW the floor are never returned — an empty list plus a &#x60;reason&#x60; is the honest answer, not a list of near-misses in the same shape as a genuine match.  |  |
-| **_mock** | **Boolean** | Present and &#x60;true&#x60; only when served by the mock backend. | [optional] |
 
 ## Example
 
@@ -47,7 +46,6 @@ instance = Weft::SearchResponse.new(
   match_quality: null,
   reason: null,
   suggestion: null,
-  results: null,
-  _mock: null
+  results: null
 )
 ```
