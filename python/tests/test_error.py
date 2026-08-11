@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from urllib3.exceptions import ProtocolError
+
 from weft_sdk import Client, WeftError
 from weft_sdk.generated.exceptions import ApiException
 

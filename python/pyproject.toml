@@ -90,3 +90,6 @@ extend-exclude = ["src/weft_sdk/generated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["weft_sdk"]

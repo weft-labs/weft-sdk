@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from weft_sdk.facilitator.fee import (
     get_fee_info,
     invalidate_fee_cache,
