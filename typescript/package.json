@@ -58,6 +58,7 @@
     "lint:check": "eslint",
     "format": "prettier --write \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\"",
+    "hooks:pre-push": "npm run lint:check && npm run format:check && vitest run",
     "generate": "../scripts/generate-typescript.sh",
     "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
     "prepublishOnly": "npm run build"

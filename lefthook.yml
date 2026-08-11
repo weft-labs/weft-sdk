@@ -1,0 +1,49 @@
+# Lefthook configuration for weft-sdk
+# Install: mise install && mise exec -- lefthook install
+
+pre-commit:
+  parallel: true
+  commands:
+    typescript-eslint:
+      glob: "typescript/**/*.{ts,js,mjs}"
+      run: mise exec -- typescript/node_modules/.bin/eslint {staged_files}
+      fail_text: "Run the TypeScript ESLint fixer"
+    python-ruff:
+      glob: "python/**/*.py"
+      run: >-
+        mise exec -- ruff check --config python/pyproject.toml
+        --exclude python/src/weft_sdk/generated --force-exclude {staged_files}
+      fail_text: "Run the Python Ruff fixer"
+    gofmt:
+      glob: "go/**/*.go"
+      run: >-
+        mise exec -- sh -c
+        'files=$(gofmt -l "$@") || exit;
+        [ -z "$files" ] || { printf "%s\n" "$files"; exit 1; }'
+        sh {staged_files}
+      fail_text: "Run gofmt on changed Go files"
+
+pre-push:
+  parallel: true
+  commands:
+    typescript:
+      run: mise exec -- npm --prefix typescript run hooks:pre-push
+      fail_text: "TypeScript lint, format, or unit tests failed"
+    python-ruff:
+      run: >-
+        mise exec -- ruff check --config python/pyproject.toml
+        --exclude python/src/weft_sdk/generated python
+      fail_text: "Python lint failed"
+    python-test:
+      run: >-
+        mise exec -- uv run --project python --python 3.11.15
+        --frozen --group dev pytest python/tests -q
+      fail_text: "Python unit tests failed"
+    ruby:
+      run: >-
+        mise exec -- ruby -W0 -C ruby -rbundler/setup -rrake
+        -e 'Rake.application.run' test
+      fail_text: "Ruby unit tests failed"
+    go:
+      run: mise exec -- go -C go test ./...
+      fail_text: "Go unit tests failed"

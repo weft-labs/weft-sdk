@@ -90,3 +90,17 @@ contract, but has not yet passed a clean-install buyer quickstart gate.
 
 All language packages share a version tied to the OpenAPI version. Generated
 sources are updated by the spec-sync workflow and must not be edited manually.
+
+## Local development tools
+
+Mise pins the repository runtimes and standalone source tools. Install them and
+enable the Git hooks with:
+
+```sh
+mise install
+mise exec -- lefthook install
+```
+
+Pre-commit checks lint or format staged files only. Pre-push runs whole-repo
+lint plus the four deterministic unit-test suites. Builds, generated-code
+checks, type checks, quickstarts, and network tests remain in CI.
