@@ -12,13 +12,13 @@ pre-commit:
       glob: "python/**/*.py"
       run: >-
         mise exec -- ruff check --config python/pyproject.toml
-        --exclude python/src/weft_sdk/generated {staged_files}
+        --exclude python/src/weft_sdk/generated --force-exclude {staged_files}
       fail_text: "Run the Python Ruff fixer"
     gofmt:
       glob: "go/**/*.go"
       run: >-
         mise exec -- sh -c
-        'files=$(gofmt -l "$@");
+        'files=$(gofmt -l "$@") || exit;
         [ -z "$files" ] || { printf "%s\n" "$files"; exit 1; }'
         sh {staged_files}
       fail_text: "Run gofmt on changed Go files"
