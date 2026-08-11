@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from weft_sdk import Client
 
 
