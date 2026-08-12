@@ -173,36 +173,136 @@ the helper configuration or `X402_FACILITATOR_URL`.
 The payment middleware asks unpaid callers to pay and lets paid callers
 through. The money settles to your wallet; Weft never holds it.
 
+Selling needs a **seller** key, not the buyer `wk_*` key above. Create one in
+[Dashboard → Seller → API keys](https://weft.network/dashboard/seller/api_keys).
+It starts with `ax_live_` and is shown once. Store it as
+`WEFT_SELLER_API_KEY`, and put the wallet that gets paid in `WEFT_PAY_TO`.
+
+A seller installs a scheme package too. The middleware carries the x402
+plumbing; the scheme prices the route and shapes the payment:
+
+```sh
+npm install @weft-labs/sdk @x402/core @x402/evm express
+```
+
+<!-- example:charge-api.mjs:start -->
+
 ```js
 import express from "express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { weftPaymentMiddleware } from "@weft-labs/sdk/facilitator/middleware";
+
+const apiKey = process.env.WEFT_SELLER_API_KEY;
+if (!apiKey) {
+  throw new Error("Set WEFT_SELLER_API_KEY to a seller ax_live_* API key");
+}
+
+const payTo = process.env.WEFT_PAY_TO;
+if (!payTo) {
+  throw new Error("Set WEFT_PAY_TO to the wallet address that gets paid");
+}
+
+const network = process.env.WEFT_NETWORK ?? "eip155:8453";
 
 const app = express();
 
 app.use(
   weftPaymentMiddleware(
     {
-      "GET /v1/search": {
-        accepts: {
-          scheme: "exact",
-          network: "eip155:8453",
-          payTo: process.env.WALLET_ADDRESS,
-          price: "$0.01",
-        },
+      "GET /v1/quote": {
+        accepts: { scheme: "exact", network, payTo, price: "$0.01" },
       },
     },
     {
-      apiKey: process.env.WEFT_API_KEY,
+      apiKey,
       name: "Acme Pricing API",
       type: "api",
       tags: ["finance", "pricing"],
+      schemes: [{ network, server: new ExactEvmScheme() }],
     },
   ),
 );
+
+app.get("/v1/quote", (_req, res) => {
+  res.json({ symbol: "ACME", price: "12.34", currency: "USD" });
+});
+
+const port = Number(process.env.PORT ?? 3000);
+app.listen(port, () => {
+  console.log(JSON.stringify({ listening: port }));
+});
 ```
 
+<!-- example:charge-api.mjs:end -->
+
 `weftPaymentMiddlewareHono` is the Hono equivalent and takes the same
-configuration.
+configuration:
+
+<!-- example:charge-api-hono.mjs:start -->
+
+```js
+import { Hono } from "hono";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { weftPaymentMiddlewareHono } from "@weft-labs/sdk/facilitator/middleware";
+
+const apiKey = process.env.WEFT_SELLER_API_KEY;
+if (!apiKey) {
+  throw new Error("Set WEFT_SELLER_API_KEY to a seller ax_live_* API key");
+}
+
+const payTo = process.env.WEFT_PAY_TO;
+if (!payTo) {
+  throw new Error("Set WEFT_PAY_TO to the wallet address that gets paid");
+}
+
+const network = process.env.WEFT_NETWORK ?? "eip155:8453";
+
+const app = new Hono();
+
+app.use(
+  weftPaymentMiddlewareHono(
+    {
+      "GET /v1/quote": {
+        accepts: { scheme: "exact", network, payTo, price: "$0.01" },
+      },
+    },
+    {
+      apiKey,
+      name: "Acme Pricing API",
+      type: "api",
+      tags: ["finance", "pricing"],
+      schemes: [{ network, server: new ExactEvmScheme() }],
+    },
+  ),
+);
+
+app.get("/v1/quote", (c) =>
+  c.json({ symbol: "ACME", price: "12.34", currency: "USD" }),
+);
+
+export default app;
+```
+
+<!-- example:charge-api-hono.mjs:end -->
+
+Both blocks are the shipped `examples/charge-api.mjs` and
+`examples/charge-api-hono.mjs` verbatim. `tests/readme-examples.test.ts` fails
+if they drift, and `npm run test:quickstarts` runs both from the packed
+package against a stub facilitator.
+
+### What the facilitator does per paid request
+
+The middleware calls the facilitator twice. `/verify` checks the buyer's
+payment before your handler runs. `/settle` moves the money after your handler
+returns success.
+
+`/settle` rejects a call without your seller key — every settlement 401s and
+you are never paid. `/verify` works without the key but reads it when present,
+and the facilitator uses it to attribute verification attempts to your
+product. Set `apiKey` once and both are covered.
+
+The direct REST contract for `/supported`, `/verify` and `/settle` is the
+advanced path. Sellers do not need it to charge for a route.
 
 ### Declaring your product
 
