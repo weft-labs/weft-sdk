@@ -14,6 +14,8 @@ dist
 **/coverage
 **/.ruby-lsp
 **/bin
+!cli/bin/
+!cli/bin/weft.mjs
 **/obj
 **/tmp
 

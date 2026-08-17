@@ -4,9 +4,13 @@
 pre-commit:
   parallel: true
   commands:
-    typescript-eslint:
+    sdk-eslint:
       glob: "typescript/**/*.{ts,js,mjs}"
-      run: mise exec -- typescript/node_modules/.bin/eslint {staged_files}
+      run: mise exec -- pnpm --filter @weft-labs/sdk run lint:check
+      fail_text: "Run the TypeScript SDK ESLint fixer"
+    cli-eslint:
+      glob: "cli/**/*.{ts,js,mjs}"
+      run: mise exec -- pnpm --filter @weft-labs/cli run lint:check
       fail_text: "Run the TypeScript ESLint fixer"
     python-ruff:
       glob: "python/**/*.py"
@@ -27,7 +31,7 @@ pre-push:
   parallel: true
   commands:
     typescript:
-      run: mise exec -- npm --prefix typescript run hooks:pre-push
+      run: mise exec -- pnpm run hooks:pre-push
       fail_text: "TypeScript lint, format, or unit tests failed"
     python-ruff:
       run: >-

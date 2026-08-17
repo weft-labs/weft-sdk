@@ -1,8 +1,8 @@
 version: 2
 updates:
-  # TypeScript SDK
+  # TypeScript SDK and CLI workspace
   - package-ecosystem: npm
-    directory: "/typescript"
+    directory: "/"
     schedule:
       interval: weekly
     open-pull-requests-limit: 10

@@ -10,10 +10,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Testing the packed TypeScript SDK and bundled CLI..."
+echo "Testing the packed TypeScript SDK and CLI packages..."
 (
-  cd "$ROOT_DIR/typescript"
-  npm run test:quickstarts
+  cd "$ROOT_DIR"
+  pnpm run test:artifacts
 )
 
 echo "Building and clean-installing the Python artifact..."

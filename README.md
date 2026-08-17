@@ -1,7 +1,7 @@
 # Weft SDK
 
-Build buyer applications and agents on Weft. The TypeScript SDK, its `weft`
-CLI, and the Python buyer client are the supported application surfaces;
+Build buyer applications and agents on Weft. The TypeScript SDK, the separate
+`weft` CLI package, and the Python buyer client are the supported application surfaces;
 generated clients remain available when you need direct access to the OpenAPI
 contract.
 
@@ -46,12 +46,12 @@ quickstart is shipped in the package at
 
 ## CLI quickstart
 
-The CLI is included in `@weft-labs/sdk`; there is no separate CLI package.
+The CLI is published separately from the application SDK.
 
 ```sh
-npx --package @weft-labs/sdk weft me
-npx --package @weft-labs/sdk weft search "weather data API"
-npx --package @weft-labs/sdk weft fetch "https://merchant.example/data" \
+npx --package @weft-labs/cli weft me
+npx --package @weft-labs/cli weft search "weather data API"
+npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
   --max-cost-usd 0.05
 ```
 
@@ -63,7 +63,8 @@ retrying an uncertain request.
 
 | Language | Package | Support level | Recommended surface |
 |---|---|---|---|
-| TypeScript | `@weft-labs/sdk` | Supported | `WeftClient` or the bundled `weft` CLI |
+| TypeScript | `@weft-labs/sdk` | Supported | `WeftClient` |
+| CLI | `@weft-labs/cli` | Supported | `weft` executable |
 | Python | `weft-sdk` | Supported | `Client` buyer façade |
 | Ruby | `weft-sdk` | Generated client preview | Generated APIs |
 | Go | `github.com/weft-labs/weft-sdk/go` | Generated client preview | Generated APIs |
@@ -83,6 +84,7 @@ contract, but has not yet passed a clean-install buyer quickstart gate.
 
 - `spec/openapi.yaml` — canonical contract copy synchronized from `weft-app`
 - `typescript/` — npm package `@weft-labs/sdk`
+- `cli/` — npm package `@weft-labs/cli`
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
 - `go/` — Go module `github.com/weft-labs/weft-sdk/go`

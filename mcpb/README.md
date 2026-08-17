@@ -31,9 +31,9 @@ production; leave it unless you run your own Weft server.
 
 ```sh
 cd mcpb
-npm install                                   # vendor mcp-remote into node_modules/
-npx @anthropic-ai/mcpb@latest validate manifest.json
-npx @anthropic-ai/mcpb@latest pack . ../weft.mcpb
+pnpm install                                  # vendor mcp-remote into node_modules/
+pnpm dlx @anthropic-ai/mcpb@latest validate manifest.json
+pnpm dlx @anthropic-ai/mcpb@latest pack . ../weft.mcpb
 ```
 
 Produces `weft.mcpb` (~1.4 MB). Distribute it via a GitHub release or

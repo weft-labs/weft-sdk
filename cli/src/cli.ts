@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { ResponseError } from "./generated";
-import { WeftClient, type PaidFetchRequest } from "./client";
-import { WeftError } from "./error";
+import {
+  type PaidFetchRequest,
+  ResponseError,
+  WeftClient,
+  WeftError,
+} from "@weft-labs/sdk";
 
 export const EXIT_SUCCESS = 0;
 export const EXIT_USAGE = 2;

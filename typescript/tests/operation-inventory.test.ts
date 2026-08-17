@@ -24,11 +24,11 @@ describe("operation inventory", () => {
     }
   });
 
-  it("ships the CLI executable from the package", () => {
+  it("ships a library-only package", () => {
     const packageJson = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
     );
-    expect(packageJson.bin).toEqual({ weft: "./cli/weft.mjs" });
-    expect(packageJson.files).toContain("cli");
+    expect(packageJson.bin).toBeUndefined();
+    expect(packageJson.files).not.toContain("cli");
   });
 });

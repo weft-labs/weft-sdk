@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   EXIT_API,
@@ -20,6 +21,16 @@ function capture() {
 }
 
 describe("weft CLI", () => {
+  it("is the sole package owner of the weft executable", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    );
+    expect(packageJson.bin).toEqual({ weft: "./bin/weft.mjs" });
+    expect(packageJson.dependencies).toEqual({
+      "@weft-labs/sdk": "workspace:*",
+    });
+  });
+
   it("never accepts an API key in argv", async () => {
     const io = capture();
     const code = await runCli(["balance", "--api-key", "wk_secret"], {

@@ -56,10 +56,15 @@ jobs:
           # token to npm/pip lifecycle scripts during generation.
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 22.23.2
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Mint weft-app App token (cross-repo spec read)
         # Minted immediately before the cross-repo spec fetch — not at job
@@ -155,7 +160,7 @@ jobs:
         # `contents: write` + `pull-requests: write` and auto-revoked by the
         # action's post step (~1h TTL). Uses app-id + private-key, so no
         # `id-token` permission is needed. Mirrors release.yml's just-in-time
-        # mint pattern — shrinks the exposure window across `npm install` and
+        # mint pattern — shrinks the exposure window across dependency install and
         # the generate-all step.
         uses: actions/create-github-app-token@v3
         id: app-token-write

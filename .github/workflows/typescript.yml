@@ -1,9 +1,13 @@
-name: TypeScript SDK
+name: TypeScript SDK and CLI
 
 on:
   pull_request:
     paths:
       - "typescript/**"
+      - "cli/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "spec/**"
       - "scripts/**"
       # Self-test: a change to this workflow must run this workflow, otherwise
@@ -19,6 +23,10 @@ on:
     # pushes that don't touch the SDK.)
     paths:
       - "typescript/**"
+      - "cli/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "spec/**"
       - "scripts/**"
 
@@ -26,7 +34,7 @@ on:
 # overrides this with its own job-level `permissions:` (id-token: write for
 # npm Trusted Publishing OIDC, attestations: write for Sigstore provenance).
 # Keeping the workflow default minimal closes the default-scope exfiltration
-# window on PR-triggered build jobs that run `npm install` against untrusted
+# window on PR-triggered build jobs that run `pnpm install` against untrusted
 # spec/** or scripts/** changes.
 permissions:
   contents: read
@@ -48,28 +56,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: typescript
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 22.23.2
-          cache: npm
-          cache-dependency-path: typescript/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Verify committed generated SDK
-        run: ../scripts/check-generated.sh typescript
+        run: ./scripts/check-generated.sh typescript
       - name: Lint
-        run: npm run lint:check
+        run: pnpm run lint:check
       - name: Test
-        run: npm run test
+        run: pnpm run test
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
   publish:
     needs: build
@@ -83,28 +90,47 @@ jobs:
       contents: read
       id-token: write
       attestations: write
-    defaults:
-      run:
-        working-directory: typescript
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
-          cache: npm
-          cache-dependency-path: typescript/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Verify committed generated SDK
-        run: ../scripts/check-generated.sh typescript
+        run: ./scripts/check-generated.sh typescript
       - name: Build
-        run: npm run build
+        run: pnpm run build
+      - name: Verify CLI package bootstrap
+        run: |
+          if ! pnpm view @weft-labs/cli name >/dev/null 2>&1; then
+            echo "::error::@weft-labs/cli must be bootstrapped on npm and configured for trusted publishing before this release can publish either npm package."
+            exit 1
+          fi
       # --provenance attaches a Sigstore-signed provenance statement to the
       # publish, tying the artifact to this workflow run + commit. Required
       # by https://docs.npmjs.com/generating-provenance-statements. Node 24
       # ships npm >= 9.5.0 which is the minimum for the flag.
-      - name: Publish to npm with provenance
-        run: npm publish --access public --provenance
+      - name: Publish SDK to npm with provenance
+        run: |
+          VERSION="$(node -p "require('./typescript/package.json').version")"
+          if pnpm view "@weft-labs/sdk@$VERSION" version >/dev/null 2>&1; then
+            echo "@weft-labs/sdk@$VERSION is already published; continuing recovery."
+          else
+            pnpm --filter @weft-labs/sdk publish --access public --provenance --no-git-checks
+          fi
+      - name: Publish CLI to npm with provenance
+        run: |
+          VERSION="$(node -p "require('./cli/package.json').version")"
+          if pnpm view "@weft-labs/cli@$VERSION" version >/dev/null 2>&1; then
+            echo "@weft-labs/cli@$VERSION is already published; continuing recovery."
+          else
+            pnpm --filter @weft-labs/cli publish --access public --provenance --no-git-checks
+          fi
