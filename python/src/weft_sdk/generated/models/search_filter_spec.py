@@ -17,12 +17,15 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from typing import Any, ClassVar, Dict, List, Optional
+from weft_sdk.generated.models.search_execution_mode_filter import SearchExecutionModeFilter
+from weft_sdk.generated.models.search_method_filter import SearchMethodFilter
 from weft_sdk.generated.models.search_price_atomic_filter import SearchPriceAtomicFilter
 from weft_sdk.generated.models.search_price_usd_filter import SearchPriceUsdFilter
 from weft_sdk.generated.models.search_protocol_filter import SearchProtocolFilter
 from weft_sdk.generated.models.search_resource_type_filter import SearchResourceTypeFilter
+from weft_sdk.generated.models.search_string_set_filter import SearchStringSetFilter
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -34,7 +37,12 @@ class SearchFilterSpec(BaseModel):
     price_atomic: Optional[SearchPriceAtomicFilter] = None
     type: Optional[SearchResourceTypeFilter] = None
     protocol: Optional[SearchProtocolFilter] = None
-    __properties: ClassVar[List[str]] = ["price", "price_atomic", "type", "protocol"]
+    category: Optional[SearchStringSetFilter] = None
+    method: Optional[SearchMethodFilter] = None
+    execution_mode: Optional[SearchExecutionModeFilter] = None
+    weft_fetch_compatible: Optional[StrictBool] = Field(default=None, description="True requires at least one access method supported by the current Weft fetch runtime; false requires none.")
+    include_unknown_prices: Optional[StrictBool] = Field(default=False, description="With a price constraint, also retain dynamic and unknown prices.")
+    __properties: ClassVar[List[str]] = ["price", "price_atomic", "type", "protocol", "category", "method", "execution_mode", "weft_fetch_compatible", "include_unknown_prices"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -87,6 +95,15 @@ class SearchFilterSpec(BaseModel):
         # override the default output from pydantic by calling `to_dict()` of protocol
         if self.protocol:
             _dict['protocol'] = self.protocol.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of category
+        if self.category:
+            _dict['category'] = self.category.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of method
+        if self.method:
+            _dict['method'] = self.method.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of execution_mode
+        if self.execution_mode:
+            _dict['execution_mode'] = self.execution_mode.to_dict()
         return _dict
 
     @classmethod
@@ -102,6 +119,11 @@ class SearchFilterSpec(BaseModel):
             "price": SearchPriceUsdFilter.from_dict(obj["price"]) if obj.get("price") is not None else None,
             "price_atomic": SearchPriceAtomicFilter.from_dict(obj["price_atomic"]) if obj.get("price_atomic") is not None else None,
             "type": SearchResourceTypeFilter.from_dict(obj["type"]) if obj.get("type") is not None else None,
-            "protocol": SearchProtocolFilter.from_dict(obj["protocol"]) if obj.get("protocol") is not None else None
+            "protocol": SearchProtocolFilter.from_dict(obj["protocol"]) if obj.get("protocol") is not None else None,
+            "category": SearchStringSetFilter.from_dict(obj["category"]) if obj.get("category") is not None else None,
+            "method": SearchMethodFilter.from_dict(obj["method"]) if obj.get("method") is not None else None,
+            "execution_mode": SearchExecutionModeFilter.from_dict(obj["execution_mode"]) if obj.get("execution_mode") is not None else None,
+            "weft_fetch_compatible": obj.get("weft_fetch_compatible"),
+            "include_unknown_prices": obj.get("include_unknown_prices") if obj.get("include_unknown_prices") is not None else False
         })
         return _obj

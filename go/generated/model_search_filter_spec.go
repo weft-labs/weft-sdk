@@ -23,6 +23,13 @@ type SearchFilterSpec struct {
 	PriceAtomic *SearchPriceAtomicFilter `json:"price_atomic,omitempty"`
 	Type *SearchResourceTypeFilter `json:"type,omitempty"`
 	Protocol *SearchProtocolFilter `json:"protocol,omitempty"`
+	Category *SearchStringSetFilter `json:"category,omitempty"`
+	Method *SearchMethodFilter `json:"method,omitempty"`
+	ExecutionMode *SearchExecutionModeFilter `json:"execution_mode,omitempty"`
+	// True requires at least one access method supported by the current Weft fetch runtime; false requires none.
+	WeftFetchCompatible *bool `json:"weft_fetch_compatible,omitempty"`
+	// With a price constraint, also retain dynamic and unknown prices.
+	IncludeUnknownPrices *bool `json:"include_unknown_prices,omitempty"`
 }
 
 // NewSearchFilterSpec instantiates a new SearchFilterSpec object
@@ -31,6 +38,8 @@ type SearchFilterSpec struct {
 // will change when the set of required properties is changed
 func NewSearchFilterSpec() *SearchFilterSpec {
 	this := SearchFilterSpec{}
+	var includeUnknownPrices bool = false
+	this.IncludeUnknownPrices = &includeUnknownPrices
 	return &this
 }
 
@@ -39,6 +48,8 @@ func NewSearchFilterSpec() *SearchFilterSpec {
 // but it doesn't guarantee that properties required by API are set
 func NewSearchFilterSpecWithDefaults() *SearchFilterSpec {
 	this := SearchFilterSpec{}
+	var includeUnknownPrices bool = false
+	this.IncludeUnknownPrices = &includeUnknownPrices
 	return &this
 }
 
@@ -170,6 +181,166 @@ func (o *SearchFilterSpec) SetProtocol(v SearchProtocolFilter) {
 	o.Protocol = &v
 }
 
+// GetCategory returns the Category field value if set, zero value otherwise.
+func (o *SearchFilterSpec) GetCategory() SearchStringSetFilter {
+	if o == nil || IsNil(o.Category) {
+		var ret SearchStringSetFilter
+		return ret
+	}
+	return *o.Category
+}
+
+// GetCategoryOk returns a tuple with the Category field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchFilterSpec) GetCategoryOk() (*SearchStringSetFilter, bool) {
+	if o == nil || IsNil(o.Category) {
+		return nil, false
+	}
+	return o.Category, true
+}
+
+// HasCategory returns a boolean if a field has been set.
+func (o *SearchFilterSpec) HasCategory() bool {
+	if o != nil && !IsNil(o.Category) {
+		return true
+	}
+
+	return false
+}
+
+// SetCategory gets a reference to the given SearchStringSetFilter and assigns it to the Category field.
+func (o *SearchFilterSpec) SetCategory(v SearchStringSetFilter) {
+	o.Category = &v
+}
+
+// GetMethod returns the Method field value if set, zero value otherwise.
+func (o *SearchFilterSpec) GetMethod() SearchMethodFilter {
+	if o == nil || IsNil(o.Method) {
+		var ret SearchMethodFilter
+		return ret
+	}
+	return *o.Method
+}
+
+// GetMethodOk returns a tuple with the Method field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchFilterSpec) GetMethodOk() (*SearchMethodFilter, bool) {
+	if o == nil || IsNil(o.Method) {
+		return nil, false
+	}
+	return o.Method, true
+}
+
+// HasMethod returns a boolean if a field has been set.
+func (o *SearchFilterSpec) HasMethod() bool {
+	if o != nil && !IsNil(o.Method) {
+		return true
+	}
+
+	return false
+}
+
+// SetMethod gets a reference to the given SearchMethodFilter and assigns it to the Method field.
+func (o *SearchFilterSpec) SetMethod(v SearchMethodFilter) {
+	o.Method = &v
+}
+
+// GetExecutionMode returns the ExecutionMode field value if set, zero value otherwise.
+func (o *SearchFilterSpec) GetExecutionMode() SearchExecutionModeFilter {
+	if o == nil || IsNil(o.ExecutionMode) {
+		var ret SearchExecutionModeFilter
+		return ret
+	}
+	return *o.ExecutionMode
+}
+
+// GetExecutionModeOk returns a tuple with the ExecutionMode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchFilterSpec) GetExecutionModeOk() (*SearchExecutionModeFilter, bool) {
+	if o == nil || IsNil(o.ExecutionMode) {
+		return nil, false
+	}
+	return o.ExecutionMode, true
+}
+
+// HasExecutionMode returns a boolean if a field has been set.
+func (o *SearchFilterSpec) HasExecutionMode() bool {
+	if o != nil && !IsNil(o.ExecutionMode) {
+		return true
+	}
+
+	return false
+}
+
+// SetExecutionMode gets a reference to the given SearchExecutionModeFilter and assigns it to the ExecutionMode field.
+func (o *SearchFilterSpec) SetExecutionMode(v SearchExecutionModeFilter) {
+	o.ExecutionMode = &v
+}
+
+// GetWeftFetchCompatible returns the WeftFetchCompatible field value if set, zero value otherwise.
+func (o *SearchFilterSpec) GetWeftFetchCompatible() bool {
+	if o == nil || IsNil(o.WeftFetchCompatible) {
+		var ret bool
+		return ret
+	}
+	return *o.WeftFetchCompatible
+}
+
+// GetWeftFetchCompatibleOk returns a tuple with the WeftFetchCompatible field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchFilterSpec) GetWeftFetchCompatibleOk() (*bool, bool) {
+	if o == nil || IsNil(o.WeftFetchCompatible) {
+		return nil, false
+	}
+	return o.WeftFetchCompatible, true
+}
+
+// HasWeftFetchCompatible returns a boolean if a field has been set.
+func (o *SearchFilterSpec) HasWeftFetchCompatible() bool {
+	if o != nil && !IsNil(o.WeftFetchCompatible) {
+		return true
+	}
+
+	return false
+}
+
+// SetWeftFetchCompatible gets a reference to the given bool and assigns it to the WeftFetchCompatible field.
+func (o *SearchFilterSpec) SetWeftFetchCompatible(v bool) {
+	o.WeftFetchCompatible = &v
+}
+
+// GetIncludeUnknownPrices returns the IncludeUnknownPrices field value if set, zero value otherwise.
+func (o *SearchFilterSpec) GetIncludeUnknownPrices() bool {
+	if o == nil || IsNil(o.IncludeUnknownPrices) {
+		var ret bool
+		return ret
+	}
+	return *o.IncludeUnknownPrices
+}
+
+// GetIncludeUnknownPricesOk returns a tuple with the IncludeUnknownPrices field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SearchFilterSpec) GetIncludeUnknownPricesOk() (*bool, bool) {
+	if o == nil || IsNil(o.IncludeUnknownPrices) {
+		return nil, false
+	}
+	return o.IncludeUnknownPrices, true
+}
+
+// HasIncludeUnknownPrices returns a boolean if a field has been set.
+func (o *SearchFilterSpec) HasIncludeUnknownPrices() bool {
+	if o != nil && !IsNil(o.IncludeUnknownPrices) {
+		return true
+	}
+
+	return false
+}
+
+// SetIncludeUnknownPrices gets a reference to the given bool and assigns it to the IncludeUnknownPrices field.
+func (o *SearchFilterSpec) SetIncludeUnknownPrices(v bool) {
+	o.IncludeUnknownPrices = &v
+}
+
 func (o SearchFilterSpec) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -191,6 +362,21 @@ func (o SearchFilterSpec) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Protocol) {
 		toSerialize["protocol"] = o.Protocol
+	}
+	if !IsNil(o.Category) {
+		toSerialize["category"] = o.Category
+	}
+	if !IsNil(o.Method) {
+		toSerialize["method"] = o.Method
+	}
+	if !IsNil(o.ExecutionMode) {
+		toSerialize["execution_mode"] = o.ExecutionMode
+	}
+	if !IsNil(o.WeftFetchCompatible) {
+		toSerialize["weft_fetch_compatible"] = o.WeftFetchCompatible
+	}
+	if !IsNil(o.IncludeUnknownPrices) {
+		toSerialize["include_unknown_prices"] = o.IncludeUnknownPrices
 	}
 	return toSerialize, nil
 }

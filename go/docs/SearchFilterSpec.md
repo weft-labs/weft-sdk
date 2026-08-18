@@ -8,6 +8,11 @@ Name | Type | Description | Notes
 **PriceAtomic** | Pointer to [**SearchPriceAtomicFilter**](SearchPriceAtomicFilter.md) |  | [optional]
 **Type** | Pointer to [**SearchResourceTypeFilter**](SearchResourceTypeFilter.md) |  | [optional]
 **Protocol** | Pointer to [**SearchProtocolFilter**](SearchProtocolFilter.md) |  | [optional]
+**Category** | Pointer to [**SearchStringSetFilter**](SearchStringSetFilter.md) |  | [optional]
+**Method** | Pointer to [**SearchMethodFilter**](SearchMethodFilter.md) |  | [optional]
+**ExecutionMode** | Pointer to [**SearchExecutionModeFilter**](SearchExecutionModeFilter.md) |  | [optional]
+**WeftFetchCompatible** | Pointer to **bool** | True requires at least one access method supported by the current Weft fetch runtime; false requires none. | [optional]
+**IncludeUnknownPrices** | Pointer to **bool** | With a price constraint, also retain dynamic and unknown prices. | [optional] [default to false]
 
 ## Methods
 
@@ -127,6 +132,131 @@ SetProtocol sets Protocol field to given value.
 `func (o *SearchFilterSpec) HasProtocol() bool`
 
 HasProtocol returns a boolean if a field has been set.
+
+### GetCategory
+
+`func (o *SearchFilterSpec) GetCategory() SearchStringSetFilter`
+
+GetCategory returns the Category field if non-nil, zero value otherwise.
+
+### GetCategoryOk
+
+`func (o *SearchFilterSpec) GetCategoryOk() (*SearchStringSetFilter, bool)`
+
+GetCategoryOk returns a tuple with the Category field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCategory
+
+`func (o *SearchFilterSpec) SetCategory(v SearchStringSetFilter)`
+
+SetCategory sets Category field to given value.
+
+### HasCategory
+
+`func (o *SearchFilterSpec) HasCategory() bool`
+
+HasCategory returns a boolean if a field has been set.
+
+### GetMethod
+
+`func (o *SearchFilterSpec) GetMethod() SearchMethodFilter`
+
+GetMethod returns the Method field if non-nil, zero value otherwise.
+
+### GetMethodOk
+
+`func (o *SearchFilterSpec) GetMethodOk() (*SearchMethodFilter, bool)`
+
+GetMethodOk returns a tuple with the Method field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMethod
+
+`func (o *SearchFilterSpec) SetMethod(v SearchMethodFilter)`
+
+SetMethod sets Method field to given value.
+
+### HasMethod
+
+`func (o *SearchFilterSpec) HasMethod() bool`
+
+HasMethod returns a boolean if a field has been set.
+
+### GetExecutionMode
+
+`func (o *SearchFilterSpec) GetExecutionMode() SearchExecutionModeFilter`
+
+GetExecutionMode returns the ExecutionMode field if non-nil, zero value otherwise.
+
+### GetExecutionModeOk
+
+`func (o *SearchFilterSpec) GetExecutionModeOk() (*SearchExecutionModeFilter, bool)`
+
+GetExecutionModeOk returns a tuple with the ExecutionMode field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetExecutionMode
+
+`func (o *SearchFilterSpec) SetExecutionMode(v SearchExecutionModeFilter)`
+
+SetExecutionMode sets ExecutionMode field to given value.
+
+### HasExecutionMode
+
+`func (o *SearchFilterSpec) HasExecutionMode() bool`
+
+HasExecutionMode returns a boolean if a field has been set.
+
+### GetWeftFetchCompatible
+
+`func (o *SearchFilterSpec) GetWeftFetchCompatible() bool`
+
+GetWeftFetchCompatible returns the WeftFetchCompatible field if non-nil, zero value otherwise.
+
+### GetWeftFetchCompatibleOk
+
+`func (o *SearchFilterSpec) GetWeftFetchCompatibleOk() (*bool, bool)`
+
+GetWeftFetchCompatibleOk returns a tuple with the WeftFetchCompatible field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetWeftFetchCompatible
+
+`func (o *SearchFilterSpec) SetWeftFetchCompatible(v bool)`
+
+SetWeftFetchCompatible sets WeftFetchCompatible field to given value.
+
+### HasWeftFetchCompatible
+
+`func (o *SearchFilterSpec) HasWeftFetchCompatible() bool`
+
+HasWeftFetchCompatible returns a boolean if a field has been set.
+
+### GetIncludeUnknownPrices
+
+`func (o *SearchFilterSpec) GetIncludeUnknownPrices() bool`
+
+GetIncludeUnknownPrices returns the IncludeUnknownPrices field if non-nil, zero value otherwise.
+
+### GetIncludeUnknownPricesOk
+
+`func (o *SearchFilterSpec) GetIncludeUnknownPricesOk() (*bool, bool)`
+
+GetIncludeUnknownPricesOk returns a tuple with the IncludeUnknownPrices field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIncludeUnknownPrices
+
+`func (o *SearchFilterSpec) SetIncludeUnknownPrices(v bool)`
+
+SetIncludeUnknownPrices sets IncludeUnknownPrices field to given value.
+
+### HasIncludeUnknownPrices
+
+`func (o *SearchFilterSpec) HasIncludeUnknownPrices() bool`
+
+HasIncludeUnknownPrices returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -32,6 +32,12 @@ module Weft
     # The `query_trace_id` from the `POST /api/v1/search` response that surfaced this URL. Optional and advisory: it attributes the purchase to the search that found it, and is used only for measurement.  It never affects payment, authorization, idempotency, or the response body — the buyer is always resolved from the credential, never from this field. A value that is not a well-formed handle is ignored rather than rejected, so an analytics mistake can never cost a fetch.
     attr_accessor :search_id
 
+    # Advisory operation id returned by search.
+    attr_accessor :operation_id
+
+    # Advisory access-method id returned by search.
+    attr_accessor :access_method_id
+
     class EnumAttributeValidator
       attr_reader :datatype
       attr_reader :allowable_values
@@ -62,7 +68,9 @@ module Weft
         :'method' => :'method',
         :'body' => :'body',
         :'headers' => :'headers',
-        :'search_id' => :'search_id'
+        :'search_id' => :'search_id',
+        :'operation_id' => :'operation_id',
+        :'access_method_id' => :'access_method_id'
       }
     end
 
@@ -84,7 +92,9 @@ module Weft
         :'method' => :'String',
         :'body' => :'FetchRequestBody',
         :'headers' => :'Hash<String, String>',
-        :'search_id' => :'String'
+        :'search_id' => :'String',
+        :'operation_id' => :'String',
+        :'access_method_id' => :'String'
       }
     end
 
@@ -141,6 +151,14 @@ module Weft
 
       if attributes.key?(:'search_id')
         self.search_id = attributes[:'search_id']
+      end
+
+      if attributes.key?(:'operation_id')
+        self.operation_id = attributes[:'operation_id']
+      end
+
+      if attributes.key?(:'access_method_id')
+        self.access_method_id = attributes[:'access_method_id']
       end
     end
 
@@ -217,7 +235,9 @@ module Weft
           method == o.method &&
           body == o.body &&
           headers == o.headers &&
-          search_id == o.search_id
+          search_id == o.search_id &&
+          operation_id == o.operation_id &&
+          access_method_id == o.access_method_id
     end
 
     # @see the `==` method
@@ -229,7 +249,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [url, max_cost_usd, method, body, headers, search_id].hash
+      [url, max_cost_usd, method, body, headers, search_id, operation_id, access_method_id].hash
     end
 
     # Builds the object from hash

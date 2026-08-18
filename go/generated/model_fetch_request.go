@@ -32,6 +32,10 @@ type FetchRequest struct {
 	Headers map[string]string `json:"headers,omitempty"`
 	// The `query_trace_id` from the `POST /api/v1/search` response that surfaced this URL. Optional and advisory: it attributes the purchase to the search that found it, and is used only for measurement.  It never affects payment, authorization, idempotency, or the response body — the buyer is always resolved from the credential, never from this field. A value that is not a well-formed handle is ignored rather than rejected, so an analytics mistake can never cost a fetch.
 	SearchId *string `json:"search_id,omitempty"`
+	// Advisory operation id returned by search.
+	OperationId *string `json:"operation_id,omitempty"`
+	// Advisory access-method id returned by search.
+	AccessMethodId *string `json:"access_method_id,omitempty"`
 }
 
 type _FetchRequest FetchRequest
@@ -256,6 +260,70 @@ func (o *FetchRequest) SetSearchId(v string) {
 	o.SearchId = &v
 }
 
+// GetOperationId returns the OperationId field value if set, zero value otherwise.
+func (o *FetchRequest) GetOperationId() string {
+	if o == nil || IsNil(o.OperationId) {
+		var ret string
+		return ret
+	}
+	return *o.OperationId
+}
+
+// GetOperationIdOk returns a tuple with the OperationId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FetchRequest) GetOperationIdOk() (*string, bool) {
+	if o == nil || IsNil(o.OperationId) {
+		return nil, false
+	}
+	return o.OperationId, true
+}
+
+// HasOperationId returns a boolean if a field has been set.
+func (o *FetchRequest) HasOperationId() bool {
+	if o != nil && !IsNil(o.OperationId) {
+		return true
+	}
+
+	return false
+}
+
+// SetOperationId gets a reference to the given string and assigns it to the OperationId field.
+func (o *FetchRequest) SetOperationId(v string) {
+	o.OperationId = &v
+}
+
+// GetAccessMethodId returns the AccessMethodId field value if set, zero value otherwise.
+func (o *FetchRequest) GetAccessMethodId() string {
+	if o == nil || IsNil(o.AccessMethodId) {
+		var ret string
+		return ret
+	}
+	return *o.AccessMethodId
+}
+
+// GetAccessMethodIdOk returns a tuple with the AccessMethodId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FetchRequest) GetAccessMethodIdOk() (*string, bool) {
+	if o == nil || IsNil(o.AccessMethodId) {
+		return nil, false
+	}
+	return o.AccessMethodId, true
+}
+
+// HasAccessMethodId returns a boolean if a field has been set.
+func (o *FetchRequest) HasAccessMethodId() bool {
+	if o != nil && !IsNil(o.AccessMethodId) {
+		return true
+	}
+
+	return false
+}
+
+// SetAccessMethodId gets a reference to the given string and assigns it to the AccessMethodId field.
+func (o *FetchRequest) SetAccessMethodId(v string) {
+	o.AccessMethodId = &v
+}
+
 func (o FetchRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -281,6 +349,12 @@ func (o FetchRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.SearchId) {
 		toSerialize["search_id"] = o.SearchId
+	}
+	if !IsNil(o.OperationId) {
+		toSerialize["operation_id"] = o.OperationId
+	}
+	if !IsNil(o.AccessMethodId) {
+		toSerialize["access_method_id"] = o.AccessMethodId
 	}
 	return toSerialize, nil
 }
