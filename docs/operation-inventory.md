@@ -43,6 +43,10 @@ on stderr. Fetch success also includes
 `"meta":{"idempotency_key":"…"}` so an uncertain call can be retried with
 the exact same key.
 
+`weft --help` returns every command, global option, authentication method, and
+exit code as JSON. `weft <command> --help` returns command-specific usage and
+options. Help does not require authentication or make a network request.
+
 Exit codes are stable:
 
 - `0`: success
