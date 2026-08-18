@@ -61,3 +61,25 @@ Exit codes are stable:
 
 `--max-results` is validated as `1..50`, and `--per-page` as `1..100`,
 before a network request is made.
+
+## Agent bootstrap (contract frozen, not yet implemented)
+
+The subsidy-free bootstrap lifecycle is specified but not yet built into this
+package. The command names below are frozen by the contract; the exact flags,
+envelope fields, and credential-file path land with the implementation, so read
+`weft --help` before scripting them.
+
+| Command | Purpose |
+| --- | --- |
+| `weft bootstrap --email EMAIL --agent-name NAME --reason TEXT` | Create a temporary bootstrap, email the human a claim link, store the `wbt_` and device credentials in a mode-0600 local file |
+| `weft auth status` | Report the bootstrap lifecycle state and the polling interval |
+
+The temporary `wbt_` credential is secret, expires 30 minutes after creation,
+and carries only the `search`, `status`, and `cancel` capabilities. Balance,
+paid fetch, wallet, transfer, withdrawal, seller, and organization mutation
+surfaces refuse it. Lifecycle states are `pending`, `claimed`, `rejected`,
+`expired`, and `consumed`; the last three are terminal. Cancellation is a
+bootstrap capability; its CLI spelling is not frozen yet.
+
+No promotional balance, free credit, or subsidy is part of this lifecycle. A
+paid fetch requires the human to fund the wallet after the claim.
