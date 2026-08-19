@@ -12,6 +12,8 @@ Name | Type
 `body` | [FetchRequestBody](FetchRequestBody.md)
 `headers` | { [key: string]: string; }
 `searchId` | string
+`operationId` | string
+`accessMethodId` | string
 
 ## Example
 
@@ -26,6 +28,8 @@ const example = {
   "body": null,
   "headers": {Accept=application/json, User-Agent=my-agent/1.0},
   "searchId": 11111111-1111-4111-8111-111111111111,
+  "operationId": null,
+  "accessMethodId": null,
 } satisfies FetchRequest
 
 console.log(example)
