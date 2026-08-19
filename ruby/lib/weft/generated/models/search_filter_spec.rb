@@ -24,13 +24,30 @@ module Weft
 
     attr_accessor :protocol
 
+    attr_accessor :category
+
+    attr_accessor :method
+
+    attr_accessor :execution_mode
+
+    # True requires at least one access method supported by the current Weft fetch runtime; false requires none.
+    attr_accessor :weft_fetch_compatible
+
+    # With a price constraint, also retain dynamic and unknown prices.
+    attr_accessor :include_unknown_prices
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'price' => :'price',
         :'price_atomic' => :'price_atomic',
         :'type' => :'type',
-        :'protocol' => :'protocol'
+        :'protocol' => :'protocol',
+        :'category' => :'category',
+        :'method' => :'method',
+        :'execution_mode' => :'execution_mode',
+        :'weft_fetch_compatible' => :'weft_fetch_compatible',
+        :'include_unknown_prices' => :'include_unknown_prices'
       }
     end
 
@@ -50,7 +67,12 @@ module Weft
         :'price' => :'SearchPriceUsdFilter',
         :'price_atomic' => :'SearchPriceAtomicFilter',
         :'type' => :'SearchResourceTypeFilter',
-        :'protocol' => :'SearchProtocolFilter'
+        :'protocol' => :'SearchProtocolFilter',
+        :'category' => :'SearchStringSetFilter',
+        :'method' => :'SearchMethodFilter',
+        :'execution_mode' => :'SearchExecutionModeFilter',
+        :'weft_fetch_compatible' => :'Boolean',
+        :'include_unknown_prices' => :'Boolean'
       }
     end
 
@@ -91,6 +113,28 @@ module Weft
       if attributes.key?(:'protocol')
         self.protocol = attributes[:'protocol']
       end
+
+      if attributes.key?(:'category')
+        self.category = attributes[:'category']
+      end
+
+      if attributes.key?(:'method')
+        self.method = attributes[:'method']
+      end
+
+      if attributes.key?(:'execution_mode')
+        self.execution_mode = attributes[:'execution_mode']
+      end
+
+      if attributes.key?(:'weft_fetch_compatible')
+        self.weft_fetch_compatible = attributes[:'weft_fetch_compatible']
+      end
+
+      if attributes.key?(:'include_unknown_prices')
+        self.include_unknown_prices = attributes[:'include_unknown_prices']
+      else
+        self.include_unknown_prices = false
+      end
     end
 
     # Show invalid properties with the reasons. Usually used together with valid?
@@ -116,7 +160,12 @@ module Weft
           price == o.price &&
           price_atomic == o.price_atomic &&
           type == o.type &&
-          protocol == o.protocol
+          protocol == o.protocol &&
+          category == o.category &&
+          method == o.method &&
+          execution_mode == o.execution_mode &&
+          weft_fetch_compatible == o.weft_fetch_compatible &&
+          include_unknown_prices == o.include_unknown_prices
     end
 
     # @see the `==` method
@@ -128,7 +177,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [price, price_atomic, type, protocol].hash
+      [price, price_atomic, type, protocol, category, method, execution_mode, weft_fetch_compatible, include_unknown_prices].hash
     end
 
     # Builds the object from hash

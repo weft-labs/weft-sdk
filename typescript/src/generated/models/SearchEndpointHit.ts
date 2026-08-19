@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { SearchAccessMethod } from './SearchAccessMethod';
+import {
+    SearchAccessMethodFromJSON,
+    SearchAccessMethodFromJSONTyped,
+    SearchAccessMethodToJSON,
+    SearchAccessMethodToJSONTyped,
+} from './SearchAccessMethod';
 import type { SearchEndpointCall } from './SearchEndpointCall';
 import {
     SearchEndpointCallFromJSON,
@@ -27,6 +34,41 @@ import {
     SearchPaymentOfferToJSON,
     SearchPaymentOfferToJSONTyped,
 } from './SearchPaymentOffer';
+import type { SearchCuratedSource } from './SearchCuratedSource';
+import {
+    SearchCuratedSourceFromJSON,
+    SearchCuratedSourceFromJSONTyped,
+    SearchCuratedSourceToJSON,
+    SearchCuratedSourceToJSONTyped,
+} from './SearchCuratedSource';
+import type { SearchCuratedCallability } from './SearchCuratedCallability';
+import {
+    SearchCuratedCallabilityFromJSON,
+    SearchCuratedCallabilityFromJSONTyped,
+    SearchCuratedCallabilityToJSON,
+    SearchCuratedCallabilityToJSONTyped,
+} from './SearchCuratedCallability';
+import type { SearchCuratedService } from './SearchCuratedService';
+import {
+    SearchCuratedServiceFromJSON,
+    SearchCuratedServiceFromJSONTyped,
+    SearchCuratedServiceToJSON,
+    SearchCuratedServiceToJSONTyped,
+} from './SearchCuratedService';
+import type { SearchCuratedOperation } from './SearchCuratedOperation';
+import {
+    SearchCuratedOperationFromJSON,
+    SearchCuratedOperationFromJSONTyped,
+    SearchCuratedOperationToJSON,
+    SearchCuratedOperationToJSONTyped,
+} from './SearchCuratedOperation';
+import type { SearchCuratedExecution } from './SearchCuratedExecution';
+import {
+    SearchCuratedExecutionFromJSON,
+    SearchCuratedExecutionFromJSONTyped,
+    SearchCuratedExecutionToJSON,
+    SearchCuratedExecutionToJSONTyped,
+} from './SearchCuratedExecution';
 import type { SearchEndpointPrice } from './SearchEndpointPrice';
 import {
     SearchEndpointPriceFromJSON,
@@ -90,6 +132,60 @@ export interface SearchEndpointHit {
      * @memberof SearchEndpointHit
      */
     payment?: Array<SearchPaymentOffer>;
+    /**
+     *
+     * @type {Array<SearchAccessMethod>}
+     * @memberof SearchEndpointHit
+     */
+    accessMethods?: Array<SearchAccessMethod>;
+    /**
+     *
+     * @type {SearchCuratedService}
+     * @memberof SearchEndpointHit
+     */
+    service?: SearchCuratedService;
+    /**
+     *
+     * @type {SearchCuratedOperation}
+     * @memberof SearchEndpointHit
+     */
+    operation?: SearchCuratedOperation;
+    /**
+     *
+     * @type {object}
+     * @memberof SearchEndpointHit
+     */
+    outputSchema?: object;
+    /**
+     *
+     * @type {object}
+     * @memberof SearchEndpointHit
+     */
+    output?: object;
+    /**
+     *
+     * @type {SearchCuratedExecution}
+     * @memberof SearchEndpointHit
+     */
+    execution?: SearchCuratedExecution;
+    /**
+     *
+     * @type {SearchCuratedCallability}
+     * @memberof SearchEndpointHit
+     */
+    callability?: SearchCuratedCallability;
+    /**
+     *
+     * @type {object}
+     * @memberof SearchEndpointHit
+     */
+    compatibility?: object;
+    /**
+     *
+     * @type {SearchCuratedSource}
+     * @memberof SearchEndpointHit
+     */
+    source?: SearchCuratedSource;
     /**
      * Who you are actually paying. `first_party` = operated by the provider
      * that makes the capability; `reseller` = resold, so the price carries
@@ -176,6 +272,15 @@ export function SearchEndpointHitFromJSONTyped(json: any, ignoreDiscriminator: b
         'call': json['call'] == null ? undefined : SearchEndpointCallFromJSON(json['call']),
         'price': json['price'] == null ? undefined : SearchEndpointPriceFromJSON(json['price']),
         'payment': json['payment'] == null ? undefined : ((json['payment'] as Array<any>).map(SearchPaymentOfferFromJSON)),
+        'accessMethods': json['access_methods'] == null ? undefined : ((json['access_methods'] as Array<any>).map(SearchAccessMethodFromJSON)),
+        'service': json['service'] == null ? undefined : SearchCuratedServiceFromJSON(json['service']),
+        'operation': json['operation'] == null ? undefined : SearchCuratedOperationFromJSON(json['operation']),
+        'outputSchema': json['output_schema'] == null ? undefined : json['output_schema'],
+        'output': json['output'] == null ? undefined : json['output'],
+        'execution': json['execution'] == null ? undefined : SearchCuratedExecutionFromJSON(json['execution']),
+        'callability': json['callability'] == null ? undefined : SearchCuratedCallabilityFromJSON(json['callability']),
+        'compatibility': json['compatibility'] == null ? undefined : json['compatibility'],
+        'source': json['source'] == null ? undefined : SearchCuratedSourceFromJSON(json['source']),
         'operatorType': json['operator_type'] == null ? undefined : json['operator_type'],
         'operatedById': json['operated_by_id'] == null ? undefined : json['operated_by_id'],
         'settledViaFacilitatorId': json['settled_via_facilitator_id'] == null ? undefined : json['settled_via_facilitator_id'],
@@ -203,6 +308,15 @@ export function SearchEndpointHitToJSONTyped(value?: SearchEndpointHit | null, i
         'call': SearchEndpointCallToJSON(value['call']),
         'price': SearchEndpointPriceToJSON(value['price']),
         'payment': value['payment'] == null ? undefined : ((value['payment'] as Array<any>).map(SearchPaymentOfferToJSON)),
+        'access_methods': value['accessMethods'] == null ? undefined : ((value['accessMethods'] as Array<any>).map(SearchAccessMethodToJSON)),
+        'service': SearchCuratedServiceToJSON(value['service']),
+        'operation': SearchCuratedOperationToJSON(value['operation']),
+        'output_schema': value['outputSchema'],
+        'output': value['output'],
+        'execution': SearchCuratedExecutionToJSON(value['execution']),
+        'callability': SearchCuratedCallabilityToJSON(value['callability']),
+        'compatibility': value['compatibility'],
+        'source': SearchCuratedSourceToJSON(value['source']),
         'operator_type': value['operatorType'],
         'operated_by_id': value['operatedById'],
         'settled_via_facilitator_id': value['settledViaFacilitatorId'],

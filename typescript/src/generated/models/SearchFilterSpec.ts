@@ -20,6 +20,13 @@ import {
     SearchProtocolFilterToJSON,
     SearchProtocolFilterToJSONTyped,
 } from './SearchProtocolFilter';
+import type { SearchMethodFilter } from './SearchMethodFilter';
+import {
+    SearchMethodFilterFromJSON,
+    SearchMethodFilterFromJSONTyped,
+    SearchMethodFilterToJSON,
+    SearchMethodFilterToJSONTyped,
+} from './SearchMethodFilter';
 import type { SearchResourceTypeFilter } from './SearchResourceTypeFilter';
 import {
     SearchResourceTypeFilterFromJSON,
@@ -27,6 +34,13 @@ import {
     SearchResourceTypeFilterToJSON,
     SearchResourceTypeFilterToJSONTyped,
 } from './SearchResourceTypeFilter';
+import type { SearchExecutionModeFilter } from './SearchExecutionModeFilter';
+import {
+    SearchExecutionModeFilterFromJSON,
+    SearchExecutionModeFilterFromJSONTyped,
+    SearchExecutionModeFilterToJSON,
+    SearchExecutionModeFilterToJSONTyped,
+} from './SearchExecutionModeFilter';
 import type { SearchPriceUsdFilter } from './SearchPriceUsdFilter';
 import {
     SearchPriceUsdFilterFromJSON,
@@ -41,6 +55,13 @@ import {
     SearchPriceAtomicFilterToJSON,
     SearchPriceAtomicFilterToJSONTyped,
 } from './SearchPriceAtomicFilter';
+import type { SearchStringSetFilter } from './SearchStringSetFilter';
+import {
+    SearchStringSetFilterFromJSON,
+    SearchStringSetFilterFromJSONTyped,
+    SearchStringSetFilterToJSON,
+    SearchStringSetFilterToJSONTyped,
+} from './SearchStringSetFilter';
 
 /**
  * Structured hard constraints on the query — the weft-search-platform
@@ -86,6 +107,36 @@ export interface SearchFilterSpec {
      * @memberof SearchFilterSpec
      */
     protocol?: SearchProtocolFilter;
+    /**
+     *
+     * @type {SearchStringSetFilter}
+     * @memberof SearchFilterSpec
+     */
+    category?: SearchStringSetFilter;
+    /**
+     *
+     * @type {SearchMethodFilter}
+     * @memberof SearchFilterSpec
+     */
+    method?: SearchMethodFilter;
+    /**
+     *
+     * @type {SearchExecutionModeFilter}
+     * @memberof SearchFilterSpec
+     */
+    executionMode?: SearchExecutionModeFilter;
+    /**
+     * True requires at least one access method supported by the current Weft fetch runtime; false requires none.
+     * @type {boolean}
+     * @memberof SearchFilterSpec
+     */
+    weftFetchCompatible?: boolean;
+    /**
+     * With a price constraint, also retain dynamic and unknown prices.
+     * @type {boolean}
+     * @memberof SearchFilterSpec
+     */
+    includeUnknownPrices?: boolean;
 }
 
 /**
@@ -109,6 +160,11 @@ export function SearchFilterSpecFromJSONTyped(json: any, ignoreDiscriminator: bo
         'priceAtomic': json['price_atomic'] == null ? undefined : SearchPriceAtomicFilterFromJSON(json['price_atomic']),
         'type': json['type'] == null ? undefined : SearchResourceTypeFilterFromJSON(json['type']),
         'protocol': json['protocol'] == null ? undefined : SearchProtocolFilterFromJSON(json['protocol']),
+        'category': json['category'] == null ? undefined : SearchStringSetFilterFromJSON(json['category']),
+        'method': json['method'] == null ? undefined : SearchMethodFilterFromJSON(json['method']),
+        'executionMode': json['execution_mode'] == null ? undefined : SearchExecutionModeFilterFromJSON(json['execution_mode']),
+        'weftFetchCompatible': json['weft_fetch_compatible'] == null ? undefined : json['weft_fetch_compatible'],
+        'includeUnknownPrices': json['include_unknown_prices'] == null ? undefined : json['include_unknown_prices'],
     };
 }
 
@@ -127,5 +183,10 @@ export function SearchFilterSpecToJSONTyped(value?: SearchFilterSpec | null, ign
         'price_atomic': SearchPriceAtomicFilterToJSON(value['priceAtomic']),
         'type': SearchResourceTypeFilterToJSON(value['type']),
         'protocol': SearchProtocolFilterToJSON(value['protocol']),
+        'category': SearchStringSetFilterToJSON(value['category']),
+        'method': SearchMethodFilterToJSON(value['method']),
+        'execution_mode': SearchExecutionModeFilterToJSON(value['executionMode']),
+        'weft_fetch_compatible': value['weftFetchCompatible'],
+        'include_unknown_prices': value['includeUnknownPrices'],
     };
 }
