@@ -1,7 +1,7 @@
 /*
 Weft API
 
-The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key or an OAuth access token with the relevant scope. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. The two key types are not interchangeable.  All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
+The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key or an OAuth access token with the relevant scope. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. The two key types are not interchangeable.  Agent bootstrap is a separate, temporary path. A `wbt_*` bootstrap bearer can call search plus its own status/cancel operations for 30 minutes. It never resolves to a User and cannot call wallet, balance, fetch, seller, organization, API-key, or MCP surfaces.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
 
 API version: 0.11.0
 */
@@ -49,9 +49,11 @@ a dual representation of one constraint: `price` in USD decimal strings
 (the reasoning form) XOR `price_atomic` in integer micro-USD (the
 settlement form) — mutually exclusive, set at most one.
 
-Account-scoped: the bearer token must be a buyer-scoped API key.
-Free for authenticated buyers in v1; billing is planned for a later
-release.
+Account-scoped: the bearer token must be a buyer-scoped API key, an
+OAuth token carrying `search`, or a pending `wbt_*` bootstrap bearer.
+Bootstrap access never resolves to a User and loses search immediately
+on claim, rejection, cancellation, or expiry. Bootstrap search is
+limited to 60 requests per credential and 120 per IP each hour.
 
 Response negotiation: `Accept: application/json` (default) returns
 the structured envelope; `Accept: text/markdown` returns a rendered
@@ -158,6 +160,17 @@ func (a *SearchAPIService) SearchExecute(r ApiSearchRequest) (*SearchResponse, *
 		}
 		if localVarHTTPResponse.StatusCode == 422 {
 			var v SearchErrorResponse
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v RateLimitResponse
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

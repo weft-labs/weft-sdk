@@ -17,7 +17,13 @@ key and payment operations in this document are seller administration
 surfaces and require an `ax_live_*` resource key. The two key types are
 not interchangeable.
 
-All errors share the envelope defined by `ErrorResponse`, except the
+Agent bootstrap is a separate, temporary path. A `wbt_*` bootstrap bearer
+can call search plus its own status/cancel operations for 30 minutes. It
+never resolves to a User and cannot call wallet, balance, fetch, seller,
+organization, API-key, or MCP surfaces.
+
+Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }`
+envelope. All errors share the envelope defined by `ErrorResponse`, except the
 buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke
 envelopes carrying additional context — see `SearchErrorResponse` and
 `FetchErrorResponse`.
@@ -103,6 +109,9 @@ Class | Method | HTTP request | Description
 *APIKeysAPI* | [**ListApiKeys**](docs/APIKeysAPI.md#listapikeys) | **Get** /api/v1/api_keys | List API keys
 *APIKeysAPI* | [**RevokeApiKey**](docs/APIKeysAPI.md#revokeapikey) | **Delete** /api/v1/api_keys/{id} | Revoke an API key
 *AccountAPI* | [**GetMe**](docs/AccountAPI.md#getme) | **Get** /api/v1/me | Get the current credential principal
+*AgentBootstrapAPI* | [**CancelAccountBootstrap**](docs/AgentBootstrapAPI.md#cancelaccountbootstrap) | **Delete** /api/v1/account_bootstraps/{id} | Cancel a bootstrap and revoke delivered OAuth access
+*AgentBootstrapAPI* | [**CreateAccountBootstrap**](docs/AgentBootstrapAPI.md#createaccountbootstrap) | **Post** /api/v1/account_bootstraps | Create a temporary agent bootstrap
+*AgentBootstrapAPI* | [**GetAccountBootstrap**](docs/AgentBootstrapAPI.md#getaccountbootstrap) | **Get** /api/v1/account_bootstraps/{id} | Read bootstrap lifecycle status
 *AuthAPI* | [**ConfirmAccount**](docs/AuthAPI.md#confirmaccount) | **Post** /api/v1/auth/confirm | Confirm an account
 *AuthAPI* | [**RequestPasswordReset**](docs/AuthAPI.md#requestpasswordreset) | **Post** /api/v1/auth/password/reset | Request password reset
 *AuthAPI* | [**ResendConfirmation**](docs/AuthAPI.md#resendconfirmation) | **Post** /api/v1/auth/resend-confirmation | Resend confirmation email
@@ -122,6 +131,13 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [AccountBootstrapApproval](docs/AccountBootstrapApproval.md)
+ - [AccountBootstrapCreated](docs/AccountBootstrapCreated.md)
+ - [AccountBootstrapCreatedApproval](docs/AccountBootstrapCreatedApproval.md)
+ - [AccountBootstrapCreatedResponse](docs/AccountBootstrapCreatedResponse.md)
+ - [AccountBootstrapRequest](docs/AccountBootstrapRequest.md)
+ - [AccountBootstrapStatus](docs/AccountBootstrapStatus.md)
+ - [AccountBootstrapStatusResponse](docs/AccountBootstrapStatusResponse.md)
  - [AccountDetails](docs/AccountDetails.md)
  - [ApiKey](docs/ApiKey.md)
  - [ApiKeyCreated](docs/ApiKeyCreated.md)
@@ -161,16 +177,25 @@ Class | Method | HTTP request | Description
  - [PurchaseArtifact](docs/PurchaseArtifact.md)
  - [PurchaseListResponse](docs/PurchaseListResponse.md)
  - [PurchaseResponse](docs/PurchaseResponse.md)
+ - [RateLimitResponse](docs/RateLimitResponse.md)
  - [ResendConfirmationRequest](docs/ResendConfirmationRequest.md)
  - [ResourceEnrollmentRequest](docs/ResourceEnrollmentRequest.md)
  - [ResourceEnrollmentResponse](docs/ResourceEnrollmentResponse.md)
  - [ResourceStats](docs/ResourceStats.md)
+ - [SearchAccessMethod](docs/SearchAccessMethod.md)
  - [SearchCapabilityRef](docs/SearchCapabilityRef.md)
+ - [SearchCuratedCallability](docs/SearchCuratedCallability.md)
+ - [SearchCuratedExecution](docs/SearchCuratedExecution.md)
+ - [SearchCuratedOperation](docs/SearchCuratedOperation.md)
+ - [SearchCuratedService](docs/SearchCuratedService.md)
+ - [SearchCuratedSource](docs/SearchCuratedSource.md)
  - [SearchEndpointCall](docs/SearchEndpointCall.md)
  - [SearchEndpointHit](docs/SearchEndpointHit.md)
  - [SearchEndpointPrice](docs/SearchEndpointPrice.md)
  - [SearchErrorResponse](docs/SearchErrorResponse.md)
+ - [SearchExecutionModeFilter](docs/SearchExecutionModeFilter.md)
  - [SearchFilterSpec](docs/SearchFilterSpec.md)
+ - [SearchMethodFilter](docs/SearchMethodFilter.md)
  - [SearchPaymentOffer](docs/SearchPaymentOffer.md)
  - [SearchPriceAtomicFilter](docs/SearchPriceAtomicFilter.md)
  - [SearchPriceUsdFilter](docs/SearchPriceUsdFilter.md)
@@ -181,6 +206,8 @@ Class | Method | HTTP request | Description
  - [SearchResponse](docs/SearchResponse.md)
  - [SearchResponseWarningsInner](docs/SearchResponseWarningsInner.md)
  - [SearchResult](docs/SearchResult.md)
+ - [SearchStringSetFilter](docs/SearchStringSetFilter.md)
+ - [SearchWeftFetchCompatibility](docs/SearchWeftFetchCompatibility.md)
  - [SignInRequest](docs/SignInRequest.md)
  - [SignUpRequest](docs/SignUpRequest.md)
  - [SpendingPolicy](docs/SpendingPolicy.md)
@@ -194,6 +221,17 @@ Class | Method | HTTP request | Description
 
 Authentication schemes defined for the API:
 ### bearerAuth
+
+- **Type**: HTTP Bearer token authentication
+
+Example
+
+```go
+auth := context.WithValue(context.Background(), generated.ContextAccessToken, "BEARER_TOKEN_STRING")
+r, err := client.Service.Operation(auth, args)
+```
+
+### bootstrapAuth
 
 - **Type**: HTTP Bearer token authentication
 
