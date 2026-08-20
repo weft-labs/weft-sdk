@@ -1,3 +1,10 @@
+import {
+  readStoredCredentials,
+  type BootstrapCredentials,
+  type OAuthCredentials,
+  withCredentialsLock,
+  writeStoredCredentials,
+} from "./credentials";
 import { randomUUID } from "node:crypto";
 import {
   type PaidFetchRequest,
@@ -12,11 +19,41 @@ export const EXIT_AUTH = 3;
 export const EXIT_API = 4;
 export const EXIT_INTERNAL = 5;
 
-type Command = "me" | "balance" | "search" | "fetch" | "purchases";
+type Command =
+  "bootstrap" | "auth" | "me" | "balance" | "search" | "fetch" | "purchases";
 
-const COMMANDS: Command[] = ["me", "balance", "search", "fetch", "purchases"];
+const COMMANDS: Command[] = [
+  "bootstrap",
+  "auth",
+  "me",
+  "balance",
+  "search",
+  "fetch",
+  "purchases",
+];
+
+const WEFT_API_BASE = "https://weft.network";
+const OAUTH_SCOPE = "balance fetch search";
+const OAUTH_CLIENT_NAME = "Weft CLI";
+const OAUTH_HOST_NAME = "Weft CLI";
+const OAUTH_REFRESH_SKEW_MS = 60_000;
 
 const COMMAND_HELP = {
+  bootstrap: {
+    description: "Bootstrap an agent account",
+    usage: "weft bootstrap --email <email> --agent-name <name> --reason <text>",
+    options: [
+      "--email <email>",
+      "--agent-name <name>",
+      "--reason <text>",
+      "[--base-url <url>]",
+    ],
+  },
+  auth: {
+    description: "Check bootstrap status and exchange device token",
+    usage: "weft auth status",
+    options: ["status"],
+  },
   me: {
     description: "Return the authenticated principal",
     usage: "weft me",
@@ -51,6 +88,40 @@ const COMMAND_HELP = {
   Command,
   { description: string; usage: string; options: string[] }
 >;
+
+interface BootstrapCreateResponse {
+  data: {
+    id: string;
+    status: string;
+    capabilities: unknown;
+    expires_at: string;
+    temporary_api_key: string;
+    device_code: string;
+    approval: {
+      interval: number;
+      expires_in: number;
+      method: string;
+      user_code: string;
+    };
+  };
+}
+
+interface BootstrapStatus {
+  data: {
+    id: string;
+    status: string;
+    expires_at?: string;
+    capabilities?: unknown;
+  };
+}
+
+interface OAuthTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+}
 
 const GLOBAL_OPTIONS = ["--api-key-stdin", "--base-url <url>", "--help", "-h"];
 
@@ -173,7 +244,7 @@ function parseArgs(args: string[]): ParsedArgs {
     throw new CliError(
       EXIT_USAGE,
       "COMMAND_REQUIRED",
-      "Command required: me, balance, search, fetch, or purchases",
+      "Command required: bootstrap, auth, me, balance, search, fetch, or purchases",
     );
   }
 
@@ -215,6 +286,108 @@ function requiredOption(
   return value;
 }
 
+function baseApiUrl(
+  baseUrl: string | undefined,
+  env: Record<string, string | undefined>,
+): string {
+  const raw = baseUrl ?? env.WEFT_BASE_URL ?? WEFT_API_BASE;
+  return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+}
+
+function resolveApiKeyFromStored(
+  credentials?:
+    | {
+        temporary_api_key: string;
+        type: "bootstrap";
+      }
+    | {
+        access_token: string;
+        type: "oauth";
+      },
+): string | undefined {
+  if (!credentials) return undefined;
+  if (credentials.type === "oauth" && credentials.access_token.trim()) {
+    return credentials.access_token;
+  }
+  if (
+    credentials.type === "bootstrap" &&
+    credentials.temporary_api_key.trim()
+  ) {
+    return credentials.temporary_api_key;
+  }
+  return undefined;
+}
+
+function oauthNeedsRefresh(credentials: OAuthCredentials): boolean {
+  return Date.parse(credentials.expiry) <= Date.now() + OAUTH_REFRESH_SKEW_MS;
+}
+
+async function refreshOAuthCredentials(
+  fetchApi: typeof fetch,
+  env: Record<string, string | undefined>,
+  stored: OAuthCredentials,
+): Promise<OAuthCredentials> {
+  const token = await requestJson<OAuthTokenResponse>(
+    fetchApi,
+    `${stored.base_url}/oauth/token`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: stored.refresh_token,
+        client_id: stored.client_id,
+      }).toString(),
+    },
+  );
+  const refreshed: OAuthCredentials = {
+    ...stored,
+    access_token: token.access_token,
+    refresh_token: token.refresh_token,
+    token_type: token.token_type,
+    scope: token.scope,
+    expiry: new Date(Date.now() + token.expires_in * 1000).toISOString(),
+  };
+  await writeStoredCredentials(env, refreshed);
+  return refreshed;
+}
+
+function noSecretFields(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...data,
+    temporary_api_key: undefined,
+    device_code: undefined,
+    access_token: undefined,
+    refresh_token: undefined,
+    client_secret: undefined,
+  };
+}
+
+async function requestJson<T>(
+  fetchApi: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<T> {
+  const response = await fetchApi(url, init);
+  if (!response.ok) {
+    throw new ResponseError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+function withCredentials(
+  headers: Record<string, string>,
+  apiKey: string,
+): Record<string, string> {
+  return {
+    ...headers,
+    authorization: `Bearer ${apiKey}`,
+  };
+}
+
 function ensureOnly(
   options: Map<string, string | true>,
   allowed: string[],
@@ -254,7 +427,11 @@ async function normalizeError(error: unknown): Promise<CliError> {
   if (error instanceof ResponseError) {
     const details = await responseDetails(error);
     const body = details as
-      { error?: { code?: string; message?: string } | string } | undefined;
+      | {
+          error?: { code?: string; message?: string } | string;
+          error_description?: string;
+        }
+      | undefined;
     const nested = typeof body?.error === "object" ? body.error : undefined;
     const code =
       nested?.code ??
@@ -262,7 +439,9 @@ async function normalizeError(error: unknown): Promise<CliError> {
         ? body.error
         : `HTTP_${error.response.status}`);
     const message =
-      nested?.message ?? `Weft API returned HTTP ${error.response.status}`;
+      nested?.message ??
+      body?.error_description ??
+      `Weft API returned HTTP ${error.response.status}`;
     const exitCode =
       error.response.status === 401 || error.response.status === 403
         ? EXIT_AUTH
@@ -293,6 +472,7 @@ export async function runCli(
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
   let idempotencyKey: string | undefined;
+  const fetchApi = dependencies.fetchApi ?? fetch;
 
   try {
     rejectUnsafeCredentialArgument(args);
@@ -313,22 +493,233 @@ export async function runCli(
     const parsed = parseArgs(args);
     command = parsed.command;
     const env = dependencies.env ?? process.env;
+    const baseUrl = baseApiUrl(parsed.baseUrl, env);
+
+    if (parsed.command === "bootstrap") {
+      ensureOnly(parsed.options, ["email", "agent-name", "reason"]);
+      if (parsed.positionals.length !== 0) {
+        throw new CliError(
+          EXIT_USAGE,
+          "INVALID_ARGUMENT",
+          "bootstrap does not accept positional arguments",
+        );
+      }
+      const email = requiredOption(parsed.options, "email");
+      const agentName = requiredOption(parsed.options, "agent-name");
+      const reason = requiredOption(parsed.options, "reason");
+
+      const register = await requestJson<{ client_id: string }>(
+        fetchApi,
+        `${baseUrl}/oauth/register`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            client_name: OAUTH_CLIENT_NAME,
+            redirect_uris: ["http://localhost/callback"],
+            grant_types: [
+              "urn:ietf:params:oauth:grant-type:device_code",
+              "refresh_token",
+            ],
+            token_endpoint_auth_method: "none",
+            scope: OAUTH_SCOPE,
+          }),
+        },
+      );
+
+      const clientId = register.client_id;
+      const bootstrap = await requestJson<BootstrapCreateResponse>(
+        fetchApi,
+        `${baseUrl}/api/v1/account_bootstraps`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            agent_name: agentName,
+            host_name: OAUTH_HOST_NAME,
+            reason,
+            oauth_client_id: clientId,
+            requested_scopes: ["balance", "fetch", "search"],
+          }),
+        },
+      );
+
+      const stored: BootstrapCredentials = {
+        version: 1,
+        type: "bootstrap",
+        base_url: baseUrl,
+        bootstrap_id: bootstrap.data.id,
+        temporary_api_key: bootstrap.data.temporary_api_key,
+        device_code: bootstrap.data.device_code,
+        client_id: clientId,
+        expiry: bootstrap.data.expires_at,
+        polling_interval: bootstrap.data.approval.interval,
+      };
+
+      await writeStoredCredentials(env, stored);
+
+      writeOut(
+        `${JSON.stringify({
+          schema_version: "1",
+          ok: true,
+          command,
+          data: noSecretFields({
+            ...bootstrap.data,
+            client_id: clientId,
+            base_url: baseUrl,
+            polling_interval: bootstrap.data.approval.interval,
+          }),
+        })}\n`,
+      );
+      return EXIT_SUCCESS;
+    }
+
+    if (parsed.command === "auth") {
+      ensureOnly(parsed.options, []);
+      if (
+        parsed.positionals.length !== 1 ||
+        parsed.positionals[0] !== "status"
+      ) {
+        throw new CliError(
+          EXIT_USAGE,
+          "INVALID_ARGUMENT",
+          "auth requires 'status'",
+        );
+      }
+
+      const stored = await readStoredCredentials(env);
+      if (!stored || stored.type !== "bootstrap") {
+        throw new CliError(
+          EXIT_AUTH,
+          "BOOTSTRAP_REQUIRED",
+          "Run weft bootstrap before auth status",
+        );
+      }
+
+      const statusBaseUrl = stored.base_url;
+      const status = await requestJson<BootstrapStatus>(
+        fetchApi,
+        `${statusBaseUrl}/api/v1/account_bootstraps/${stored.bootstrap_id}`,
+        {
+          method: "GET",
+          headers: withCredentials({}, stored.temporary_api_key),
+        },
+      );
+
+      const statusValue = status.data.status;
+      if (["pending", "rejected", "expired"].includes(statusValue)) {
+        writeOut(
+          `${JSON.stringify({
+            schema_version: "1",
+            ok: true,
+            command,
+            data: { status: statusValue },
+          })}\n`,
+        );
+        return EXIT_SUCCESS;
+      }
+
+      if (statusValue !== "claimed" && statusValue !== "consumed") {
+        writeOut(
+          `${JSON.stringify({
+            schema_version: "1",
+            ok: true,
+            command,
+            data: { status: statusValue },
+          })}\n`,
+        );
+        return EXIT_SUCCESS;
+      }
+
+      const token = await requestJson<OAuthTokenResponse>(
+        fetchApi,
+        `${statusBaseUrl}/oauth/token`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            device_code: stored.device_code,
+            client_id: stored.client_id,
+            name: OAUTH_CLIENT_NAME,
+          }).toString(),
+        },
+      );
+
+      const oauth: OAuthCredentials = {
+        version: 1,
+        type: "oauth",
+        base_url: statusBaseUrl,
+        client_id: stored.client_id,
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+        token_type: token.token_type,
+        scope: token.scope,
+        expiry: new Date(Date.now() + token.expires_in * 1000).toISOString(),
+      };
+      await writeStoredCredentials(env, oauth);
+
+      writeOut(
+        `${JSON.stringify({
+          schema_version: "1",
+          ok: true,
+          command,
+          data: {
+            status: "consumed",
+            authentication: "oauth",
+            scope: token.scope,
+          },
+        })}\n`,
+      );
+      return EXIT_SUCCESS;
+    }
+
     const rawKey = parsed.apiKeyStdin
       ? await (dependencies.readStdin ?? defaultReadStdin)()
       : env.WEFT_API_KEY;
-    const apiKey = rawKey?.trim();
+    let apiKey = rawKey?.trim();
+    let authenticatedBaseUrl = baseUrl;
+    if (parsed.apiKeyStdin && !apiKey) {
+      throw new CliError(
+        EXIT_AUTH,
+        "API_KEY_REQUIRED",
+        "--api-key-stdin requires a non-empty API key",
+      );
+    }
+    if (!apiKey && !parsed.apiKeyStdin) {
+      let stored = await readStoredCredentials(env);
+      if (stored?.type === "oauth" && oauthNeedsRefresh(stored)) {
+        stored = await withCredentialsLock(env, async () => {
+          const current = await readStoredCredentials(env);
+          if (current?.type === "oauth" && oauthNeedsRefresh(current)) {
+            return refreshOAuthCredentials(fetchApi, env, current);
+          }
+          return current;
+        });
+      }
+      apiKey = resolveApiKeyFromStored(stored);
+      if (stored) authenticatedBaseUrl = stored.base_url;
+    }
+
     if (!apiKey) {
       throw new CliError(
         EXIT_AUTH,
         "API_KEY_REQUIRED",
-        "Set WEFT_API_KEY or pass --api-key-stdin",
+        "Set WEFT_API_KEY, pass --api-key-stdin, or store credentials",
       );
     }
 
     const client = new WeftClient({
       apiKey,
-      baseUrl: parsed.baseUrl ?? env.WEFT_BASE_URL,
-      fetchApi: dependencies.fetchApi,
+      baseUrl: authenticatedBaseUrl,
+      fetchApi,
     });
 
     let data: unknown;
