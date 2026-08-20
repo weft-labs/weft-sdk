@@ -5,11 +5,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**address** | **str** | EVM address of the buyer&#39;s Privy-managed wallet. Null if no wallet provisioned. |
-**balance_usdc** | **str** | Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Returns \&quot;0.00\&quot; if the upstream wallet provider is unreachable. |
+**provider** | **str** | Crossmint is the only buyer-wallet provider. |
+**address** | **str** | Base smart-wallet address. Null only when Crossmint is unavailable. |
+**tempo_address** | **str** | Paired Tempo smart-wallet address. Null only when Crossmint is unavailable. |
+**balance_usdc** | **str** | Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
 **tempo_usd** | **str** | Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet&#39;s paired Tempo chain, exact to the micro-dollar. &#x60;null&#x60; when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \&quot;0.00\&quot;; it means \&quot;we couldn&#39;t determine it\&quot;, and &#x60;total_usd&#x60; then reflects the Base component only.  |
 **total_usd** | **str** | Single aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, exact to the micro-dollar. When &#x60;tempo_usd&#x60; is null (unavailable/unallowlisted) this equals &#x60;balance_usdc&#x60; alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.  |
-**network** | **str** | Wallet network (e.g. &#x60;base-sepolia&#x60;). |
+**network** | **str** | Selected Crossmint environment (&#x60;base_sepolia&#x60; or &#x60;base_mainnet&#x60;).  |
 
 ## Example
 
