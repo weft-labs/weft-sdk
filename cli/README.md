@@ -4,8 +4,9 @@ Use Weft from a shell or an autonomous agent. Application code should use the
 separate [`@weft-labs/sdk`](../typescript/README.md) package.
 
 The CLI prints one versioned JSON object per command. It accepts credentials
-only through `WEFT_API_KEY` or `--api-key-stdin`; it rejects API keys in command
-arguments so they do not leak into shell history or process listings.
+through `--api-key-stdin`, `WEFT_API_KEY`, or its protected local credential
+store; it rejects API keys in command arguments so they do not leak into shell
+history or process listings.
 `weft --help` and `weft <command> --help` return machine-readable JSON without
 requiring authentication.
 
@@ -51,9 +52,15 @@ weft me
 weft balance
 ```
 
+The `npm install -g` command also installs the Weft Skill into the supported
+per-user agent Skill directories. Restart the agent host after the first
+install. Package managers and install flags that block dependency scripts also
+block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` to opt out.
+
 `weft bootstrap` registers its OAuth client, creates the bootstrap, and writes
 the temporary and device credentials to a local credential file created with
-mode `0600`. Normal output never prints a secret.
+mode `0600`. After approval, the stored OAuth credential replaces the temporary
+credential and refreshes before expiry. Normal output never prints a secret.
 
 ### The temporary `wbt_` credential
 
@@ -74,13 +81,13 @@ existing account.
 | Status | Meaning | Agent action |
 | --- | --- | --- |
 | `pending` | Waiting for the human. Search works. | Keep polling at the returned interval. |
-| `claimed` | The human approved. `wbt_` can no longer search. | Complete the OAuth device exchange. |
+| `claimed` | The human approved. Search continues until OAuth delivery succeeds. | Complete the OAuth device exchange. |
 | `rejected` | The human declined. Terminal. | Stop; do not re-create the same bootstrap. |
 | `expired` | The 30-minute window closed unclaimed. Terminal. | Offer to start a new bootstrap. |
 | `consumed` | OAuth tokens were delivered. Terminal. | Use the OAuth credential. |
 
-`rejected`, `expired`, and `consumed` are terminal. Only a `pending` bootstrap
-can search; a `claimed` bootstrap keeps status and OAuth token exchange only.
+`rejected`, `expired`, and `consumed` are terminal. A `pending` or `claimed`
+bootstrap can search; `claimed` also keeps status and OAuth token exchange.
 
 See [`examples/agent-bootstrap.sh`](examples/agent-bootstrap.sh) for the same
 sequence as a script, and

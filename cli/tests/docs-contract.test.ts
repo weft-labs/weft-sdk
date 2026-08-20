@@ -1,5 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { EXIT_SUCCESS, runCli } from "../src/cli";
@@ -15,6 +24,7 @@ import { EXIT_SUCCESS, runCli } from "../src/cli";
 
 const SKILL = read("../../skills/weft/SKILL.md");
 const README = read("../README.md");
+const TYPESCRIPT_README = read("../../typescript/README.md");
 const EXAMPLE = read("../examples/agent-bootstrap.sh");
 const INVENTORY = read("../../docs/operation-inventory.md");
 
@@ -25,9 +35,6 @@ const BOOTSTRAP_STATES = [
   "expired",
   "consumed",
 ] as const;
-
-/** Frozen by the contract; the implementation lands with T3. */
-const CONTRACT_ONLY_COMMANDS = ["bootstrap", "auth"];
 
 function read(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -77,10 +84,7 @@ async function implementedCommands(): Promise<string[]> {
 
 describe("public documents teach the frozen bootstrap lifecycle", () => {
   it("names only implemented or contract-frozen commands", async () => {
-    const allowed = new Set([
-      ...(await implementedCommands()),
-      ...CONTRACT_ONLY_COMMANDS,
-    ]);
+    const allowed = new Set(await implementedCommands());
     for (const [label, document] of [
       ["SKILL.md", SKILL],
       ["cli/README.md", README],
@@ -171,6 +175,12 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
+  it("keeps the emailed claim link out of CLI handoff instructions", () => {
+    expect(SKILL).not.toMatch(/verification URI/i);
+    expect(EXAMPLE).not.toMatch(/verification URI/i);
+    expect(SKILL).toMatch(/claim link[\s\S]{0,80}only in the email/i);
+  });
+
   it("never implies a subsidy, sponsorship, or promotional balance", () => {
     for (const [label, document] of [
       ["SKILL.md", SKILL],
@@ -193,11 +203,103 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
   });
 
+  it("documents claimed-state search and stored OAuth credentials", () => {
+    for (const document of [SKILL, README, INVENTORY]) {
+      expect(document).toMatch(/claimed[\s\S]{0,100}search/i);
+    }
+    for (const document of [SKILL, README, TYPESCRIPT_README, INVENTORY]) {
+      expect(document).toMatch(/stored[\s\S]{0,100}OAuth/i);
+    }
+  });
+
+  it("packs and installs the exact public Skill for supported hosts", () => {
+    const home = mkdtempSync(join(tmpdir(), "weft-skill-install-"));
+    const bundled = new URL("../dist/weft-skill/SKILL.md", import.meta.url);
+    execFileSync(process.execPath, [
+      fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
+    ]);
+    expect(readFileSync(bundled, "utf8")).toBe(SKILL);
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        [
+          fileURLToPath(
+            new URL("../scripts/install-skill.mjs", import.meta.url),
+          ),
+        ],
+        {
+          env: {
+            ...process.env,
+            HOME: home,
+            USERPROFILE: "",
+            WEFT_FORCE_SKILL_INSTALL: "1",
+          },
+        },
+      ),
+    ).not.toThrow();
+    for (const destination of [
+      ".agents/skills/weft/SKILL.md",
+      ".claude/skills/weft/SKILL.md",
+      ".cursor/skills/weft/SKILL.md",
+      ".cline/skills/weft/SKILL.md",
+      ".config/opencode/skills/weft/SKILL.md",
+      ".openclaw/skills/weft/SKILL.md",
+      ".hermes/skills/weft/SKILL.md",
+    ]) {
+      expect(readFileSync(join(home, destination), "utf8")).toBe(SKILL);
+    }
+    rmSync(home, { recursive: true, force: true });
+    rmSync(bundled, { force: true });
+  });
+
+  it("skips unsafe or broken host paths without failing CLI installation", () => {
+    const home = mkdtempSync(join(tmpdir(), "weft-skill-install-safe-"));
+    const outside = mkdtempSync(join(tmpdir(), "weft-skill-install-outside-"));
+    const installer = fileURLToPath(
+      new URL("../scripts/install-skill.mjs", import.meta.url),
+    );
+    execFileSync(process.execPath, [
+      fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
+    ]);
+
+    writeFileSync(join(home, ".claude"), "not a directory");
+    mkdirSync(join(home, ".cursor", "skills"), { recursive: true });
+    mkdirSync(join(outside, "weft"));
+    symlinkSync(join(outside, "weft"), join(home, ".cursor", "skills", "weft"));
+
+    expect(() =>
+      execFileSync(process.execPath, [installer], {
+        env: {
+          ...process.env,
+          HOME: home,
+          USERPROFILE: "",
+          WEFT_FORCE_SKILL_INSTALL: "1",
+        },
+      }),
+    ).not.toThrow();
+    expect(
+      readFileSync(join(home, ".agents/skills/weft/SKILL.md"), "utf8"),
+    ).toBe(SKILL);
+    expect(() => readFileSync(join(outside, "weft", "SKILL.md"))).toThrow();
+
+    rmSync(home, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+    rmSync(new URL("../dist/weft-skill/SKILL.md", import.meta.url), {
+      force: true,
+    });
+  });
+
   it("keeps the bootstrap example valid POSIX shell", () => {
     const path = fileURLToPath(
       new URL("../examples/agent-bootstrap.sh", import.meta.url),
     );
     expect(() => execFileSync("sh", ["-n", path])).not.toThrow();
+  });
+
+  it("waits before every auth status poll", () => {
+    expect(EXAMPLE).toMatch(
+      /while :; do\s+sleep "\$POLL_INTERVAL"\s+auth="\$\(weft auth status\)"/,
+    );
   });
 
   it("keeps the bootstrap example credential-free and non-secret-printing", () => {

@@ -12,7 +12,7 @@ operations stay on the lower-level generated clients.
 | `signUp` | — | — | Excluded: interactive account lifecycle |
 | `confirmAccount` | — | — | Excluded: interactive account lifecycle |
 | `resendConfirmation` | — | — | Excluded: interactive account lifecycle |
-| `signIn` | — | — | Excluded: CLI accepts API keys only |
+| `signIn` | — | — | Excluded: CLI uses API keys or stored bootstrap/OAuth credentials |
 | `requestPasswordReset` | — | — | Excluded: interactive account lifecycle |
 | `updatePassword` | — | — | Excluded: interactive account lifecycle |
 | `getMe` | `me()` | `weft me` | Buyer runtime |
@@ -29,11 +29,12 @@ operations stay on the lower-level generated clients.
 
 ## CLI contract
 
-Authentication is accepted only through `WEFT_API_KEY` or
-`--api-key-stdin`; a `--api-key VALUE` argument is rejected so credentials do
-not leak into shell history or process listings. The API origin defaults to
-`https://weft.network` and can be changed with `WEFT_BASE_URL` or
-`--base-url`.
+Authentication precedence is explicit `--api-key-stdin`, then `WEFT_API_KEY`,
+then the protected local bootstrap or OAuth credential store. A
+`--api-key VALUE` argument is rejected so credentials do not leak into shell
+history or process listings. Stored OAuth credentials refresh before expiry.
+The API origin defaults to `https://weft.network` and can be changed with
+`WEFT_BASE_URL` or `--base-url`; stored credentials retain their API origin.
 
 Every command prints one versioned JSON object. Success uses
 `{"schema_version":"1","ok":true,"command":"…","data":…}` on stdout.
@@ -62,24 +63,25 @@ Exit codes are stable:
 `--max-results` is validated as `1..50`, and `--per-page` as `1..100`,
 before a network request is made.
 
-## Agent bootstrap (contract frozen, not yet implemented)
+## Agent bootstrap
 
-The subsidy-free bootstrap lifecycle is specified but not yet built into this
-package. The command names below are frozen by the contract; the exact flags,
-envelope fields, and credential-file path land with the implementation, so read
-`weft --help` before scripting them.
+The package implements the bootstrap lifecycle with no subsidy. Read
+`weft --help` before scripting it so the installed CLI remains the source of
+command syntax.
 
 | Command | Purpose |
 | --- | --- |
 | `weft bootstrap --email EMAIL --agent-name NAME --reason TEXT` | Create a temporary bootstrap, email the human a claim link, store the `wbt_` and device credentials in a mode-0600 local file |
-| `weft auth status` | Report the bootstrap lifecycle state and the polling interval |
+| `weft auth status` | Report the bootstrap lifecycle state; poll at the interval returned by `weft bootstrap` |
 
 The temporary `wbt_` credential is secret, expires 30 minutes after creation,
 and carries only the `search`, `status`, and `cancel` capabilities. Balance,
 paid fetch, wallet, transfer, withdrawal, seller, and organization mutation
 surfaces refuse it. Lifecycle states are `pending`, `claimed`, `rejected`,
-`expired`, and `consumed`; the last three are terminal. Cancellation is a
-bootstrap capability; its CLI spelling is not frozen yet.
+`expired`, and `consumed`; the last three are terminal. Search remains available
+through `claimed` and ends only after successful OAuth token delivery consumes
+the temporary credential. Cancellation is an API capability; no CLI cancel
+command is shipped in this version.
 
 No promotional balance, free credit, or subsidy is part of this lifecycle. A
 paid fetch requires the human to fund the wallet after the claim.

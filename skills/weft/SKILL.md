@@ -25,11 +25,20 @@ paid action spends the human's own funded wallet.
 npm install -g @weft-labs/cli
 ```
 
+The `npm install -g` command installs this Skill into the supported per-user
+agent Skill directories. Restart the agent host after the first install so it
+loads the new Skill. Package managers and install flags that block dependency
+scripts also block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` only
+when the Skill must not be installed on that machine.
+
 Zero-install equivalent, usable in any of the commands below:
 
 ```sh
 npx --package @weft-labs/cli weft --help
 ```
+
+The zero-install form runs the CLI but does not guarantee persistent Skill
+installation.
 
 `weft --help` and `weft <command> --help` return machine-readable JSON and need
 no credential. Read them before guessing a flag.
@@ -91,8 +100,9 @@ agent name, host, reason, requested scopes, and the searches already run, and
 then approves or rejects. An existing user must sign in freshly — holding the
 email link is not enough to attach the agent to their account.
 
-Show the verification URI and the user code from the bootstrap response so the
-human can confirm they are approving this session and not another one.
+Show the user code from the bootstrap response so the human can confirm they
+are approving this session and not another one. The tokenized claim link exists
+only in the email; the CLI does not print it.
 
 ### 5. Poll the status at the server's interval
 
@@ -109,7 +119,7 @@ Act on the status:
 | Status | What it means | What to do |
 |---|---|---|
 | `pending` | Waiting for the human. Search still works. | Keep searching if useful, keep polling at the given interval. |
-| `claimed` | The human approved. Temporary search access ends here. | Finish the OAuth handoff in step 6. |
+| `claimed` | The human approved. Temporary search remains available until OAuth delivery succeeds. | Finish the OAuth handoff in step 6. |
 | `rejected` | The human declined. Terminal. | Stop. Do not create a second bootstrap for the same request; ask the user what they want instead. |
 | `expired` | The 30-minute window passed without a claim. Terminal. | Tell the user the link timed out and offer to start a new bootstrap. |
 | `consumed` | The OAuth tokens were delivered. The temporary credential is dead. Terminal. | Use the OAuth credential; the `wbt_` token is finished. |
@@ -119,9 +129,9 @@ itself after 30 minutes. Cancelling early is also a bootstrap capability; check
 `weft --help` for its exact spelling before using it.
 
 `rejected`, `expired`, and `consumed` are terminal — nothing you run brings the
-bootstrap back. Only a `pending` bootstrap can search. A `claimed` bootstrap can
-still report status and complete the OAuth exchange, but its `wbt_` token can no
-longer search.
+bootstrap back. A `pending` or `claimed` bootstrap can search. A `claimed`
+bootstrap also keeps status and OAuth token exchange until successful token
+delivery consumes it.
 
 ### 6. Resume through OAuth
 
@@ -165,10 +175,11 @@ weft purchases
 
 ## Credentials
 
-The CLI accepts credentials only through `WEFT_API_KEY` or `--api-key-stdin`. It
-rejects an API key passed as a command argument so keys never reach shell
-history or a process listing. Never echo any credential — `wbt_`, `wk_`, or an
-OAuth token — into your output.
+The CLI first uses an explicit `--api-key-stdin` credential, then
+`WEFT_API_KEY`, then its stored bootstrap or OAuth credential. It refreshes an
+expiring OAuth credential without printing it. It rejects an API key passed as
+a command argument so keys never reach shell history or a process listing.
+Never echo any credential — `wbt_`, `wk_`, or an OAuth token — into your output.
 
 ## Errors
 

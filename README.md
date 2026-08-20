@@ -49,6 +49,9 @@ quickstart is shipped in the package at
 The CLI is published separately from the application SDK.
 
 ```sh
+npm install -g @weft-labs/cli
+weft --help
+
 npx --package @weft-labs/cli weft me
 npx --package @weft-labs/cli weft search "weather data API"
 npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
@@ -57,7 +60,9 @@ npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
 
 `fetch` requires a maximum cost. The CLI also generates an idempotency key and
 returns it in `meta.idempotency_key`, so a caller can safely reuse it when
-retrying an uncertain request.
+retrying an uncertain request. A global npm install also installs the Weft
+Skill for supported agent hosts. See the [CLI guide](cli/README.md) for
+credential-free bootstrap and human claim.
 
 ## Language support
 

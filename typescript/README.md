@@ -82,9 +82,11 @@ npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
   --max-cost-usd 0.05
 ```
 
-The CLI accepts credentials only from `WEFT_API_KEY` or `--api-key-stdin`. It
-never accepts a key in process arguments. Every response is a versioned JSON
-envelope suitable for scripts.
+The CLI accepts credentials from `--api-key-stdin`, `WEFT_API_KEY`, or its
+protected local stored OAuth/bootstrap credentials. It never accepts a key in
+process arguments. Every response is a versioned JSON envelope suitable for
+scripts. See the [CLI guide](../cli/README.md) for credential-free bootstrap,
+human claim, and automatic Skill installation.
 
 ## Error handling
 

@@ -110,6 +110,7 @@ try {
         "@weft-labs/sdk": `file:${sdkArchive}`,
       },
       pnpm: {
+        onlyBuiltDependencies: ["@weft-labs/cli"],
         overrides: {
           "@weft-labs/sdk": `file:${sdkArchive}`,
         },
@@ -117,9 +118,31 @@ try {
     }),
   );
 
-  await run("pnpm", ["install", "--ignore-scripts"], {
+  const skillHome = join(temporaryDirectory, "skill-home");
+  await run("pnpm", ["install"], {
     cwd: temporaryDirectory,
+    env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
   });
+
+  const publicSkill = await readFile(
+    new URL("../skills/weft/SKILL.md", import.meta.url),
+    "utf8",
+  );
+  for (const destination of [
+    ".agents/skills/weft/SKILL.md",
+    ".claude/skills/weft/SKILL.md",
+    ".cursor/skills/weft/SKILL.md",
+    ".cline/skills/weft/SKILL.md",
+    ".config/opencode/skills/weft/SKILL.md",
+    ".openclaw/skills/weft/SKILL.md",
+    ".hermes/skills/weft/SKILL.md",
+  ]) {
+    if (
+      (await readFile(join(skillHome, destination), "utf8")) !== publicSkill
+    ) {
+      throw new Error(`Packed CLI did not install ${destination}`);
+    }
+  }
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
