@@ -10,6 +10,8 @@ Name | Type | Description | Notes
 **Body** | Pointer to [**NullableFetchRequestBody**](FetchRequestBody.md) |  | [optional]
 **Headers** | Pointer to **map[string]string** | Headers forwarded to the upstream. Up to 32 headers, 4 KB total. The following are silently stripped: &#x60;host&#x60;, &#x60;authorization&#x60;, &#x60;cookie&#x60;, &#x60;proxy-authorization&#x60;, &#x60;x-forwarded-*&#x60;, &#x60;x-real-ip&#x60;, &#x60;x-payment&#x60;, &#x60;connection&#x60;, &#x60;upgrade&#x60;.  | [optional]
 **SearchId** | Pointer to **string** | The &#x60;query_trace_id&#x60; from the &#x60;POST /api/v1/search&#x60; response that surfaced this URL. Optional and advisory: it attributes the purchase to the search that found it, and is used only for measurement.  It never affects payment, authorization, idempotency, or the response body — the buyer is always resolved from the credential, never from this field. A value that is not a well-formed handle is ignored rather than rejected, so an analytics mistake can never cost a fetch.  | [optional]
+**OperationId** | Pointer to **string** | Advisory operation id returned by search. | [optional]
+**AccessMethodId** | Pointer to **string** | Advisory access-method id returned by search. | [optional]
 
 ## Methods
 
@@ -184,6 +186,56 @@ SetSearchId sets SearchId field to given value.
 `func (o *FetchRequest) HasSearchId() bool`
 
 HasSearchId returns a boolean if a field has been set.
+
+### GetOperationId
+
+`func (o *FetchRequest) GetOperationId() string`
+
+GetOperationId returns the OperationId field if non-nil, zero value otherwise.
+
+### GetOperationIdOk
+
+`func (o *FetchRequest) GetOperationIdOk() (*string, bool)`
+
+GetOperationIdOk returns a tuple with the OperationId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOperationId
+
+`func (o *FetchRequest) SetOperationId(v string)`
+
+SetOperationId sets OperationId field to given value.
+
+### HasOperationId
+
+`func (o *FetchRequest) HasOperationId() bool`
+
+HasOperationId returns a boolean if a field has been set.
+
+### GetAccessMethodId
+
+`func (o *FetchRequest) GetAccessMethodId() string`
+
+GetAccessMethodId returns the AccessMethodId field if non-nil, zero value otherwise.
+
+### GetAccessMethodIdOk
+
+`func (o *FetchRequest) GetAccessMethodIdOk() (*string, bool)`
+
+GetAccessMethodIdOk returns a tuple with the AccessMethodId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAccessMethodId
+
+`func (o *FetchRequest) SetAccessMethodId(v string)`
+
+SetAccessMethodId sets AccessMethodId field to given value.
+
+### HasAccessMethodId
+
+`func (o *FetchRequest) HasAccessMethodId() bool`
+
+HasAccessMethodId returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
