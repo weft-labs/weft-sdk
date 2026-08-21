@@ -8,6 +8,9 @@ operations stay on the lower-level generated clients.
 | OpenAPI operation | `WeftClient` | CLI | Classification |
 | --- | --- | --- | --- |
 | `getOpenApiDocument` | — | — | Excluded: contract discovery metadata |
+| `createAccountBootstrap` | — | `weft bootstrap --email EMAIL --agent-name NAME --reason TEXT` | Agent bootstrap lifecycle |
+| `getAccountBootstrap` | — | `weft auth status` | Agent bootstrap lifecycle status |
+| `cancelAccountBootstrap` | — | — | Agent bootstrap cancel; API capability only, no CLI command in this version |
 | `enrollResource` | — | — | Excluded: seller resource enrollment |
 | `signUp` | — | — | Excluded: interactive account lifecycle |
 | `confirmAccount` | — | — | Excluded: interactive account lifecycle |
@@ -20,6 +23,7 @@ operations stay on the lower-level generated clients.
 | `createApiKey` | — | — | Excluded: prevents secrets in CLI output/history |
 | `revokeApiKey` | — | — | Excluded: credential lifecycle |
 | `getBalance` | `balance()` | `weft balance` | Buyer runtime |
+| `getCuratedMarketplaceContract` | — | — | Excluded: contract discovery metadata |
 | `search` | `search(request)` | `weft search QUERY` | Buyer runtime |
 | `fetch` | `fetch(request, options)` | `weft fetch URL --max-cost-usd USD` | Paid buyer runtime |
 | `listPayments` | — | — | Excluded: organization-scoped seller ledger |
