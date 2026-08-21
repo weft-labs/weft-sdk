@@ -2,6 +2,7 @@
 /* eslint-disable */
 export * from './APIKeysApi';
 export * from './AccountApi';
+export * from './AgentBootstrapApi';
 export * from './AuthApi';
 export * from './BalanceApi';
 export * from './DefaultApi';
