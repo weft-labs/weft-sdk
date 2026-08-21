@@ -35,7 +35,9 @@ class FetchRequest(BaseModel):
     body: Optional[FetchRequestBody] = None
     headers: Optional[Dict[str, StrictStr]] = Field(default=None, description="Headers forwarded to the upstream. Up to 32 headers, 4 KB total. The following are silently stripped: `host`, `authorization`, `cookie`, `proxy-authorization`, `x-forwarded-*`, `x-real-ip`, `x-payment`, `connection`, `upgrade`. ")
     search_id: Optional[UUID] = Field(default=None, description="The `query_trace_id` from the `POST /api/v1/search` response that surfaced this URL. Optional and advisory: it attributes the purchase to the search that found it, and is used only for measurement.  It never affects payment, authorization, idempotency, or the response body — the buyer is always resolved from the credential, never from this field. A value that is not a well-formed handle is ignored rather than rejected, so an analytics mistake can never cost a fetch. ")
-    __properties: ClassVar[List[str]] = ["url", "max_cost_usd", "method", "body", "headers", "search_id"]
+    operation_id: Optional[StrictStr] = Field(default=None, description="Advisory operation id returned by search.")
+    access_method_id: Optional[StrictStr] = Field(default=None, description="Advisory access-method id returned by search.")
+    __properties: ClassVar[List[str]] = ["url", "max_cost_usd", "method", "body", "headers", "search_id", "operation_id", "access_method_id"]
 
     @field_validator('max_cost_usd')
     def max_cost_usd_validate_regular_expression(cls, value):
@@ -121,6 +123,8 @@ class FetchRequest(BaseModel):
             "method": obj.get("method") if obj.get("method") is not None else 'GET',
             "body": FetchRequestBody.from_dict(obj["body"]) if obj.get("body") is not None else None,
             "headers": obj.get("headers"),
-            "search_id": obj.get("search_id")
+            "search_id": obj.get("search_id"),
+            "operation_id": obj.get("operation_id"),
+            "access_method_id": obj.get("access_method_id")
         })
         return _obj

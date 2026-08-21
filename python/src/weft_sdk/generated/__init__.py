@@ -80,12 +80,20 @@ __all__ = [
     "ResourceEnrollmentRequest",
     "ResourceEnrollmentResponse",
     "ResourceStats",
+    "SearchAccessMethod",
     "SearchCapabilityRef",
+    "SearchCuratedCallability",
+    "SearchCuratedExecution",
+    "SearchCuratedOperation",
+    "SearchCuratedService",
+    "SearchCuratedSource",
     "SearchEndpointCall",
     "SearchEndpointHit",
     "SearchEndpointPrice",
     "SearchErrorResponse",
+    "SearchExecutionModeFilter",
     "SearchFilterSpec",
+    "SearchMethodFilter",
     "SearchPaymentOffer",
     "SearchPriceAtomicFilter",
     "SearchPriceUsdFilter",
@@ -96,6 +104,8 @@ __all__ = [
     "SearchResponse",
     "SearchResponseWarningsInner",
     "SearchResult",
+    "SearchStringSetFilter",
+    "SearchWeftFetchCompatibility",
     "SignInRequest",
     "SignUpRequest",
     "SpendingPolicy",
@@ -171,12 +181,20 @@ from weft_sdk.generated.models.resend_confirmation_request import ResendConfirma
 from weft_sdk.generated.models.resource_enrollment_request import ResourceEnrollmentRequest as ResourceEnrollmentRequest
 from weft_sdk.generated.models.resource_enrollment_response import ResourceEnrollmentResponse as ResourceEnrollmentResponse
 from weft_sdk.generated.models.resource_stats import ResourceStats as ResourceStats
+from weft_sdk.generated.models.search_access_method import SearchAccessMethod as SearchAccessMethod
 from weft_sdk.generated.models.search_capability_ref import SearchCapabilityRef as SearchCapabilityRef
+from weft_sdk.generated.models.search_curated_callability import SearchCuratedCallability as SearchCuratedCallability
+from weft_sdk.generated.models.search_curated_execution import SearchCuratedExecution as SearchCuratedExecution
+from weft_sdk.generated.models.search_curated_operation import SearchCuratedOperation as SearchCuratedOperation
+from weft_sdk.generated.models.search_curated_service import SearchCuratedService as SearchCuratedService
+from weft_sdk.generated.models.search_curated_source import SearchCuratedSource as SearchCuratedSource
 from weft_sdk.generated.models.search_endpoint_call import SearchEndpointCall as SearchEndpointCall
 from weft_sdk.generated.models.search_endpoint_hit import SearchEndpointHit as SearchEndpointHit
 from weft_sdk.generated.models.search_endpoint_price import SearchEndpointPrice as SearchEndpointPrice
 from weft_sdk.generated.models.search_error_response import SearchErrorResponse as SearchErrorResponse
+from weft_sdk.generated.models.search_execution_mode_filter import SearchExecutionModeFilter as SearchExecutionModeFilter
 from weft_sdk.generated.models.search_filter_spec import SearchFilterSpec as SearchFilterSpec
+from weft_sdk.generated.models.search_method_filter import SearchMethodFilter as SearchMethodFilter
 from weft_sdk.generated.models.search_payment_offer import SearchPaymentOffer as SearchPaymentOffer
 from weft_sdk.generated.models.search_price_atomic_filter import SearchPriceAtomicFilter as SearchPriceAtomicFilter
 from weft_sdk.generated.models.search_price_usd_filter import SearchPriceUsdFilter as SearchPriceUsdFilter
@@ -187,6 +205,8 @@ from weft_sdk.generated.models.search_resource_type_filter import SearchResource
 from weft_sdk.generated.models.search_response import SearchResponse as SearchResponse
 from weft_sdk.generated.models.search_response_warnings_inner import SearchResponseWarningsInner as SearchResponseWarningsInner
 from weft_sdk.generated.models.search_result import SearchResult as SearchResult
+from weft_sdk.generated.models.search_string_set_filter import SearchStringSetFilter as SearchStringSetFilter
+from weft_sdk.generated.models.search_weft_fetch_compatibility import SearchWeftFetchCompatibility as SearchWeftFetchCompatibility
 from weft_sdk.generated.models.sign_in_request import SignInRequest as SignInRequest
 from weft_sdk.generated.models.sign_up_request import SignUpRequest as SignUpRequest
 from weft_sdk.generated.models.spending_policy import SpendingPolicy as SpendingPolicy
