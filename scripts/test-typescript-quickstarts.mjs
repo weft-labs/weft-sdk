@@ -1,4 +1,11 @@
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
@@ -110,6 +117,7 @@ try {
         "@weft-labs/sdk": `file:${sdkArchive}`,
       },
       pnpm: {
+        onlyBuiltDependencies: ["@weft-labs/cli"],
         overrides: {
           "@weft-labs/sdk": `file:${sdkArchive}`,
         },
@@ -117,9 +125,42 @@ try {
     }),
   );
 
-  await run("pnpm", ["install", "--ignore-scripts"], {
+  const skillHome = join(temporaryDirectory, "skill-home");
+  for (const root of [
+    ".agents",
+    ".claude",
+    ".cursor",
+    ".cline",
+    ".config/opencode",
+    ".openclaw",
+    ".hermes",
+  ]) {
+    await mkdir(join(skillHome, root), { recursive: true });
+  }
+  await run("pnpm", ["install"], {
     cwd: temporaryDirectory,
+    env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
   });
+
+  const publicSkill = await readFile(
+    new URL("../skills/weft-cli/SKILL.md", import.meta.url),
+    "utf8",
+  );
+  for (const destination of [
+    ".agents/skills/weft-cli/SKILL.md",
+    ".claude/skills/weft-cli/SKILL.md",
+    ".cursor/skills/weft-cli/SKILL.md",
+    ".cline/skills/weft-cli/SKILL.md",
+    ".config/opencode/skills/weft-cli/SKILL.md",
+    ".openclaw/skills/weft-cli/SKILL.md",
+    ".hermes/skills/weft-cli/SKILL.md",
+  ]) {
+    if (
+      (await readFile(join(skillHome, destination), "utf8")) !== publicSkill
+    ) {
+      throw new Error(`Packed CLI did not install ${destination}`);
+    }
+  }
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
