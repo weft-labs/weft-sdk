@@ -11,7 +11,8 @@
     "dist",
     "examples",
     "README.md",
-    "scripts/install-skill.mjs"
+    "scripts/install-skill.mjs",
+    "scripts/skill-paths.mjs"
   ],
   "scripts": {
     "build": "tsup",

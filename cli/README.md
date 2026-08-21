@@ -52,10 +52,15 @@ weft me
 weft balance
 ```
 
-The `npm install -g` command also installs the Weft Skill into the supported
-per-user agent Skill directories. Restart the agent host after the first
-install. Package managers and install flags that block dependency scripts also
-block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` to opt out.
+The `npm install -g` command also installs the `weft-cli` Skill for supported
+agent hosts already present on the machine. It does not create configuration
+for absent hosts or replace a different existing Skill. Restart the agent host
+after the first install. Package managers and install flags that block
+dependency scripts also block Skill installation. Set
+`WEFT_SKIP_SKILL_INSTALL=1` before installation to opt out. npm does not run
+package uninstall hooks, so `npm rm -g @weft-labs/cli` leaves the Skill in
+place; remove the host's `skills/weft-cli` directory if you also want to remove
+the Skill.
 
 `weft bootstrap` registers its OAuth client, creates the bootstrap, and writes
 the temporary and device credentials to a local credential file created with
@@ -85,6 +90,10 @@ existing account.
 | `rejected` | The human declined. Terminal. | Stop; do not re-create the same bootstrap. |
 | `expired` | The 30-minute window closed unclaimed. Terminal. | Offer to start a new bootstrap. |
 | `consumed` | OAuth tokens were delivered. Terminal. | Use the OAuth credential. |
+
+These are server lifecycle states. `weft auth status` handles `claimed` by
+performing the OAuth exchange and emits `consumed` after successful delivery;
+it does not emit an intermediate `claimed` result.
 
 `rejected`, `expired`, and `consumed` are terminal. A `pending` or `claimed`
 bootstrap can search; `claimed` also keeps status and OAuth token exchange.

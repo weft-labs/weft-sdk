@@ -1,45 +1,28 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
   access,
-  lstat,
   mkdir,
   readFile,
   rename,
   rm,
   writeFile,
 } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import {
+  containsSymlink,
+  home,
+  isDetectedHost,
+  targets,
+} from "./skill-paths.mjs";
 
-const bundledSkill = new URL("../dist/weft-skill/SKILL.md", import.meta.url);
-const workspaceSkill = new URL("../../skills/weft/SKILL.md", import.meta.url);
-const home = process.env.HOME || process.env.USERPROFILE || homedir();
-const targets = [
-  ".agents/skills/weft/SKILL.md",
-  ".claude/skills/weft/SKILL.md",
-  ".cursor/skills/weft/SKILL.md",
-  ".cline/skills/weft/SKILL.md",
-  ".config/opencode/skills/weft/SKILL.md",
-  ".openclaw/skills/weft/SKILL.md",
-  ".hermes/skills/weft/SKILL.md",
-];
-
-async function containsSymlink(relativeTarget) {
-  let current = home;
-  for (const part of relativeTarget.split("/")) {
-    current = join(current, part);
-    try {
-      if ((await lstat(current)).isSymbolicLink()) return true;
-    } catch (error) {
-      if (error.code === "ENOENT") return false;
-      throw error;
-    }
-  }
-  return false;
-}
+const bundledSkill = new URL("../dist/weft-cli-skill/SKILL.md", import.meta.url);
+const workspaceSkill = new URL(
+  "../../skills/weft-cli/SKILL.md",
+  import.meta.url,
+);
 
 if (process.env.WEFT_SKIP_SKILL_INSTALL === "1") {
-  console.log("Skipped Weft Skill installation (WEFT_SKIP_SKILL_INSTALL=1).");
+  console.log("Skipped Weft CLI Skill installation (WEFT_SKIP_SKILL_INSTALL=1).");
   process.exit(0);
 }
 
@@ -54,45 +37,113 @@ let skill;
 try {
   skill = await readFile(bundledSkill, "utf8");
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  console.warn(`Could not read the bundled Weft Skill: ${message}`);
+  console.warn(`Could not read the bundled Weft CLI Skill: ${error.message}`);
   process.exit(0);
 }
 
-for (const relativeTarget of targets) {
+const skillHash = createHash("sha256").update(skill).digest("hex");
+const ownerMarker = JSON.stringify({ sha256: skillHash });
+let installed = 0;
+for (const [hostRoot, relativeTarget] of targets) {
   const target = join(home, relativeTarget);
-  const temporary = `${target}.${randomUUID()}.tmp`;
+  const relativeMarker = join(
+    dirname(relativeTarget),
+    ".weft-cli-owner.json",
+  );
+  const markerTarget = join(home, relativeMarker);
   try {
-    if (await containsSymlink(relativeTarget)) {
-      throw new Error("destination contains a symbolic link");
+    if (!(await isDetectedHost(hostRoot))) continue;
+    if (
+      (await containsSymlink(relativeTarget)) ||
+      (await containsSymlink(relativeMarker))
+    ) {
+      console.warn(`Skipped symlinked Skill destination: ${target}`);
+      continue;
     }
 
+    const directory = dirname(target);
+    const temporary = join(directory, ".weft-cli-next");
+    const backup = join(directory, ".weft-cli-backup");
     const existing = await readFile(target, "utf8").catch((error) => {
       if (error.code === "ENOENT") return undefined;
       throw error;
     });
-    if (existing === skill) continue;
-
-    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    await writeFile(temporary, skill, { mode: 0o600 });
-    let backup;
-    if (existing !== undefined) {
-      backup = `${target}.bak.${Date.now()}.${randomUUID()}`;
-      await rename(target, backup);
-    }
-    try {
-      await rename(temporary, target);
-    } catch (error) {
-      if (backup) await rename(backup, target);
+    const marker = await readFile(markerTarget, "utf8").catch((error) => {
+      if (error.code === "ENOENT") return undefined;
       throw error;
+    });
+    if (marker !== undefined) {
+      await rm(temporary, { force: true });
+      await rm(backup, { force: true });
     }
+    if (existing === skill) {
+      if (marker !== undefined && marker !== ownerMarker) {
+        await writeFile(markerTarget, ownerMarker, {
+          encoding: "utf8",
+          mode: 0o600,
+        });
+      }
+      continue;
+    }
+
+    const existingHash =
+      existing === undefined
+        ? undefined
+        : createHash("sha256").update(existing).digest("hex");
+
+    if (existing !== undefined) {
+      if (marker !== JSON.stringify({ sha256: existingHash })) {
+        console.warn(
+          `Kept existing Skill at ${target}. Remove it and reinstall @weft-labs/cli to use weft-cli.`,
+        );
+        continue;
+      }
+
+      await writeFile(temporary, skill, { encoding: "utf8", mode: 0o600 });
+      try {
+        await rename(target, backup);
+        try {
+          await rename(temporary, target);
+        } catch (error) {
+          await rename(backup, target);
+          throw error;
+        }
+      } finally {
+        await rm(temporary, { force: true });
+      }
+    } else {
+      await mkdir(dirname(target), { recursive: true });
+      await rm(markerTarget, { force: true });
+      await writeFile(markerTarget, ownerMarker, {
+        encoding: "utf8",
+        flag: "wx",
+        mode: 0o600,
+      });
+      try {
+        await writeFile(target, skill, {
+          encoding: "utf8",
+          flag: "wx",
+          mode: 0o600,
+        });
+      } catch (error) {
+        await rm(markerTarget, { force: true });
+        throw error;
+      }
+    }
+
+    await writeFile(markerTarget, ownerMarker, {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+    await rm(backup, { force: true });
+    installed += 1;
   } catch (error) {
-    await rm(temporary, { force: true }).catch(() => {});
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Could not install ${relativeTarget}: ${message}`);
+    console.warn(
+      `Could not install the Weft CLI Skill at ${target}: ${error.message}`,
+    );
   }
 }
 
 console.log(
-  `Finished Weft Skill installation for supported agent hosts under ${home}.`,
+  `Installed the Weft CLI Skill for ${installed} detected agent host(s).`,
 );

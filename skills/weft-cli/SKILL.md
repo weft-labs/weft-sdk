@@ -1,13 +1,13 @@
 ---
-name: weft
-description: Search the agent web and pay x402-protected endpoints with a Weft Account, and start from zero when the user has no Weft credential yet. Trigger when the user asks to find paid APIs, agents, or data resources, asks to retrieve or buy from a URL that may require payment, or asks to set up Weft. Drives the `@weft-labs/cli` command line: bootstrap a temporary search-only identity, hand the account to the human by email, resume through OAuth, then read balance and buy within the user's spending policy.
+name: weft-cli
+description: Use the Weft CLI to search the agent web, pay x402-protected endpoints, or bootstrap Weft when no credential exists. Drives `@weft-labs/cli`: create a temporary search-only identity, hand the account to the human by email, resume through OAuth, then read balance and buy within the user's spending policy. This is the shell-based CLI surface, not the Claude plugin's `weft` MCP Skill or the hosted `weft-mcp` usage Skill.
 ---
 
-# Weft
+# Weft CLI
 
-Weft Account is a self-custodial wallet that pays x402-protected endpoints from
-inside an agent host. The `weft` CLI is the agent surface: it prints one
-versioned JSON object per command, so parse the output instead of reading prose.
+Weft gives agents a wallet that pays x402-protected endpoints from inside an
+agent host. The `weft` CLI is the agent surface: it prints one versioned JSON
+object per command, so parse the output instead of reading prose.
 
 Two starting points:
 
@@ -25,10 +25,11 @@ paid action spends the human's own funded wallet.
 npm install -g @weft-labs/cli
 ```
 
-The `npm install -g` command installs this Skill into the supported per-user
-agent Skill directories. Restart the agent host after the first install so it
-loads the new Skill. Package managers and install flags that block dependency
-scripts also block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` only
+The `npm install -g` command installs this `weft-cli` Skill only for agent hosts
+already present on the machine. It never creates a new host configuration or
+replaces a different existing Skill. Restart the agent host after the first
+install. Package managers and install flags that block dependency scripts also
+block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` before installation
 when the Skill must not be installed on that machine.
 
 Zero-install equivalent, usable in any of the commands below:
@@ -124,6 +125,10 @@ Act on the status:
 | `expired` | The 30-minute window passed without a claim. Terminal. | Tell the user the link timed out and offer to start a new bootstrap. |
 | `consumed` | The OAuth tokens were delivered. The temporary credential is dead. Terminal. | Use the OAuth credential; the `wbt_` token is finished. |
 
+These are server lifecycle states. `weft auth status` handles `claimed` by
+performing the OAuth exchange and emits `consumed` after successful delivery;
+it does not emit an intermediate `claimed` result.
+
 If the user abandons the setup, do nothing: an unclaimed bootstrap expires by
 itself after 30 minutes. Cancelling early is also a bootstrap capability; check
 `weft --help` for its exact spelling before using it.
@@ -202,6 +207,10 @@ The hosted Weft MCP server (`https://weft.network/mcp`) exposes `weft_balance`,
 `weft_search`, and `weft_fetch` for hosts that cannot run a command line, such
 as ChatGPT. It requires an account the human has already created and signed in
 to; it cannot bootstrap a new one. Where a shell exists, use the CLI.
+
+In Claude Code, prefer the official Weft plugin. If that plugin is installed,
+do not add a second manual MCP connection. Without the plugin, add the hosted
+server directly:
 
 ```sh
 claude mcp add --transport http weft https://weft.network/mcp

@@ -1,14 +1,16 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { EXIT_SUCCESS, runCli } from "../src/cli";
@@ -22,7 +24,7 @@ import { EXIT_SUCCESS, runCli } from "../src/cli";
  * `wbt_` secrecy rule, or any wording that implies promotional money.
  */
 
-const SKILL = read("../../skills/weft/SKILL.md");
+const SKILL = read("../../skills/weft-cli/SKILL.md");
 const README = read("../README.md");
 const TYPESCRIPT_README = read("../../typescript/README.md");
 const EXAMPLE = read("../examples/agent-bootstrap.sh");
@@ -35,6 +37,26 @@ const BOOTSTRAP_STATES = [
   "expired",
   "consumed",
 ] as const;
+
+const SKILL_TARGETS = [
+  ".agents/skills/weft-cli/SKILL.md",
+  ".claude/skills/weft-cli/SKILL.md",
+  ".cursor/skills/weft-cli/SKILL.md",
+  ".cline/skills/weft-cli/SKILL.md",
+  ".config/opencode/skills/weft-cli/SKILL.md",
+  ".openclaw/skills/weft-cli/SKILL.md",
+  ".hermes/skills/weft-cli/SKILL.md",
+];
+
+const HOST_ROOTS = [
+  ".agents",
+  ".claude",
+  ".cursor",
+  ".cline",
+  ".config/opencode",
+  ".openclaw",
+  ".hermes",
+];
 
 function read(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -157,6 +179,15 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
+  it("explains that claimed is consumed inside auth status", () => {
+    for (const document of [SKILL, README]) {
+      expect(document).toMatch(
+        /auth status[\s\S]{0,100}claimed[\s\S]{0,100}consumed/i,
+      );
+      expect(document).toMatch(/does not emit an intermediate `claimed`/i);
+    }
+  });
+
   it("forbids the agent from handling the human's password", () => {
     for (const [label, document] of [
       ["SKILL.md", SKILL],
@@ -212,47 +243,100 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("packs and installs the exact public Skill for supported hosts", () => {
+  it("packs and updates package-owned Skills for detected hosts", () => {
     const home = mkdtempSync(join(tmpdir(), "weft-skill-install-"));
-    const bundled = new URL("../dist/weft-skill/SKILL.md", import.meta.url);
+    const bundled = new URL("../dist/weft-cli-skill/SKILL.md", import.meta.url);
+    const staleBundled = new URL(
+      "../dist/weft-skill/SKILL.md",
+      import.meta.url,
+    );
+    mkdirSync(fileURLToPath(new URL("../dist/weft-skill", import.meta.url)), {
+      recursive: true,
+    });
+    writeFileSync(staleBundled, "---\nname: weft\n---\n");
+    for (const root of HOST_ROOTS) {
+      mkdirSync(join(home, root), { recursive: true });
+    }
     execFileSync(process.execPath, [
       fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
     ]);
     expect(readFileSync(bundled, "utf8")).toBe(SKILL);
+    expect(() => readFileSync(staleBundled, "utf8")).toThrow();
+    const installer = fileURLToPath(
+      new URL("../scripts/install-skill.mjs", import.meta.url),
+    );
     expect(() =>
-      execFileSync(
-        process.execPath,
-        [
-          fileURLToPath(
-            new URL("../scripts/install-skill.mjs", import.meta.url),
-          ),
-        ],
-        {
-          env: {
-            ...process.env,
-            HOME: home,
-            USERPROFILE: "",
-            WEFT_FORCE_SKILL_INSTALL: "1",
-          },
+      execFileSync(process.execPath, [installer], {
+        env: {
+          ...process.env,
+          HOME: home,
+          USERPROFILE: "",
+          WEFT_FORCE_SKILL_INSTALL: "1",
         },
-      ),
+      }),
     ).not.toThrow();
-    for (const destination of [
-      ".agents/skills/weft/SKILL.md",
-      ".claude/skills/weft/SKILL.md",
-      ".cursor/skills/weft/SKILL.md",
-      ".cline/skills/weft/SKILL.md",
-      ".config/opencode/skills/weft/SKILL.md",
-      ".openclaw/skills/weft/SKILL.md",
-      ".hermes/skills/weft/SKILL.md",
-    ]) {
+    for (const destination of SKILL_TARGETS) {
       expect(readFileSync(join(home, destination), "utf8")).toBe(SKILL);
+    }
+
+    const updatedSkill = `${SKILL}\n<!-- updated -->\n`;
+    writeFileSync(bundled, updatedSkill);
+    execFileSync(process.execPath, [installer], {
+      env: {
+        ...process.env,
+        HOME: home,
+        USERPROFILE: "",
+        WEFT_FORCE_SKILL_INSTALL: "1",
+      },
+    });
+    for (const destination of SKILL_TARGETS) {
+      expect(readFileSync(join(home, destination), "utf8")).toBe(updatedSkill);
+    }
+
+    const firstDirectory = join(home, dirname(SKILL_TARGETS[0]));
+    const marker = join(firstDirectory, ".weft-cli-owner.json");
+    const abandonedBackup = join(firstDirectory, ".weft-cli-backup");
+    writeFileSync(marker, JSON.stringify({ sha256: "stale" }));
+    writeFileSync(abandonedBackup, "old package copy\n");
+    execFileSync(process.execPath, [installer], {
+      env: {
+        ...process.env,
+        HOME: home,
+        USERPROFILE: "",
+        WEFT_FORCE_SKILL_INSTALL: "1",
+      },
+    });
+    expect(JSON.parse(readFileSync(marker, "utf8"))).toEqual({
+      sha256: createHash("sha256").update(updatedSkill).digest("hex"),
+    });
+    expect(() => readFileSync(abandonedBackup, "utf8")).toThrow();
+
+    const changed = join(home, SKILL_TARGETS[0]);
+    writeFileSync(changed, "user-owned\n");
+    const nextSkill = `${SKILL}\n<!-- next -->\n`;
+    writeFileSync(bundled, nextSkill);
+    execFileSync(process.execPath, [installer], {
+      env: {
+        ...process.env,
+        HOME: home,
+        USERPROFILE: "",
+        WEFT_FORCE_SKILL_INSTALL: "1",
+      },
+    });
+    expect(readFileSync(changed, "utf8")).toBe("user-owned\n");
+    for (const destination of SKILL_TARGETS.slice(1)) {
+      expect(readFileSync(join(home, destination), "utf8")).toBe(nextSkill);
+      expect(
+        readdirSync(join(home, dirname(destination))).filter(
+          (name) => name.includes(".old.") || name.includes(".bak."),
+        ),
+      ).toEqual([]);
     }
     rmSync(home, { recursive: true, force: true });
     rmSync(bundled, { force: true });
   });
 
-  it("skips unsafe or broken host paths without failing CLI installation", () => {
+  it("skips absent, occupied, unsafe, or broken host paths", () => {
     const home = mkdtempSync(join(tmpdir(), "weft-skill-install-safe-"));
     const outside = mkdtempSync(join(tmpdir(), "weft-skill-install-outside-"));
     const installer = fileURLToPath(
@@ -262,10 +346,33 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
     ]);
 
-    writeFileSync(join(home, ".claude"), "not a directory");
+    mkdirSync(join(home, ".agents"));
+    mkdirSync(join(home, ".claude", "skills", "weft-cli"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(home, ".claude", "skills", "weft-cli", "SKILL.md"),
+      "user-owned\n",
+    );
+    writeFileSync(
+      join(home, ".claude", "skills", "weft-cli", "SKILL.md.old.manual"),
+      "user backup\n",
+    );
     mkdirSync(join(home, ".cursor", "skills"), { recursive: true });
-    mkdirSync(join(outside, "weft"));
-    symlinkSync(join(outside, "weft"), join(home, ".cursor", "skills", "weft"));
+    mkdirSync(join(outside, "weft-cli"));
+    symlinkSync(
+      join(outside, "weft-cli"),
+      join(home, ".cursor", "skills", "weft-cli"),
+    );
+    mkdirSync(join(home, ".openclaw", "skills", "weft-cli"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(home, ".openclaw", "skills", "weft-cli", ".weft-cli-owner.json"),
+      JSON.stringify({
+        sha256: createHash("sha256").update(SKILL).digest("hex"),
+      }),
+    );
 
     expect(() =>
       execFileSync(process.execPath, [installer], {
@@ -278,13 +385,37 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       }),
     ).not.toThrow();
     expect(
-      readFileSync(join(home, ".agents/skills/weft/SKILL.md"), "utf8"),
+      readFileSync(join(home, ".agents/skills/weft-cli/SKILL.md"), "utf8"),
     ).toBe(SKILL);
-    expect(() => readFileSync(join(outside, "weft", "SKILL.md"))).toThrow();
+    expect(
+      readFileSync(
+        join(home, ".claude", "skills", "weft-cli", "SKILL.md"),
+        "utf8",
+      ),
+    ).toBe("user-owned\n");
+    expect(
+      readFileSync(
+        join(home, ".claude", "skills", "weft-cli", "SKILL.md.old.manual"),
+        "utf8",
+      ),
+    ).toBe("user backup\n");
+    expect(() => readFileSync(join(outside, "weft-cli", "SKILL.md"))).toThrow();
+    expect(
+      readFileSync(
+        join(home, ".openclaw", "skills", "weft-cli", "SKILL.md"),
+        "utf8",
+      ),
+    ).toBe(SKILL);
+    expect(() => readFileSync(join(home, ".cline"))).toThrow();
+    expect(
+      readdirSync(join(home, ".claude", "skills", "weft-cli")).filter((name) =>
+        name.includes(".bak."),
+      ),
+    ).toEqual([]);
 
     rmSync(home, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
-    rmSync(new URL("../dist/weft-skill/SKILL.md", import.meta.url), {
+    rmSync(new URL("../dist/weft-cli-skill/SKILL.md", import.meta.url), {
       force: true,
     });
   });

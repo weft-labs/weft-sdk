@@ -60,9 +60,9 @@ npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
 
 `fetch` requires a maximum cost. The CLI also generates an idempotency key and
 returns it in `meta.idempotency_key`, so a caller can safely reuse it when
-retrying an uncertain request. A global npm install also installs the Weft
-Skill for supported agent hosts. See the [CLI guide](cli/README.md) for
-credential-free bootstrap and human claim.
+retrying an uncertain request. A global npm install also installs the
+`weft-cli` Skill for supported agent hosts already present on the machine. See
+the [CLI guide](cli/README.md) for credential-free bootstrap and human claim.
 
 ## Language support
 
