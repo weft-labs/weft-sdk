@@ -1,14 +1,4 @@
-# Changelog — OpenAPI 0.11.0 (2026-08-17)
+# Changelog — OpenAPI 0.13.1 (2026-08-21)
 
-_No generated API surface changes detected between the previous and current
-spec._
+_No API surface changes detected between the previous and current spec._
 
-## CLI
-
-- Added credential-free agent bootstrap, human claim status, protected OAuth
-  storage, and automatic refresh to `@weft-labs/cli`.
-- Global npm installation now installs the public `weft-cli` Skill for detected
-  agent hosts without replacing user-owned files. Package-owned copies update
-  on later installs. Package managers or flags that block dependency scripts
-  also block Skill installation.
-- Added a subsidy-free bootstrap guide and executable end-to-end example.
