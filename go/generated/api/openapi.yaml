@@ -1947,6 +1947,16 @@ components:
             - x402
             - x402
             eq: x402
+          execution_mode:
+            in:
+            - sync
+            - sync
+            eq: sync
+          method:
+            in:
+            - GET
+            - GET
+            eq: GET
           price:
             range_lte: range_lte
             gte: gte
@@ -1959,11 +1969,18 @@ components:
             lte: 0
             eq: 0
             range_gte: 0
+          weft_fetch_compatible: true
           type:
             in:
             - api
             - api
             eq: api
+          category:
+            in:
+            - in
+            - in
+            eq: eq
+          include_unknown_prices: false
       properties:
         query:
           description: Free-text query. Required and non-empty.
@@ -2005,6 +2022,16 @@ components:
           - x402
           - x402
           eq: x402
+        execution_mode:
+          in:
+          - sync
+          - sync
+          eq: sync
+        method:
+          in:
+          - GET
+          - GET
+          eq: GET
         price:
           range_lte: range_lte
           gte: gte
@@ -2017,11 +2044,18 @@ components:
           lte: 0
           eq: 0
           range_gte: 0
+        weft_fetch_compatible: true
         type:
           in:
           - api
           - api
           eq: api
+        category:
+          in:
+          - in
+          - in
+          eq: eq
+        include_unknown_prices: false
       properties:
         price:
           $ref: "#/components/schemas/SearchPriceUsdFilter"
@@ -2031,6 +2065,20 @@ components:
           $ref: "#/components/schemas/SearchResourceTypeFilter"
         protocol:
           $ref: "#/components/schemas/SearchProtocolFilter"
+        category:
+          $ref: "#/components/schemas/SearchStringSetFilter"
+        method:
+          $ref: "#/components/schemas/SearchMethodFilter"
+        execution_mode:
+          $ref: "#/components/schemas/SearchExecutionModeFilter"
+        weft_fetch_compatible:
+          description: True requires at least one access method supported by the current
+            Weft fetch runtime; false requires none.
+          type: boolean
+        include_unknown_prices:
+          default: false
+          description: "With a price constraint, also retain dynamic and unknown prices."
+          type: boolean
     SearchPriceUsdFilter:
       additionalProperties: false
       description: |
@@ -2164,6 +2212,75 @@ components:
             type: string
           minItems: 1
           type: array
+    SearchStringSetFilter:
+      additionalProperties: false
+      example:
+        in:
+        - in
+        - in
+        eq: eq
+      properties:
+        eq:
+          type: string
+        in:
+          items:
+            type: string
+          minItems: 1
+          type: array
+    SearchMethodFilter:
+      additionalProperties: false
+      example:
+        in:
+        - GET
+        - GET
+        eq: GET
+      properties:
+        eq:
+          enum:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - HEAD
+          - OPTIONS
+          type: string
+        in:
+          items:
+            enum:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - HEAD
+            - OPTIONS
+            type: string
+          minItems: 1
+          type: array
+    SearchExecutionModeFilter:
+      additionalProperties: false
+      example:
+        in:
+        - sync
+        - sync
+        eq: sync
+      properties:
+        eq:
+          enum:
+          - sync
+          - async
+          - stream
+          type: string
+        in:
+          items:
+            enum:
+            - sync
+            - async
+            - stream
+            type: string
+          minItems: 1
+          type: array
     SearchResponse:
       description: The weft-search-platform `POST /v1/search` response envelope.
       example:
@@ -2193,31 +2310,75 @@ components:
         result_count: 0
         embedder_model: embedder_model
         results:
-        - score: 0.7061401241503109
+        - score: 0.20271230230023218
           capability:
             capability_id: capability_id
             capability_type: capability_type
           endpoints:
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2236,26 +2397,76 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2274,37 +2485,87 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           provider:
             origin_domains:
             - origin_domains
             - origin_domains
             provider_id: provider_id
             display_name: display_name
-        - score: 0.7061401241503109
+        - score: 0.20271230230023218
           capability:
             capability_id: capability_id
             capability_type: capability_type
           endpoints:
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2323,26 +2584,76 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2361,6 +2672,12 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           provider:
             origin_domains:
             - origin_domains
@@ -2520,31 +2837,75 @@ components:
       - warnings
     SearchResult:
       example:
-        score: 0.7061401241503109
+        score: 0.20271230230023218
         capability:
           capability_id: capability_id
           capability_type: capability_type
         endpoints:
         - primary_protocol: primary_protocol
-          settlements: 5
+          settlements: 9
+          execution:
+            mode: sync
           operated_by_id: operated_by_id
           resource_type: resource_type
           endpoint_id: endpoint_id
+          source:
+            snapshot_version: 7
+            catalog: curated_marketplace
+            captured_at: 2000-01-23T04:56:07.000+00:00
           settled_via_facilitator_id: settled_via_facilitator_id
           url: url
           operator_type: first_party
-          latency_p50_ms: 2
+          latency_p50_ms: 3
           call:
             example_request: "{}"
             method: method
             input_schema: "{}"
             example_response: ""
+          output: "{}"
+          access_methods:
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
           price:
             last_observed_at: 2000-01-23T04:56:07.000+00:00
             atomic: 1
             live_verified: true
             indexed_usd: indexed_usd
             source: probe
+          service:
+            name: name
+            id: id
+          callability:
+            missing:
+            - missing
+            - missing
+            state: complete
           last_verified_at: 2000-01-23T04:56:07.000+00:00
           payment:
           - protocol: protocol
@@ -2563,26 +2924,76 @@ components:
             pay_to: pay_to
             network: network
             facilitator: facilitator
+          output_schema: "{}"
+          operation:
+            name: name
+            description: description
+            id: id
+          compatibility: "{}"
         - primary_protocol: primary_protocol
-          settlements: 5
+          settlements: 9
+          execution:
+            mode: sync
           operated_by_id: operated_by_id
           resource_type: resource_type
           endpoint_id: endpoint_id
+          source:
+            snapshot_version: 7
+            catalog: curated_marketplace
+            captured_at: 2000-01-23T04:56:07.000+00:00
           settled_via_facilitator_id: settled_via_facilitator_id
           url: url
           operator_type: first_party
-          latency_p50_ms: 2
+          latency_p50_ms: 3
           call:
             example_request: "{}"
             method: method
             input_schema: "{}"
             example_response: ""
+          output: "{}"
+          access_methods:
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
           price:
             last_observed_at: 2000-01-23T04:56:07.000+00:00
             atomic: 1
             live_verified: true
             indexed_usd: indexed_usd
             source: probe
+          service:
+            name: name
+            id: id
+          callability:
+            missing:
+            - missing
+            - missing
+            state: complete
           last_verified_at: 2000-01-23T04:56:07.000+00:00
           payment:
           - protocol: protocol
@@ -2601,6 +3012,12 @@ components:
             pay_to: pay_to
             network: network
             facilitator: facilitator
+          output_schema: "{}"
+          operation:
+            name: name
+            description: description
+            id: id
+          compatibility: "{}"
         provider:
           origin_domains:
           - origin_domains
@@ -2656,25 +3073,69 @@ components:
     SearchEndpointHit:
       example:
         primary_protocol: primary_protocol
-        settlements: 5
+        settlements: 9
+        execution:
+          mode: sync
         operated_by_id: operated_by_id
         resource_type: resource_type
         endpoint_id: endpoint_id
+        source:
+          snapshot_version: 7
+          catalog: curated_marketplace
+          captured_at: 2000-01-23T04:56:07.000+00:00
         settled_via_facilitator_id: settled_via_facilitator_id
         url: url
         operator_type: first_party
-        latency_p50_ms: 2
+        latency_p50_ms: 3
         call:
           example_request: "{}"
           method: method
           input_schema: "{}"
           example_response: ""
+        output: "{}"
+        access_methods:
+        - weft_fetch:
+            reason: reason
+            contract_version: 2
+            state: supported
+          protocol: x402
+          scheme: scheme
+          terms: "{}"
+          price: "{}"
+          merchant: "{}"
+          asset: asset
+          access_method_id: access_method_id
+          network: network
+          asset_decimals: 5
+          status: listed
+        - weft_fetch:
+            reason: reason
+            contract_version: 2
+            state: supported
+          protocol: x402
+          scheme: scheme
+          terms: "{}"
+          price: "{}"
+          merchant: "{}"
+          asset: asset
+          access_method_id: access_method_id
+          network: network
+          asset_decimals: 5
+          status: listed
         price:
           last_observed_at: 2000-01-23T04:56:07.000+00:00
           atomic: 1
           live_verified: true
           indexed_usd: indexed_usd
           source: probe
+        service:
+          name: name
+          id: id
+        callability:
+          missing:
+          - missing
+          - missing
+          state: complete
         last_verified_at: 2000-01-23T04:56:07.000+00:00
         payment:
         - protocol: protocol
@@ -2693,6 +3154,12 @@ components:
           pay_to: pay_to
           network: network
           facilitator: facilitator
+        output_schema: "{}"
+        operation:
+          name: name
+          description: description
+          id: id
+        compatibility: "{}"
       properties:
         endpoint_id:
           type: string
@@ -2721,6 +3188,29 @@ components:
           items:
             $ref: "#/components/schemas/SearchPaymentOffer"
           type: array
+        access_methods:
+          items:
+            $ref: "#/components/schemas/SearchAccessMethod"
+          type: array
+        service:
+          $ref: "#/components/schemas/SearchCuratedService"
+        operation:
+          $ref: "#/components/schemas/SearchCuratedOperation"
+        output_schema:
+          type: object
+          nullable: true
+        output:
+          type: object
+          nullable: true
+        execution:
+          $ref: "#/components/schemas/SearchCuratedExecution"
+        callability:
+          $ref: "#/components/schemas/SearchCuratedCallability"
+        compatibility:
+          type: object
+          nullable: true
+        source:
+          $ref: "#/components/schemas/SearchCuratedSource"
         operator_type:
           description: |
             Who you are actually paying. `first_party` = operated by the provider
@@ -2884,6 +3374,159 @@ components:
           nullable: true
       required:
       - protocol
+    SearchAccessMethod:
+      example:
+        weft_fetch:
+          reason: reason
+          contract_version: 2
+          state: supported
+        protocol: x402
+        scheme: scheme
+        terms: "{}"
+        price: "{}"
+        merchant: "{}"
+        asset: asset
+        access_method_id: access_method_id
+        network: network
+        asset_decimals: 5
+        status: listed
+      properties:
+        access_method_id:
+          type: string
+        protocol:
+          enum:
+          - x402
+          - mpp
+          - free
+          type: string
+        scheme:
+          type: string
+          nullable: true
+        network:
+          type: string
+          nullable: true
+        asset:
+          type: string
+          nullable: true
+        asset_decimals:
+          type: integer
+          nullable: true
+        price:
+          type: object
+        merchant:
+          type: object
+        terms:
+          type: object
+        status:
+          enum:
+          - listed
+          - observed
+          - unavailable
+          type: string
+        weft_fetch:
+          $ref: "#/components/schemas/SearchWeftFetchCompatibility"
+      required:
+      - access_method_id
+      - price
+      - protocol
+      - weft_fetch
+    SearchWeftFetchCompatibility:
+      example:
+        reason: reason
+        contract_version: 2
+        state: supported
+      properties:
+        state:
+          enum:
+          - supported
+          - unsupported
+          - unknown
+          type: string
+        reason:
+          type: string
+        contract_version:
+          type: integer
+      required:
+      - contract_version
+      - reason
+      - state
+    SearchCuratedService:
+      example:
+        name: name
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SearchCuratedOperation:
+      example:
+        name: name
+        description: description
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+    SearchCuratedExecution:
+      example:
+        mode: sync
+      properties:
+        mode:
+          enum:
+          - sync
+          - async
+          - stream
+          type: string
+          nullable: true
+    SearchCuratedCallability:
+      example:
+        missing:
+        - missing
+        - missing
+        state: complete
+      properties:
+        state:
+          enum:
+          - complete
+          - incomplete
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+      required:
+      - missing
+      - state
+    SearchCuratedSource:
+      example:
+        snapshot_version: 7
+        catalog: curated_marketplace
+        captured_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        catalog:
+          enum:
+          - curated_marketplace
+          type: string
+        snapshot_version:
+          type: integer
+        captured_at:
+          format: date-time
+          type: string
+      required:
+      - captured_at
+      - catalog
+      - snapshot_version
     SearchErrorResponse:
       description: |
         Bespoke error envelope returned by `/api/v1/search` for `422`, `502`,
@@ -2918,9 +3561,11 @@ components:
           Accept: application/json
           User-Agent: my-agent/1.0
         method: GET
+        operation_id: operation_id
         body: FetchRequest_body
         max_cost_usd: "0.05"
         url: https://x402.api.agentmail.to/v0/inboxes
+        access_method_id: access_method_id
         search_id: 11111111-1111-4111-8111-111111111111
       properties:
         url:
@@ -2975,6 +3620,12 @@ components:
             a fetch.
           example: 11111111-1111-4111-8111-111111111111
           format: uuid
+          type: string
+        operation_id:
+          description: Advisory operation id returned by search.
+          type: string
+        access_method_id:
+          description: Advisory access-method id returned by search.
           type: string
       required:
       - url

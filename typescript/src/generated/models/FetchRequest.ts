@@ -77,6 +77,18 @@ export interface FetchRequest {
      * @memberof FetchRequest
      */
     searchId?: string;
+    /**
+     * Advisory operation id returned by search.
+     * @type {string}
+     * @memberof FetchRequest
+     */
+    operationId?: string;
+    /**
+     * Advisory access-method id returned by search.
+     * @type {string}
+     * @memberof FetchRequest
+     */
+    accessMethodId?: string;
 }
 
 
@@ -119,6 +131,8 @@ export function FetchRequestFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'body': json['body'] == null ? undefined : FetchRequestBodyFromJSON(json['body']),
         'headers': json['headers'] == null ? undefined : json['headers'],
         'searchId': json['search_id'] == null ? undefined : json['search_id'],
+        'operationId': json['operation_id'] == null ? undefined : json['operation_id'],
+        'accessMethodId': json['access_method_id'] == null ? undefined : json['access_method_id'],
     };
 }
 
@@ -139,5 +153,7 @@ export function FetchRequestToJSONTyped(value?: FetchRequest | null, ignoreDiscr
         'body': FetchRequestBodyToJSON(value['body']),
         'headers': value['headers'],
         'search_id': value['searchId'],
+        'operation_id': value['operationId'],
+        'access_method_id': value['accessMethodId'],
     };
 }

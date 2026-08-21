@@ -20,6 +20,12 @@ import json
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List, Optional
+from weft_sdk.generated.models.search_access_method import SearchAccessMethod
+from weft_sdk.generated.models.search_curated_callability import SearchCuratedCallability
+from weft_sdk.generated.models.search_curated_execution import SearchCuratedExecution
+from weft_sdk.generated.models.search_curated_operation import SearchCuratedOperation
+from weft_sdk.generated.models.search_curated_service import SearchCuratedService
+from weft_sdk.generated.models.search_curated_source import SearchCuratedSource
 from weft_sdk.generated.models.search_endpoint_call import SearchEndpointCall
 from weft_sdk.generated.models.search_endpoint_price import SearchEndpointPrice
 from weft_sdk.generated.models.search_payment_offer import SearchPaymentOffer
@@ -37,13 +43,22 @@ class SearchEndpointHit(BaseModel):
     call: Optional[SearchEndpointCall] = None
     price: Optional[SearchEndpointPrice] = None
     payment: Optional[List[SearchPaymentOffer]] = Field(default=None, description="The settlement routes this endpoint's own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of `call`: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider's own preference order. Honest-empty when the pipeline observed no challenge. ")
+    access_methods: Optional[List[SearchAccessMethod]] = None
+    service: Optional[SearchCuratedService] = None
+    operation: Optional[SearchCuratedOperation] = None
+    output_schema: Optional[Dict[str, Any]] = None
+    output: Optional[Dict[str, Any]] = None
+    execution: Optional[SearchCuratedExecution] = None
+    callability: Optional[SearchCuratedCallability] = None
+    compatibility: Optional[Dict[str, Any]] = None
+    source: Optional[SearchCuratedSource] = None
     operator_type: Optional[StrictStr] = Field(default=None, description="Who you are actually paying. `first_party` = operated by the provider that makes the capability; `reseller` = resold, so the price carries someone else's margin. Null until the platform resolves the operator. ")
     operated_by_id: Optional[StrictStr] = None
     settled_via_facilitator_id: Optional[StrictStr] = None
     settlements: Optional[StrictInt] = Field(default=None, description="Count of payments observed settling against this endpoint by ANYONE (chain-indexed), not just by Weft — the reliability signal a caller can act on. Null when unknown. ")
     last_verified_at: Optional[datetime] = Field(default=None, description="When Weft last CONFIRMED this endpoint answers — the most recent conclusive probe. Null when never probed, or when the latest probe errored: an endpoint we last failed to reach has no current verification. ")
     latency_p50_ms: Optional[StrictInt] = Field(default=None, description="Median time-to-first-byte in ms across the endpoint's probe call set. First-byte latency, not full-response time. Null when unmeasured (never 0). ")
-    __properties: ClassVar[List[str]] = ["endpoint_id", "url", "resource_type", "primary_protocol", "call", "price", "payment", "operator_type", "operated_by_id", "settled_via_facilitator_id", "settlements", "last_verified_at", "latency_p50_ms"]
+    __properties: ClassVar[List[str]] = ["endpoint_id", "url", "resource_type", "primary_protocol", "call", "price", "payment", "access_methods", "service", "operation", "output_schema", "output", "execution", "callability", "compatibility", "source", "operator_type", "operated_by_id", "settled_via_facilitator_id", "settlements", "last_verified_at", "latency_p50_ms"]
 
     @field_validator('operator_type')
     def operator_type_validate_enum(cls, value):
@@ -107,6 +122,28 @@ class SearchEndpointHit(BaseModel):
                 if _item_payment:
                     _items.append(_item_payment.to_dict())
             _dict['payment'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in access_methods (list)
+        _items = []
+        if self.access_methods:
+            for _item_access_methods in self.access_methods:
+                if _item_access_methods:
+                    _items.append(_item_access_methods.to_dict())
+            _dict['access_methods'] = _items
+        # override the default output from pydantic by calling `to_dict()` of service
+        if self.service:
+            _dict['service'] = self.service.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of operation
+        if self.operation:
+            _dict['operation'] = self.operation.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of execution
+        if self.execution:
+            _dict['execution'] = self.execution.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of callability
+        if self.callability:
+            _dict['callability'] = self.callability.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of source
+        if self.source:
+            _dict['source'] = self.source.to_dict()
         return _dict
 
     @classmethod
@@ -126,6 +163,15 @@ class SearchEndpointHit(BaseModel):
             "call": SearchEndpointCall.from_dict(obj["call"]) if obj.get("call") is not None else None,
             "price": SearchEndpointPrice.from_dict(obj["price"]) if obj.get("price") is not None else None,
             "payment": [SearchPaymentOffer.from_dict(_item) for _item in obj["payment"]] if obj.get("payment") is not None else None,
+            "access_methods": [SearchAccessMethod.from_dict(_item) for _item in obj["access_methods"]] if obj.get("access_methods") is not None else None,
+            "service": SearchCuratedService.from_dict(obj["service"]) if obj.get("service") is not None else None,
+            "operation": SearchCuratedOperation.from_dict(obj["operation"]) if obj.get("operation") is not None else None,
+            "output_schema": obj.get("output_schema"),
+            "output": obj.get("output"),
+            "execution": SearchCuratedExecution.from_dict(obj["execution"]) if obj.get("execution") is not None else None,
+            "callability": SearchCuratedCallability.from_dict(obj["callability"]) if obj.get("callability") is not None else None,
+            "compatibility": obj.get("compatibility"),
+            "source": SearchCuratedSource.from_dict(obj["source"]) if obj.get("source") is not None else None,
             "operator_type": obj.get("operator_type"),
             "operated_by_id": obj.get("operated_by_id"),
             "settled_via_facilitator_id": obj.get("settled_via_facilitator_id"),
