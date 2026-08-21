@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **PromoUsd** | **string** |  |
-**WalletUsdc** | **string** | Live Base USDC balance. |
+**WalletUsdc** | **string** | Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero.  |
 **TempoUsd** | **string** | Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. &#x60;null&#x60; when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \&quot;0.00\&quot; for an unread component.  |
 **TotalUsd** | **string** | Aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals &#x60;wallet_usdc&#x60; alone when &#x60;tempo_usd&#x60; is null. Null when the Base USDC provider is unreachable.  |
 **SpentTodayUsd** | **string** |  |
