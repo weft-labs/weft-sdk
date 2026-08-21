@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { ResponseError } from "./generated";
-import { WeftClient, type PaidFetchRequest } from "./client";
-import { WeftError } from "./error";
+import {
+  type PaidFetchRequest,
+  ResponseError,
+  WeftClient,
+  WeftError,
+} from "@weft-labs/sdk";
 
 export const EXIT_SUCCESS = 0;
 export const EXIT_USAGE = 2;
@@ -10,6 +13,46 @@ export const EXIT_API = 4;
 export const EXIT_INTERNAL = 5;
 
 type Command = "me" | "balance" | "search" | "fetch" | "purchases";
+
+const COMMANDS: Command[] = ["me", "balance", "search", "fetch", "purchases"];
+
+const COMMAND_HELP = {
+  me: {
+    description: "Return the authenticated principal",
+    usage: "weft me",
+    options: [],
+  },
+  balance: {
+    description: "Return wallet balance and spending policy",
+    usage: "weft balance",
+    options: [],
+  },
+  search: {
+    description: "Search for payable resources",
+    usage: "weft search <query> [--max-results <1..50>]",
+    options: ["--max-results <1..50>"],
+  },
+  fetch: {
+    description: "Fetch a URL within an explicit spending limit",
+    usage:
+      "weft fetch <url> --max-cost-usd <amount> [--method <method>] [--idempotency-key <key>]",
+    options: [
+      "--max-cost-usd <amount>",
+      "--method <method>",
+      "--idempotency-key <key>",
+    ],
+  },
+  purchases: {
+    description: "List purchases or return one purchase by ID",
+    usage: "weft purchases [id] [--page <number>] [--per-page <1..100>]",
+    options: ["--page <number>", "--per-page <1..100>"],
+  },
+} satisfies Record<
+  Command,
+  { description: string; usage: string; options: string[] }
+>;
+
+const GLOBAL_OPTIONS = ["--api-key-stdin", "--base-url <url>", "--help", "-h"];
 
 export interface CliDependencies {
   env?: Record<string, string | undefined>;
@@ -55,7 +98,7 @@ function takeValue(
   return [value, index + 1];
 }
 
-function parseArgs(args: string[]): ParsedArgs {
+function rejectUnsafeCredentialArgument(args: string[]): void {
   if (args.some((arg) => arg === "--api-key" || arg.startsWith("--api-key="))) {
     throw new CliError(
       EXIT_USAGE,
@@ -63,7 +106,39 @@ function parseArgs(args: string[]): ParsedArgs {
       "API keys are accepted only through WEFT_API_KEY or --api-key-stdin",
     );
   }
+}
 
+function requestedHelp(args: string[]): Command | "all" | undefined {
+  const isHelp = (value: string) => value === "--help" || value === "-h";
+  if (args.length === 1 && isHelp(args[0])) return "all";
+  if (
+    args.length === 2 &&
+    COMMANDS.includes(args[0] as Command) &&
+    isHelp(args[1])
+  ) {
+    return args[0] as Command;
+  }
+  return undefined;
+}
+
+function helpData(command: Command | "all") {
+  if (command !== "all") {
+    return {
+      command,
+      ...COMMAND_HELP[command],
+      global_options: GLOBAL_OPTIONS,
+    };
+  }
+  return {
+    usage: "weft <command> [options]",
+    commands: COMMANDS.map((name) => ({ name, ...COMMAND_HELP[name] })),
+    global_options: GLOBAL_OPTIONS,
+    authentication: ["WEFT_API_KEY", "--api-key-stdin"],
+    exit_codes: { success: 0, usage: 2, auth: 3, api: 4, internal: 5 },
+  };
+}
+
+function parseArgs(args: string[]): ParsedArgs {
   let command: Command | undefined;
   let apiKeyStdin = false;
   let baseUrl: string | undefined;
@@ -81,7 +156,7 @@ function parseArgs(args: string[]): ParsedArgs {
       options.set(arg.slice(2), value);
       index = nextIndex;
     } else if (!command) {
-      if (!["me", "balance", "search", "fetch", "purchases"].includes(arg)) {
+      if (!COMMANDS.includes(arg as Command)) {
         throw new CliError(
           EXIT_USAGE,
           "UNKNOWN_COMMAND",
@@ -220,6 +295,21 @@ export async function runCli(
   let idempotencyKey: string | undefined;
 
   try {
+    rejectUnsafeCredentialArgument(args);
+    const help = requestedHelp(args);
+    if (help !== undefined) {
+      command = "help";
+      writeOut(
+        `${JSON.stringify({
+          schema_version: "1",
+          ok: true,
+          command,
+          data: helpData(help),
+        })}\n`,
+      );
+      return EXIT_SUCCESS;
+    }
+
     const parsed = parseArgs(args);
     command = parsed.command;
     const env = dependencies.env ?? process.env;

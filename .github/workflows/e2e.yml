@@ -61,12 +61,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: typescript/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Compute expected OpenAPI SHA-256
         # The PR's `spec/openapi.yaml` is the source of truth for what the
@@ -81,10 +83,10 @@ jobs:
           echo "EXPECTED_OPENAPI_SHA256=$ACTUAL_SHA256" >> "$GITHUB_ENV"
 
       - name: Install TypeScript dependencies
-        run: cd typescript && npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Build TypeScript SDK
-        run: cd typescript && npm run build
+      - name: Build TypeScript SDK and CLI
+        run: pnpm run build
 
       - name: Run TypeScript staging e2e
         run: node scripts/e2e-typescript-staging.mjs

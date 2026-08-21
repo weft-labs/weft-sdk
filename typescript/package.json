@@ -5,9 +5,6 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "weft": "./cli/weft.mjs"
-  },
   "exports": {
     ".": {
       "import": {
@@ -52,16 +49,16 @@
   },
   "scripts": {
     "build": "tsup",
-    "test": "vitest run && npm run test:quickstarts",
-    "test:quickstarts": "npm run build && node ../scripts/test-typescript-quickstarts.mjs && node ../scripts/test-seller-quickstarts.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run",
     "lint": "eslint --fix",
     "lint:check": "eslint",
     "format": "prettier --write \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\" \"../scripts/test-seller-quickstarts.mjs\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"!src/generated/**\" \"examples/*.mjs\" \"../scripts/test-typescript-quickstarts.mjs\" \"../scripts/test-seller-quickstarts.mjs\"",
-    "hooks:pre-push": "npm run lint:check && npm run format:check && vitest run",
+    "hooks:pre-push": "pnpm run lint:check && pnpm run format:check && vitest run",
     "generate": "../scripts/generate-typescript.sh",
-    "smoke": "npm run build && node ../scripts/weft-smoke.mjs",
-    "prepublishOnly": "npm run build"
+    "smoke": "pnpm run build && node ../scripts/weft-smoke.mjs",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "weft",
@@ -81,6 +78,7 @@
     "@x402/core": "^2.0.0"
   },
   "devDependencies": {
+    "@x402/core": "2.20.0",
     "@types/node": "^26.1.2",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
@@ -92,7 +90,6 @@
     "vitest": "^4.1.8"
   },
   "files": [
-    "cli",
     "dist",
     "docs",
     "examples",
@@ -101,6 +98,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "packageManager": "pnpm@10.33.4",
   "overrides": {
     "esbuild": "^0.28.1"
   }

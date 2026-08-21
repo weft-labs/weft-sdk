@@ -1,7 +1,6 @@
 # `@weft-labs/sdk`
 
-The supported TypeScript client and CLI for building buyer applications on
-Weft.
+The supported TypeScript client for building buyer applications on Weft.
 
 ## Get a buyer API key
 
@@ -73,13 +72,13 @@ generates a key automatically and returns it in its success envelope.
 
 ## CLI
 
-The `weft` executable ships in this package.
+The `weft` executable is published separately as `@weft-labs/cli`.
 
 ```sh
-npx --package @weft-labs/sdk weft me
-npx --package @weft-labs/sdk weft balance
-npx --package @weft-labs/sdk weft search "weather data API" --max-results 5
-npx --package @weft-labs/sdk weft fetch "https://merchant.example/data" \
+npx --package @weft-labs/cli weft me
+npx --package @weft-labs/cli weft balance
+npx --package @weft-labs/cli weft search "weather data API" --max-results 5
+npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
   --max-cost-usd 0.05
 ```
 
@@ -287,8 +286,8 @@ export default app;
 
 Both blocks are the shipped `examples/charge-api.mjs` and
 `examples/charge-api-hono.mjs` verbatim. `tests/readme-examples.test.ts` fails
-if they drift, and `npm run test:quickstarts` runs both from the packed
-package against a stub facilitator.
+if they drift. The root artifact test runs both from the packed package against
+a stub facilitator.
 
 ### What the facilitator does per paid request
 

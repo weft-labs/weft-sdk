@@ -3,7 +3,6 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: {
     index: "src/index.ts",
-    cli: "src/cli.ts",
     server: "src/server.ts",
     "facilitator/index": "src/facilitator/index.ts",
     "facilitator/middleware/index": "src/facilitator/middleware/index.ts",

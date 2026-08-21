@@ -13,7 +13,7 @@
  * or payment validity. The real-money proof lives in the staging first-seller
  * plan, not here.
  */
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -217,30 +217,25 @@ function buildPaymentPayload(requirements) {
 
 let expressProcess;
 try {
-  const packResult = await run(
-    "npm",
-    [
-      "pack",
-      "--json",
-      "--ignore-scripts",
-      "--pack-destination",
-      temporaryDirectory,
-    ],
-    { cwd: packageDirectory },
+  await run("pnpm", ["pack", "--pack-destination", temporaryDirectory], {
+    cwd: packageDirectory,
+  });
+  const archive = join(
+    temporaryDirectory,
+    (await readdir(temporaryDirectory)).find((name) => name.endsWith(".tgz")),
   );
-  const [{ filename }] = JSON.parse(packResult.stdout);
-  const archive = join(temporaryDirectory, filename);
+  await writeFile(
+    join(temporaryDirectory, "package.json"),
+    JSON.stringify({ name: "weft-seller-artifact-consumer", private: true }),
+  );
 
   // Exactly what the public guide tells a seller to install.
   await run(
-    "npm",
+    "pnpm",
     [
-      "install",
+      "add",
       "--ignore-scripts",
-      "--no-audit",
-      "--no-fund",
-      "--no-package-lock",
-      archive,
+      `file:${archive}`,
       "express",
       "hono",
       "@x402/evm",

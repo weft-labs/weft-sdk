@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   EXIT_API,
@@ -20,6 +21,16 @@ function capture() {
 }
 
 describe("weft CLI", () => {
+  it("is the sole package owner of the weft executable", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    );
+    expect(packageJson.bin).toEqual({ weft: "./bin/weft.mjs" });
+    expect(packageJson.dependencies).toEqual({
+      "@weft-labs/sdk": "workspace:*",
+    });
+  });
+
   it("never accepts an API key in argv", async () => {
     const io = capture();
     const code = await runCli(["balance", "--api-key", "wk_secret"], {
@@ -32,6 +43,61 @@ describe("weft CLI", () => {
       schema_version: "1",
       error: { code: "UNSAFE_CREDENTIAL_ARGUMENT" },
     });
+  });
+
+  it("describes all commands as machine-readable JSON without authentication", async () => {
+    const io = capture();
+    const code = await runCli(["--help"], { ...io, env: {} });
+
+    expect(code).toBe(EXIT_SUCCESS);
+    expect(io.err).toEqual([]);
+    expect(JSON.parse(io.out[0])).toMatchObject({
+      schema_version: "1",
+      ok: true,
+      command: "help",
+      data: {
+        usage: "weft <command> [options]",
+        commands: [
+          { name: "me" },
+          { name: "balance" },
+          { name: "search" },
+          { name: "fetch" },
+          { name: "purchases" },
+        ],
+        authentication: ["WEFT_API_KEY", "--api-key-stdin"],
+        exit_codes: { success: 0, usage: 2, auth: 3, api: 4, internal: 5 },
+      },
+    });
+  });
+
+  it("describes each command without authentication or a network call", async () => {
+    const fetchApi = vi.fn();
+    for (const command of ["me", "balance", "search", "fetch", "purchases"]) {
+      const io = capture();
+      expect(
+        await runCli([command, "--help"], { ...io, env: {}, fetchApi }),
+      ).toBe(EXIT_SUCCESS);
+      expect(JSON.parse(io.out[0])).toMatchObject({
+        schema_version: "1",
+        ok: true,
+        command: "help",
+        data: { command },
+      });
+    }
+    expect(fetchApi).not.toHaveBeenCalled();
+  });
+
+  it("rejects an argv credential even when help is requested", async () => {
+    const io = capture();
+    expect(
+      await runCli(["balance", "--help", "--api-key", "wk_secret"], {
+        ...io,
+        env: {},
+      }),
+    ).toBe(EXIT_USAGE);
+    expect(io.out).toEqual([]);
+    expect(io.err.join("")).not.toContain("wk_secret");
+    expect(JSON.parse(io.err[0]).error.code).toBe("UNSAFE_CREDENTIAL_ARGUMENT");
   });
 
   it("requires an environment or stdin credential", async () => {
