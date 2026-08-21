@@ -319,7 +319,10 @@ function resolveApiKeyFromStored(
 }
 
 function oauthNeedsRefresh(credentials: OAuthCredentials): boolean {
-  return Date.parse(credentials.expiry) <= Date.now() + OAUTH_REFRESH_SKEW_MS;
+  const expiry = Date.parse(credentials.expiry);
+  return (
+    !Number.isFinite(expiry) || expiry <= Date.now() + OAUTH_REFRESH_SKEW_MS
+  );
 }
 
 async function refreshOAuthCredentials(
@@ -339,6 +342,7 @@ async function refreshOAuthCredentials(
         client_id: stored.client_id,
       }).toString(),
     },
+    true,
   );
   const refreshed: OAuthCredentials = {
     ...stored,
@@ -369,9 +373,21 @@ async function requestJson<T>(
   fetchApi: typeof fetch,
   url: string,
   init: RequestInit,
+  redactError = false,
 ): Promise<T> {
   const response = await fetchApi(url, init);
   if (!response.ok) {
+    if (redactError) {
+      throw new CliError(
+        response.status === 401 || response.status === 403
+          ? EXIT_AUTH
+          : response.status >= 500
+            ? EXIT_INTERNAL
+            : EXIT_API,
+        "OAUTH_TOKEN_ERROR",
+        `OAuth token request failed with HTTP ${response.status}`,
+      );
+    }
     throw new ResponseError(response);
   }
 
@@ -593,7 +609,22 @@ export async function runCli(
       }
 
       const stored = await readStoredCredentials(env);
-      if (!stored || stored.type !== "bootstrap") {
+      if (stored?.type === "oauth") {
+        writeOut(
+          `${JSON.stringify({
+            schema_version: "1",
+            ok: true,
+            command,
+            data: {
+              status: "consumed",
+              authentication: "oauth",
+              scope: stored.scope,
+            },
+          })}\n`,
+        );
+        return EXIT_SUCCESS;
+      }
+      if (!stored) {
         throw new CliError(
           EXIT_AUTH,
           "BOOTSTRAP_REQUIRED",
@@ -612,18 +643,6 @@ export async function runCli(
       );
 
       const statusValue = status.data.status;
-      if (["pending", "rejected", "expired"].includes(statusValue)) {
-        writeOut(
-          `${JSON.stringify({
-            schema_version: "1",
-            ok: true,
-            command,
-            data: { status: statusValue },
-          })}\n`,
-        );
-        return EXIT_SUCCESS;
-      }
-
       if (statusValue !== "claimed" && statusValue !== "consumed") {
         writeOut(
           `${JSON.stringify({
@@ -651,6 +670,7 @@ export async function runCli(
             name: OAUTH_CLIENT_NAME,
           }).toString(),
         },
+        true,
       );
 
       const oauth: OAuthCredentials = {

@@ -457,10 +457,29 @@ describe("weft CLI", () => {
     expect(after.client_id).toBe("client-id");
     expect(after.access_token).toBe("access-token");
     expect(after).not.toHaveProperty("temporary_api_key");
+
+    const repeated = capture();
+    expect(
+      await runCli(["auth", "status"], {
+        ...repeated,
+        env: { WEFT_CREDENTIALS_FILE: credFile },
+        fetchApi: vi.fn(() => {
+          throw new Error("auth status must not call the server after OAuth");
+        }),
+      }),
+    ).toBe(EXIT_SUCCESS);
+    expect(JSON.parse(repeated.out[0])).toMatchObject({
+      ok: true,
+      data: {
+        status: "consumed",
+        authentication: "oauth",
+        scope: "balance fetch search",
+      },
+    });
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("refreshes expired stored OAuth credentials before an API call", async () => {
+  it("refreshes OAuth credentials with an invalid expiry before an API call", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-refresh-"));
     const credFile = join(dir, "credentials.json");
     writeFileSync(
@@ -474,7 +493,7 @@ describe("weft CLI", () => {
         refresh_token: "old-refresh-token",
         token_type: "Bearer",
         scope: "balance fetch search",
-        expiry: "2020-01-01T00:00:00.000Z",
+        expiry: "not-a-date",
       }),
     );
     const io = capture();
@@ -521,6 +540,54 @@ describe("weft CLI", () => {
       access_token: "new-access-token",
       refresh_token: "new-refresh-token",
     });
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("does not print secrets returned by a failed OAuth refresh", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "weft-cli-refresh-error-"));
+    const credFile = join(dir, "credentials.json");
+    writeFileSync(
+      credFile,
+      JSON.stringify({
+        version: 1,
+        type: "oauth",
+        base_url: "https://api.example",
+        client_id: "client-id",
+        access_token: "expired-access-token",
+        refresh_token: "old-refresh-token",
+        token_type: "Bearer",
+        scope: "balance fetch search",
+        expiry: "not-a-date",
+      }),
+    );
+    const io = capture();
+    const fetchApi = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: "invalid_grant",
+            error_description: "old-refresh-token was rejected",
+            refresh_token: "server-echoed-refresh-token",
+          }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        ),
+    );
+
+    expect(
+      await runCli(["me"], {
+        ...io,
+        env: { WEFT_CREDENTIALS_FILE: credFile },
+        fetchApi,
+      }),
+    ).toBe(EXIT_AUTH);
+    expect(JSON.parse(io.err[0])).toMatchObject({
+      error: {
+        code: "OAUTH_TOKEN_ERROR",
+        message: "OAuth token request failed with HTTP 401",
+      },
+    });
+    expect(io.err.join(" ")).not.toContain("old-refresh-token");
+    expect(io.err.join(" ")).not.toContain("server-echoed-refresh-token");
     rmSync(dir, { recursive: true, force: true });
   });
 
