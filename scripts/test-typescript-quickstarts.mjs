@@ -137,7 +137,7 @@ try {
   ]) {
     await mkdir(join(skillHome, root), { recursive: true });
   }
-  await run("pnpm", ["install"], {
+  await run("pnpm", ["install", "--side-effects-cache=false"], {
     cwd: temporaryDirectory,
     env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
   });
