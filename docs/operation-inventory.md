@@ -8,6 +8,7 @@ operations stay on the lower-level generated clients.
 | OpenAPI operation | `WeftClient` | CLI | Classification |
 | --- | --- | --- | --- |
 | `getOpenApiDocument` | — | — | Excluded: contract discovery metadata |
+| `getCuratedMarketplaceContract` | — | — | Excluded: contract discovery metadata |
 | `enrollResource` | — | — | Excluded: seller resource enrollment |
 | `signUp` | — | — | Excluded: interactive account lifecycle |
 | `confirmAccount` | — | — | Excluded: interactive account lifecycle |
@@ -19,6 +20,9 @@ operations stay on the lower-level generated clients.
 | `listApiKeys` | — | — | Excluded: credential lifecycle |
 | `createApiKey` | — | — | Excluded: prevents secrets in CLI output/history |
 | `revokeApiKey` | — | — | Excluded: credential lifecycle |
+| `cancelAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
+| `createAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
+| `getAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
 | `getBalance` | `balance()` | `weft balance` | Buyer runtime |
 | `search` | `search(request)` | `weft search QUERY` | Buyer runtime |
 | `fetch` | `fetch(request, options)` | `weft fetch URL --max-cost-usd USD` | Paid buyer runtime |
