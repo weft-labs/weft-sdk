@@ -516,6 +516,108 @@ describe("weft CLI", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it("does not restore stale status over a new bootstrap", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-status-race-"));
+    const credFile = join(dir, "credentials.json");
+    writeFileSync(
+      credFile,
+      JSON.stringify({
+        base_url: "https://old.example",
+        id: "old-boot-id",
+        status: "pending",
+        capabilities: ["search", "status", "cancel"],
+        expires_at: "2026-08-22T15:00:00Z",
+        approval: { method: "email_link", expires_in: 1800, interval: 5 },
+        temporary_api_key: "old-temp-key",
+      }),
+    );
+
+    let statusStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      statusStarted = resolve;
+    });
+    let finishStatus!: (response: Response) => void;
+    const statusResponse = new Promise<Response>((resolve) => {
+      finishStatus = resolve;
+    });
+    const statusIo = capture();
+    const statusRun = runCli(["auth", "status"], {
+      ...statusIo,
+      env: { WEFT_CREDENTIALS_FILE: credFile },
+      fetchApi: vi.fn(async () => {
+        statusStarted();
+        return statusResponse;
+      }),
+    });
+    await started;
+
+    const bootstrapIo = capture();
+    expect(
+      await runCli(
+        [
+          "bootstrap",
+          "--email",
+          "agent@example.com",
+          "--agent-name",
+          "Agent",
+          "--reason",
+          "Test",
+          "--base-url",
+          "https://new.example",
+        ],
+        {
+          ...bootstrapIo,
+          env: { WEFT_CREDENTIALS_FILE: credFile },
+          fetchApi: vi.fn(
+            async () =>
+              new Response(
+                JSON.stringify({
+                  data: {
+                    id: "new-boot-id",
+                    status: "pending",
+                    capabilities: ["search", "status", "cancel"],
+                    expires_at: "2026-08-22T16:00:00Z",
+                    approval: {
+                      method: "email_link",
+                      expires_in: 1800,
+                      interval: 5,
+                    },
+                    temporary_api_key: "new-temp-key",
+                  },
+                }),
+                {
+                  status: 201,
+                  headers: { "content-type": "application/json" },
+                },
+              ),
+          ),
+        },
+      ),
+    ).toBe(EXIT_SUCCESS);
+
+    finishStatus(
+      new Response(
+        JSON.stringify({
+          data: {
+            id: "old-boot-id",
+            status: "claimed",
+            capabilities: ["identity", "search", "balance"],
+            expires_at: null,
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+    expect(await statusRun).toBe(EXIT_AUTH);
+    expect(JSON.parse(statusIo.err[0]).error.code).toBe("CREDENTIALS_CHANGED");
+    expect(JSON.parse(readFileSync(credFile, "utf8"))).toMatchObject({
+      base_url: "https://new.example",
+      id: "new-boot-id",
+      temporary_api_key: "new-temp-key",
+    });
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it("keeps the same bootstrap token after claim and writes merged status", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-claimed-"));
     const credFile = join(dir, "credentials.json");

@@ -6,6 +6,7 @@ import {
   type StoredCredentials,
   withCredentialsLock,
   writeStoredCredentials,
+  writeStoredCredentialsWhileLocked,
 } from "./credentials";
 import { randomUUID } from "node:crypto";
 import {
@@ -353,7 +354,7 @@ async function refreshOAuthCredentials(
     scope: token.scope,
     expiry: new Date(Date.now() + token.expires_in * 1000).toISOString(),
   };
-  await writeStoredCredentials(env, refreshed);
+  await writeStoredCredentialsWhileLocked(env, refreshed);
   return refreshed;
 }
 
@@ -651,7 +652,7 @@ export async function runCli(
               "Stored credentials changed; rerun auth status",
             );
           }
-          await writeStoredCredentials(env, oauth);
+          await writeStoredCredentialsWhileLocked(env, oauth);
           return oauth;
         });
         writeOut(
@@ -705,14 +706,25 @@ export async function runCli(
         temporary_api_key: stored.temporary_api_key,
       };
 
-      await writeStoredCredentials(env, merged);
+      const active = await withCredentialsLock(env, async () => {
+        const current = await readStoredCredentials(env);
+        if (JSON.stringify(current) !== JSON.stringify(stored)) {
+          throw new CliError(
+            EXIT_AUTH,
+            "CREDENTIALS_CHANGED",
+            "Stored credentials changed; rerun auth status",
+          );
+        }
+        await writeStoredCredentialsWhileLocked(env, merged);
+        return merged;
+      });
 
       writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
           command,
-          data: noSecretFields(merged),
+          data: noSecretFields(active),
         })}\n`,
       );
       return EXIT_SUCCESS;

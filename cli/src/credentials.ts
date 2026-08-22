@@ -161,6 +161,15 @@ export async function writeStoredCredentials(
   env: Record<string, string | undefined>,
   credentials: StoredCredentials,
 ): Promise<void> {
+  await withCredentialsLock(env, () =>
+    writeStoredCredentialsWhileLocked(env, credentials),
+  );
+}
+
+export async function writeStoredCredentialsWhileLocked(
+  env: Record<string, string | undefined>,
+  credentials: StoredCredentials,
+): Promise<void> {
   const path = resolveCredentialsPath(env);
   if (!path) {
     throw new Error("HOME, USERPROFILE, or WEFT_CREDENTIALS_FILE is required");
