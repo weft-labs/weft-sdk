@@ -13,8 +13,8 @@ Method | HTTP request | Description
 Get the current credential principal
 
 Returns the seller Organization represented by an `ax_live_*` resource
-key, or the buyer User represented by a `wk_*` account key or OAuth
-access token. Branch on `data.principal_type`.
+key, or the buyer User represented by a `wk_*` account key, OAuth access
+token, or claimed `wbt_*` bearer. Branch on `data.principal_type`.
 
 
 ### Example
