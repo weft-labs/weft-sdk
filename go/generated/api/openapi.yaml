@@ -31,7 +31,7 @@ info:
     envelopes carrying additional context — see `SearchErrorResponse` and
     `FetchErrorResponse`.
   title: Weft API
-  version: 0.13.1
+  version: 0.14.1
 servers:
 - description: Production
   url: https://weft.network
@@ -286,6 +286,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Validation error
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Rate limit exceeded (20 accounts/hour/IP)
       summary: Create an account
       tags:
       - Auth
