@@ -11,6 +11,15 @@ Name | Type | Description | Notes
 **Call** | Pointer to [**SearchEndpointCall**](SearchEndpointCall.md) |  | [optional]
 **Price** | Pointer to [**SearchEndpointPrice**](SearchEndpointPrice.md) |  | [optional]
 **Payment** | Pointer to [**[]SearchPaymentOffer**](SearchPaymentOffer.md) | The settlement routes this endpoint&#39;s own 402 challenge published — one entry per rail × network × asset × payee it accepts. Sibling of &#x60;call&#x60;: that block says how to shape the request, this says how to pay for it, so a caller can settle with its OWN x402/mpp SDK instead of guessing. A list because rails are irreducibly plural. Order is the provider&#39;s own preference order. Honest-empty when the pipeline observed no challenge.  | [optional]
+**AccessMethods** | Pointer to [**[]SearchAccessMethod**](SearchAccessMethod.md) |  | [optional]
+**Service** | Pointer to [**SearchCuratedService**](SearchCuratedService.md) |  | [optional]
+**Operation** | Pointer to [**SearchCuratedOperation**](SearchCuratedOperation.md) |  | [optional]
+**OutputSchema** | Pointer to **map[string]interface{}** |  | [optional]
+**Output** | Pointer to **map[string]interface{}** |  | [optional]
+**Execution** | Pointer to [**SearchCuratedExecution**](SearchCuratedExecution.md) |  | [optional]
+**Callability** | Pointer to [**SearchCuratedCallability**](SearchCuratedCallability.md) |  | [optional]
+**Compatibility** | Pointer to **map[string]interface{}** |  | [optional]
+**Source** | Pointer to [**SearchCuratedSource**](SearchCuratedSource.md) |  | [optional]
 **OperatorType** | Pointer to **string** | Who you are actually paying. &#x60;first_party&#x60; &#x3D; operated by the provider that makes the capability; &#x60;reseller&#x60; &#x3D; resold, so the price carries someone else&#39;s margin. Null until the platform resolves the operator.  | [optional]
 **OperatedById** | Pointer to **string** |  | [optional]
 **SettledViaFacilitatorId** | Pointer to **string** |  | [optional]
@@ -211,6 +220,231 @@ SetPayment sets Payment field to given value.
 `func (o *SearchEndpointHit) HasPayment() bool`
 
 HasPayment returns a boolean if a field has been set.
+
+### GetAccessMethods
+
+`func (o *SearchEndpointHit) GetAccessMethods() []SearchAccessMethod`
+
+GetAccessMethods returns the AccessMethods field if non-nil, zero value otherwise.
+
+### GetAccessMethodsOk
+
+`func (o *SearchEndpointHit) GetAccessMethodsOk() (*[]SearchAccessMethod, bool)`
+
+GetAccessMethodsOk returns a tuple with the AccessMethods field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAccessMethods
+
+`func (o *SearchEndpointHit) SetAccessMethods(v []SearchAccessMethod)`
+
+SetAccessMethods sets AccessMethods field to given value.
+
+### HasAccessMethods
+
+`func (o *SearchEndpointHit) HasAccessMethods() bool`
+
+HasAccessMethods returns a boolean if a field has been set.
+
+### GetService
+
+`func (o *SearchEndpointHit) GetService() SearchCuratedService`
+
+GetService returns the Service field if non-nil, zero value otherwise.
+
+### GetServiceOk
+
+`func (o *SearchEndpointHit) GetServiceOk() (*SearchCuratedService, bool)`
+
+GetServiceOk returns a tuple with the Service field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetService
+
+`func (o *SearchEndpointHit) SetService(v SearchCuratedService)`
+
+SetService sets Service field to given value.
+
+### HasService
+
+`func (o *SearchEndpointHit) HasService() bool`
+
+HasService returns a boolean if a field has been set.
+
+### GetOperation
+
+`func (o *SearchEndpointHit) GetOperation() SearchCuratedOperation`
+
+GetOperation returns the Operation field if non-nil, zero value otherwise.
+
+### GetOperationOk
+
+`func (o *SearchEndpointHit) GetOperationOk() (*SearchCuratedOperation, bool)`
+
+GetOperationOk returns a tuple with the Operation field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOperation
+
+`func (o *SearchEndpointHit) SetOperation(v SearchCuratedOperation)`
+
+SetOperation sets Operation field to given value.
+
+### HasOperation
+
+`func (o *SearchEndpointHit) HasOperation() bool`
+
+HasOperation returns a boolean if a field has been set.
+
+### GetOutputSchema
+
+`func (o *SearchEndpointHit) GetOutputSchema() map[string]interface{}`
+
+GetOutputSchema returns the OutputSchema field if non-nil, zero value otherwise.
+
+### GetOutputSchemaOk
+
+`func (o *SearchEndpointHit) GetOutputSchemaOk() (*map[string]interface{}, bool)`
+
+GetOutputSchemaOk returns a tuple with the OutputSchema field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOutputSchema
+
+`func (o *SearchEndpointHit) SetOutputSchema(v map[string]interface{})`
+
+SetOutputSchema sets OutputSchema field to given value.
+
+### HasOutputSchema
+
+`func (o *SearchEndpointHit) HasOutputSchema() bool`
+
+HasOutputSchema returns a boolean if a field has been set.
+
+### GetOutput
+
+`func (o *SearchEndpointHit) GetOutput() map[string]interface{}`
+
+GetOutput returns the Output field if non-nil, zero value otherwise.
+
+### GetOutputOk
+
+`func (o *SearchEndpointHit) GetOutputOk() (*map[string]interface{}, bool)`
+
+GetOutputOk returns a tuple with the Output field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOutput
+
+`func (o *SearchEndpointHit) SetOutput(v map[string]interface{})`
+
+SetOutput sets Output field to given value.
+
+### HasOutput
+
+`func (o *SearchEndpointHit) HasOutput() bool`
+
+HasOutput returns a boolean if a field has been set.
+
+### GetExecution
+
+`func (o *SearchEndpointHit) GetExecution() SearchCuratedExecution`
+
+GetExecution returns the Execution field if non-nil, zero value otherwise.
+
+### GetExecutionOk
+
+`func (o *SearchEndpointHit) GetExecutionOk() (*SearchCuratedExecution, bool)`
+
+GetExecutionOk returns a tuple with the Execution field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetExecution
+
+`func (o *SearchEndpointHit) SetExecution(v SearchCuratedExecution)`
+
+SetExecution sets Execution field to given value.
+
+### HasExecution
+
+`func (o *SearchEndpointHit) HasExecution() bool`
+
+HasExecution returns a boolean if a field has been set.
+
+### GetCallability
+
+`func (o *SearchEndpointHit) GetCallability() SearchCuratedCallability`
+
+GetCallability returns the Callability field if non-nil, zero value otherwise.
+
+### GetCallabilityOk
+
+`func (o *SearchEndpointHit) GetCallabilityOk() (*SearchCuratedCallability, bool)`
+
+GetCallabilityOk returns a tuple with the Callability field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCallability
+
+`func (o *SearchEndpointHit) SetCallability(v SearchCuratedCallability)`
+
+SetCallability sets Callability field to given value.
+
+### HasCallability
+
+`func (o *SearchEndpointHit) HasCallability() bool`
+
+HasCallability returns a boolean if a field has been set.
+
+### GetCompatibility
+
+`func (o *SearchEndpointHit) GetCompatibility() map[string]interface{}`
+
+GetCompatibility returns the Compatibility field if non-nil, zero value otherwise.
+
+### GetCompatibilityOk
+
+`func (o *SearchEndpointHit) GetCompatibilityOk() (*map[string]interface{}, bool)`
+
+GetCompatibilityOk returns a tuple with the Compatibility field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCompatibility
+
+`func (o *SearchEndpointHit) SetCompatibility(v map[string]interface{})`
+
+SetCompatibility sets Compatibility field to given value.
+
+### HasCompatibility
+
+`func (o *SearchEndpointHit) HasCompatibility() bool`
+
+HasCompatibility returns a boolean if a field has been set.
+
+### GetSource
+
+`func (o *SearchEndpointHit) GetSource() SearchCuratedSource`
+
+GetSource returns the Source field if non-nil, zero value otherwise.
+
+### GetSourceOk
+
+`func (o *SearchEndpointHit) GetSourceOk() (*SearchCuratedSource, bool)`
+
+GetSourceOk returns a tuple with the Source field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSource
+
+`func (o *SearchEndpointHit) SetSource(v SearchCuratedSource)`
+
+SetSource sets Source field to given value.
+
+### HasSource
+
+`func (o *SearchEndpointHit) HasSource() bool`
+
+HasSource returns a boolean if a field has been set.
 
 ### GetOperatorType
 
