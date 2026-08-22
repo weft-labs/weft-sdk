@@ -13,7 +13,7 @@ All URIs are relative to *https://weft.network*
 
 Get the current credential principal
 
-Returns the seller Organization represented by an `ax_live_*` resource key, or the buyer User represented by a `wk_*` account key or OAuth access token. Branch on `data.principal_type`.
+Returns the seller Organization represented by an `ax_live_*` resource key, or the buyer User represented by a `wk_*` account key, OAuth access token, or claimed `wbt_*` bearer. Branch on `data.principal_type`.
 
 ### Examples
 
