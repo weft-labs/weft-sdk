@@ -1,41 +1,19 @@
 diff --git a/go/generated/client.go b/go/generated/client.go
 --- a/go/generated/client.go
 +++ b/go/generated/client.go
-@@ -18,10 +18,9 @@ import (
- 	"errors"
- 	"fmt"
- 	"io"
- 	"log"
- 	"mime/multipart"
- 	"net/http"
+@@ -24 +23,0 @@ import (
 -	"net/http/httputil"
- 	"net/url"
- 	"os"
- 	"path/filepath"
-@@ -276,24 +275,16 @@ func parameterToJson(obj interface{}) (string, error) {
- // callAPI do the request.
- func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
- 	if c.cfg.Debug {
+@@ -279,5 +278 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
 -		dump, err := httputil.DumpRequestOut(request, true)
 -		if err != nil {
 -			return nil, err
 -		}
 -		log.Printf("\n%s\n", string(dump))
 +		log.Printf("%s %s\n", request.Method, request.URL.Path)
- 	}
- 
- 	resp, err := c.cfg.HTTPClient.Do(request)
- 	if err != nil {
- 		return resp, err
- 	}
- 
- 	if c.cfg.Debug {
+@@ -292,5 +287 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
 -		dump, err := httputil.DumpResponse(resp, true)
 -		if err != nil {
 -			return resp, err
 -		}
 -		log.Printf("\n%s\n", string(dump))
 +		log.Printf("%s\n", resp.Status)
- 	}
- 	return resp, err
- }

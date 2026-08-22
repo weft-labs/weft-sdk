@@ -42,7 +42,7 @@ find "${OUT_DIR}/generated" -type f -name '*.go' -exec gofmt -w {} +
 
 # OpenAPI Generator's debug mode dumps authorization headers and full bodies.
 # Apply a source patch so generator upgrades fail closed if that code changes.
-git -C "${ROOT_DIR}" apply "scripts/patches/go-safe-debug-logging.patch"
+git -C "${ROOT_DIR}" apply --unidiff-zero "scripts/patches/go-safe-debug-logging.patch"
 find "${OUT_DIR}/generated" -type f -name '*.go' -exec gofmt -w {} +
 
 "${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
