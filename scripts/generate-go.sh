@@ -38,5 +38,12 @@ find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -type f \( -name '*.go' -o -name '
   -exec sed -i.bak 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -name '*.bak' -delete
 
+find "${OUT_DIR}/generated" -type f -name '*.go' -exec gofmt -w {} +
+
+# OpenAPI Generator's debug mode dumps authorization headers and full bodies.
+# Apply a source patch so generator upgrades fail closed if that code changes.
+git -C "${ROOT_DIR}" apply --unidiff-zero "scripts/patches/go-safe-debug-logging.patch"
+find "${OUT_DIR}/generated" -type f -name '*.go' -exec gofmt -w {} +
+
 "${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
   "${OUT_DIR}/generated" "${OUT_DIR}/docs"

@@ -83,10 +83,11 @@ npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
 ```
 
 The CLI accepts credentials from `--api-key-stdin`, `WEFT_API_KEY`, or its
-protected local stored OAuth/bootstrap credentials. It never accepts a key in
-process arguments. Every response is a versioned JSON envelope suitable for
-scripts. See the [CLI guide](../cli/README.md) for credential-free bootstrap,
-human claim, and automatic Skill installation.
+protected local bootstrap/OAuth credentials. It never accepts a key in process
+arguments. Every response is a versioned JSON envelope suitable for scripts. See
+the [CLI guide](../cli/README.md) for credential-free bootstrap, human claim,
+same-bearer promotion, and Skill installation. Existing stored OAuth
+credentials remain compatible and refresh normally.
 
 ## Error handling
 

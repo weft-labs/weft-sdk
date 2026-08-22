@@ -1,0 +1,8 @@
+diff --git a/python/src/weft_sdk/generated/configuration.py b/python/src/weft_sdk/generated/configuration.py
+--- a/python/src/weft_sdk/generated/configuration.py
++++ b/python/src/weft_sdk/generated/configuration.py
+@@ -427,2 +427,2 @@ class Configuration:
+-            # turn on httplib debug
++            # Keep HTTP wire logging off because it exposes authorization headers.
+-            httplib.HTTPConnection.debuglevel = 1
++            httplib.HTTPConnection.debuglevel = 0

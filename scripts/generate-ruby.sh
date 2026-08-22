@@ -26,6 +26,20 @@ mkdir -p "${OUT_DIR}/lib/weft/generated"
 
 cp -R "${TMP_DIR}/lib/weft-sdk/"* "${OUT_DIR}/lib/weft/generated/"
 
+git -C "${ROOT_DIR}" apply --unidiff-zero "scripts/patches/ruby-safe-debug-logging.patch"
+
+if ! grep -R -q '@api_client.config.logger' "${OUT_DIR}/lib/weft/generated/api"; then
+  echo "Expected generated Ruby operation logging was not found" >&2
+  exit 1
+fi
+find "${OUT_DIR}/lib/weft/generated/api" -type f -name '*.rb' \
+  -exec sed -i.bak '/^[[:space:]]*if @api_client\.config\.debugging$/,/^[[:space:]]*end$/d' {} +
+find "${OUT_DIR}/lib/weft/generated/api" -name '*.bak' -delete
+if grep -R -q 'logger' "${OUT_DIR}/lib/weft/generated/api"; then
+  echo "Generated Ruby operation logging remains after redaction" >&2
+  exit 1
+fi
+
 # OpenAPI Generator 7.19 emits oneOf discriminator builders that only read
 # symbol keys, but JSON.parse supplies string keys. Normalize every generated
 # discriminator lookup so real API responses deserialize correctly.

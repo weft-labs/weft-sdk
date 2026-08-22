@@ -1,0 +1,19 @@
+diff --git a/go/generated/client.go b/go/generated/client.go
+--- a/go/generated/client.go
++++ b/go/generated/client.go
+@@ -24 +23,0 @@ import (
+-	"net/http/httputil"
+@@ -279,5 +278 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
+-		dump, err := httputil.DumpRequestOut(request, true)
+-		if err != nil {
+-			return nil, err
+-		}
+-		log.Printf("\n%s\n", string(dump))
++		log.Printf("%s %s\n", request.Method, request.URL.Path)
+@@ -292,5 +287 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
+-		dump, err := httputil.DumpResponse(resp, true)
+-		if err != nil {
+-			return resp, err
+-		}
+-		log.Printf("\n%s\n", string(dump))
++		log.Printf("%s\n", resp.Status)

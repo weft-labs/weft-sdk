@@ -26,6 +26,8 @@ mkdir -p "${OUT_DIR}/src/weft_sdk"
 
 cp -R "${TMP_DIR}/weft_sdk/generated" "${OUT_DIR}/src/weft_sdk/"
 
+git -C "${ROOT_DIR}" apply --unidiff-zero "scripts/patches/python-safe-debug-logging.patch"
+
 # Copy generated docs
 if [ -d "${TMP_DIR}/docs" ]; then
   cp -R "${TMP_DIR}/docs" "${OUT_DIR}/docs"
