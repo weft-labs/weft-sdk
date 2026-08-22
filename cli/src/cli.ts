@@ -1,7 +1,9 @@
 import {
   readStoredCredentials,
   type BootstrapCredentials,
+  type LegacyBootstrapCredentials,
   type OAuthCredentials,
+  type StoredCredentials,
   withCredentialsLock,
   writeStoredCredentials,
 } from "./credentials";
@@ -281,7 +283,7 @@ function baseApiUrl(
 }
 
 function resolveApiKeyFromStored(
-  credentials?: BootstrapCredentials | OAuthCredentials,
+  credentials?: StoredCredentials,
 ): string | undefined {
   if (!credentials) return undefined;
   if (
@@ -302,10 +304,18 @@ function resolveApiKeyFromStored(
 }
 
 function isOAuthCredentials(
-  credentials: BootstrapCredentials | OAuthCredentials | undefined,
+  credentials: StoredCredentials | undefined,
 ): credentials is OAuthCredentials {
   return Boolean(
     credentials && "type" in credentials && credentials.type === "oauth",
+  );
+}
+
+function isLegacyBootstrapCredentials(
+  credentials: StoredCredentials | undefined,
+): credentials is LegacyBootstrapCredentials {
+  return Boolean(
+    credentials && "type" in credentials && credentials.type === "bootstrap",
   );
 }
 
@@ -571,6 +581,73 @@ export async function runCli(
               status: "consumed",
               authentication: "oauth",
               scope: stored.scope,
+            },
+          })}\n`,
+        );
+        return EXIT_SUCCESS;
+      }
+      if (isLegacyBootstrapCredentials(stored)) {
+        const status = await requestJson<BootstrapStatus>(
+          fetchApi,
+          `${stored.base_url}/api/v1/account_bootstraps/${stored.bootstrap_id}`,
+          {
+            method: "GET",
+            headers: withCredentials({}, stored.temporary_api_key),
+          },
+        );
+        if (
+          status.data.status !== "claimed" &&
+          status.data.status !== "consumed"
+        ) {
+          writeOut(
+            `${JSON.stringify({
+              schema_version: "1",
+              ok: true,
+              command,
+              data: { status: status.data.status },
+            })}\n`,
+          );
+          return EXIT_SUCCESS;
+        }
+
+        const token = await requestJson<OAuthTokenResponse>(
+          fetchApi,
+          `${stored.base_url}/oauth/token`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+              device_code: stored.device_code,
+              client_id: stored.client_id,
+              name: "Weft CLI",
+            }).toString(),
+          },
+          true,
+        );
+        const oauth: OAuthCredentials = {
+          version: 1,
+          type: "oauth",
+          base_url: stored.base_url,
+          client_id: stored.client_id,
+          access_token: token.access_token,
+          refresh_token: token.refresh_token,
+          token_type: token.token_type,
+          scope: token.scope,
+          expiry: new Date(Date.now() + token.expires_in * 1000).toISOString(),
+        };
+        await writeStoredCredentials(env, oauth);
+        writeOut(
+          `${JSON.stringify({
+            schema_version: "1",
+            ok: true,
+            command,
+            data: {
+              status: "consumed",
+              authentication: "oauth",
+              scope: token.scope,
             },
           })}\n`,
         );

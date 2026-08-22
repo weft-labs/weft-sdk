@@ -1,0 +1,13 @@
+diff --git a/ruby/lib/weft/generated/api_client.rb b/ruby/lib/weft/generated/api_client.rb
+--- a/ruby/lib/weft/generated/api_client.rb
++++ b/ruby/lib/weft/generated/api_client.rb
+@@ -57 +57 @@ module Weft
+-        @config.logger.debug "HTTP response body ~BEGIN~\n#{response.body}\n~END~\n"
++        @config.logger.debug "#{http_method.to_s.upcase} #{path} -> #{response.code}"
+@@ -118 +118 @@ module Weft
+-        :verbose => @config.debugging,
++        :verbose => false,
+@@ -128,3 +128,0 @@ module Weft
+-        if @config.debugging
+-          @config.logger.debug "HTTP request body param ~BEGIN~\n#{req_body}\n~END~\n"
+-        end

@@ -54,7 +54,7 @@ module Weft
       response = request.run
 
       if @config.debugging
-        @config.logger.debug "HTTP response body ~BEGIN~\n#{response.body}\n~END~\n"
+        @config.logger.debug "#{http_method.to_s.upcase} #{path} -> #{response.code}"
       end
 
       unless response.success?
@@ -115,7 +115,7 @@ module Weft
         :ssl_verifyhost => _verify_ssl_host,
         :sslcert => @config.cert_file,
         :sslkey => @config.key_file,
-        :verbose => @config.debugging,
+        :verbose => false,
         :followlocation => follow_location
       }
 
@@ -125,9 +125,6 @@ module Weft
       if [:post, :patch, :put, :delete].include?(http_method)
         req_body = build_request_body(header_params, form_params, opts[:body])
         req_opts.update :body => req_body
-        if @config.debugging
-          @config.logger.debug "HTTP request body param ~BEGIN~\n#{req_body}\n~END~\n"
-        end
       end
 
       Typhoeus::Request.new(url, req_opts)

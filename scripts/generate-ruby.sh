@@ -26,6 +26,8 @@ mkdir -p "${OUT_DIR}/lib/weft/generated"
 
 cp -R "${TMP_DIR}/lib/weft-sdk/"* "${OUT_DIR}/lib/weft/generated/"
 
+git -C "${ROOT_DIR}" apply --unidiff-zero "scripts/patches/ruby-safe-debug-logging.patch"
+
 # OpenAPI Generator 7.19 emits oneOf discriminator builders that only read
 # symbol keys, but JSON.parse supplies string keys. Normalize every generated
 # discriminator lookup so real API responses deserialize correctly.

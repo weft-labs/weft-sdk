@@ -31,6 +31,18 @@ export interface BootstrapCredentials {
   temporary_api_key: string;
 }
 
+export interface LegacyBootstrapCredentials {
+  version: 1;
+  type: "bootstrap";
+  base_url: string;
+  bootstrap_id: string;
+  temporary_api_key: string;
+  device_code: string;
+  client_id: string;
+  expiry: string;
+  polling_interval: number;
+}
+
 export interface OAuthCredentials {
   version: 1;
   type: "oauth";
@@ -43,7 +55,8 @@ export interface OAuthCredentials {
   expiry: string;
 }
 
-export type StoredCredentials = BootstrapCredentials | OAuthCredentials;
+export type StoredCredentials =
+  BootstrapCredentials | LegacyBootstrapCredentials | OAuthCredentials;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -68,6 +81,26 @@ function isBootstrapCredentials(
     typeof value.temporary_api_key === "string"
   ) {
     return value as BootstrapCredentials;
+  }
+
+  return undefined;
+}
+
+function isLegacyBootstrapCredentials(
+  value: Record<string, unknown>,
+): LegacyBootstrapCredentials | undefined {
+  if (
+    value.version === 1 &&
+    value.type === "bootstrap" &&
+    typeof value.base_url === "string" &&
+    typeof value.bootstrap_id === "string" &&
+    typeof value.temporary_api_key === "string" &&
+    typeof value.device_code === "string" &&
+    typeof value.client_id === "string" &&
+    typeof value.expiry === "string" &&
+    typeof value.polling_interval === "number"
+  ) {
+    return value as LegacyBootstrapCredentials;
   }
 
   return undefined;
@@ -113,7 +146,11 @@ export async function readStoredCredentials(
     const raw = await readFile(path, "utf8");
     const parsed: unknown = JSON.parse(raw);
     if (!isObject(parsed)) throw new Error("Stored credentials malformed");
-    return isBootstrapCredentials(parsed) ?? isOAuthCredentials(parsed);
+    return (
+      isBootstrapCredentials(parsed) ??
+      isLegacyBootstrapCredentials(parsed) ??
+      isOAuthCredentials(parsed)
+    );
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;

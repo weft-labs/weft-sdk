@@ -374,6 +374,85 @@ describe("weft CLI", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it("completes an in-flight bootstrap saved by the legacy CLI", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-legacy-"));
+    const credFile = join(dir, "credentials.json");
+    writeFileSync(
+      credFile,
+      JSON.stringify({
+        version: 1,
+        type: "bootstrap",
+        base_url: "https://api.example",
+        bootstrap_id: "legacy-boot-id",
+        temporary_api_key: "legacy-temp-key",
+        device_code: "legacy-device-code",
+        client_id: "legacy-client-id",
+        expiry: "2026-08-22T15:00:00Z",
+        polling_interval: 5,
+      }),
+    );
+
+    const io = capture();
+    const fetchApi = vi
+      .fn()
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => {
+        expect(new Headers(init.headers).get("authorization")).toBe(
+          "Bearer legacy-temp-key",
+        );
+        return new Response(JSON.stringify({ data: { status: "consumed" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      })
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => {
+        expect(init.body?.toString()).toBe(
+          "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&device_code=legacy-device-code&client_id=legacy-client-id&name=Weft+CLI",
+        );
+        return new Response(
+          JSON.stringify({
+            access_token: "legacy-access-token",
+            refresh_token: "legacy-refresh-token",
+            token_type: "Bearer",
+            scope: "balance fetch search",
+            expires_in: 3600,
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      });
+
+    expect(
+      await runCli(["auth", "status"], {
+        ...io,
+        env: { WEFT_CREDENTIALS_FILE: credFile },
+        fetchApi,
+      }),
+    ).toBe(EXIT_SUCCESS);
+    expect(fetchApi.mock.calls.map(([url]) => url)).toEqual([
+      "https://api.example/api/v1/account_bootstraps/legacy-boot-id",
+      "https://api.example/oauth/token",
+    ]);
+    expect(JSON.parse(io.out[0])).toMatchObject({
+      ok: true,
+      data: {
+        status: "consumed",
+        authentication: "oauth",
+        scope: "balance fetch search",
+      },
+    });
+    expect(JSON.stringify(io)).not.toContain("legacy-access-token");
+    expect(JSON.parse(readFileSync(credFile, "utf8"))).toMatchObject({
+      type: "oauth",
+      base_url: "https://api.example",
+      client_id: "legacy-client-id",
+      access_token: "legacy-access-token",
+      refresh_token: "legacy-refresh-token",
+    });
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it("keeps the same bootstrap token after claim and writes merged status", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-claimed-"));
     const credFile = join(dir, "credentials.json");

@@ -4,6 +4,17 @@ def test_generated_client_imports_cleanly():
     assert weft_sdk.generated.Configuration
 
 
+def test_generated_debug_mode_keeps_http_wire_logging_disabled():
+    import http.client as httplib
+
+    from weft_sdk.generated import Configuration
+
+    configuration = Configuration()
+    configuration.debug = True
+
+    assert httplib.HTTPConnection.debuglevel == 0
+
+
 def test_generated_buyer_models_accept_contract_nulls():
     from weft_sdk.generated.models.purchase import Purchase
     from weft_sdk.generated.models.user_principal import UserPrincipal

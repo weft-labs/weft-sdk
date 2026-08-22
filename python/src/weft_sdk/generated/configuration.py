@@ -424,8 +424,8 @@ class Configuration:
             # if debug status is True, turn on debug logging
             for _, logger in self.logger.items():
                 logger.setLevel(logging.DEBUG)
-            # turn on httplib debug
-            httplib.HTTPConnection.debuglevel = 1
+            # Keep HTTP wire logging off because it exposes authorization headers.
+            httplib.HTTPConnection.debuglevel = 0
         else:
             # if debug status is False, turn off debug logging,
             # setting log level to default `logging.WARNING`
