@@ -13,8 +13,10 @@ import (
 )
 
 func TestGeneratedDebugLoggingOmitsSecrets(t *testing.T) {
+	const responseSecret = "secret-response-token"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(responseSecret))
 	}))
 	t.Cleanup(server.Close)
 
@@ -39,7 +41,7 @@ func TestGeneratedDebugLoggingOmitsSecrets(t *testing.T) {
 	_, _, _ = client.AuthAPI.SignIn(context.Background()).SignInRequest(*request).Execute()
 
 	logged := output.String()
-	for _, secret := range []string{password, bearer, "agent@example.com"} {
+	for _, secret := range []string{password, bearer, "agent@example.com", responseSecret} {
 		if strings.Contains(logged, secret) {
 			t.Fatalf("debug log contains secret %q: %s", secret, logged)
 		}
