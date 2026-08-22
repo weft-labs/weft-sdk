@@ -13,6 +13,15 @@ Name | Type
 `call` | [SearchEndpointCall](SearchEndpointCall.md)
 `price` | [SearchEndpointPrice](SearchEndpointPrice.md)
 `payment` | [Array&lt;SearchPaymentOffer&gt;](SearchPaymentOffer.md)
+`accessMethods` | [Array&lt;SearchAccessMethod&gt;](SearchAccessMethod.md)
+`service` | [SearchCuratedService](SearchCuratedService.md)
+`operation` | [SearchCuratedOperation](SearchCuratedOperation.md)
+`outputSchema` | object
+`output` | object
+`execution` | [SearchCuratedExecution](SearchCuratedExecution.md)
+`callability` | [SearchCuratedCallability](SearchCuratedCallability.md)
+`compatibility` | object
+`source` | [SearchCuratedSource](SearchCuratedSource.md)
 `operatorType` | string
 `operatedById` | string
 `settledViaFacilitatorId` | string
@@ -34,6 +43,15 @@ const example = {
   "call": null,
   "price": null,
   "payment": null,
+  "accessMethods": null,
+  "service": null,
+  "operation": null,
+  "outputSchema": null,
+  "output": null,
+  "execution": null,
+  "callability": null,
+  "compatibility": null,
+  "source": null,
   "operatorType": null,
   "operatedById": null,
   "settledViaFacilitatorId": null,
