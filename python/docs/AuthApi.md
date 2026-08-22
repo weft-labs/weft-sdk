@@ -347,6 +347,7 @@ No authorization required
 |-------------|-------------|------------------|
 **200** | Account created |  -  |
 **422** | Validation error |  -  |
+**429** | Rate limit exceeded (20 accounts/hour/IP) |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
