@@ -11,6 +11,11 @@ Name | Type
 `priceAtomic` | [SearchPriceAtomicFilter](SearchPriceAtomicFilter.md)
 `type` | [SearchResourceTypeFilter](SearchResourceTypeFilter.md)
 `protocol` | [SearchProtocolFilter](SearchProtocolFilter.md)
+`category` | [SearchStringSetFilter](SearchStringSetFilter.md)
+`method` | [SearchMethodFilter](SearchMethodFilter.md)
+`executionMode` | [SearchExecutionModeFilter](SearchExecutionModeFilter.md)
+`weftFetchCompatible` | boolean
+`includeUnknownPrices` | boolean
 
 ## Example
 
@@ -23,6 +28,11 @@ const example = {
   "priceAtomic": null,
   "type": null,
   "protocol": null,
+  "category": null,
+  "method": null,
+  "executionMode": null,
+  "weftFetchCompatible": null,
+  "includeUnknownPrices": null,
 } satisfies SearchFilterSpec
 
 console.log(example)
