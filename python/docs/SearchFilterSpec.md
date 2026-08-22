@@ -10,6 +10,11 @@ Name | Type | Description | Notes
 **price_atomic** | [**SearchPriceAtomicFilter**](SearchPriceAtomicFilter.md) |  | [optional]
 **type** | [**SearchResourceTypeFilter**](SearchResourceTypeFilter.md) |  | [optional]
 **protocol** | [**SearchProtocolFilter**](SearchProtocolFilter.md) |  | [optional]
+**category** | [**SearchStringSetFilter**](SearchStringSetFilter.md) |  | [optional]
+**method** | [**SearchMethodFilter**](SearchMethodFilter.md) |  | [optional]
+**execution_mode** | [**SearchExecutionModeFilter**](SearchExecutionModeFilter.md) |  | [optional]
+**weft_fetch_compatible** | **bool** | True requires at least one access method whose paid request is supported by the current Weft fetch runtime. For async operations this can mean submission-only coverage followed by the provider workflow. | [optional]
+**include_unknown_prices** | **bool** | With a price constraint, also retain dynamic and unknown prices. | [optional] [default to False]
 
 ## Example
 
