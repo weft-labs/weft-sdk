@@ -33,9 +33,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AuthResponse, Integer, Hash)>] AuthResponse data, response status code and response headers
     def confirm_account_with_http_info(confirm_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.confirm_account ...'
-      end
       # verify the required parameter 'confirm_request' is set
       if @api_client.config.client_side_validation && confirm_request.nil?
         fail ArgumentError, "Missing the required parameter 'confirm_request' when calling AuthApi.confirm_account"
@@ -79,9 +76,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#confirm_account\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -99,9 +93,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(MessageResponse, Integer, Hash)>] MessageResponse data, response status code and response headers
     def request_password_reset_with_http_info(password_reset_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.request_password_reset ...'
-      end
       # verify the required parameter 'password_reset_request' is set
       if @api_client.config.client_side_validation && password_reset_request.nil?
         fail ArgumentError, "Missing the required parameter 'password_reset_request' when calling AuthApi.request_password_reset"
@@ -145,9 +136,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#request_password_reset\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -165,9 +153,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(MessageResponse, Integer, Hash)>] MessageResponse data, response status code and response headers
     def resend_confirmation_with_http_info(resend_confirmation_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.resend_confirmation ...'
-      end
       # verify the required parameter 'resend_confirmation_request' is set
       if @api_client.config.client_side_validation && resend_confirmation_request.nil?
         fail ArgumentError, "Missing the required parameter 'resend_confirmation_request' when calling AuthApi.resend_confirmation"
@@ -211,9 +196,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#resend_confirmation\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -231,9 +213,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AuthResponse, Integer, Hash)>] AuthResponse data, response status code and response headers
     def sign_in_with_http_info(sign_in_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.sign_in ...'
-      end
       # verify the required parameter 'sign_in_request' is set
       if @api_client.config.client_side_validation && sign_in_request.nil?
         fail ArgumentError, "Missing the required parameter 'sign_in_request' when calling AuthApi.sign_in"
@@ -277,9 +256,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#sign_in\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -297,9 +273,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AuthResponse, Integer, Hash)>] AuthResponse data, response status code and response headers
     def sign_up_with_http_info(sign_up_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.sign_up ...'
-      end
       # verify the required parameter 'sign_up_request' is set
       if @api_client.config.client_side_validation && sign_up_request.nil?
         fail ArgumentError, "Missing the required parameter 'sign_up_request' when calling AuthApi.sign_up"
@@ -343,9 +316,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#sign_up\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -363,9 +333,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(MessageResponse, Integer, Hash)>] MessageResponse data, response status code and response headers
     def update_password_with_http_info(password_update_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AuthApi.update_password ...'
-      end
       # verify the required parameter 'password_update_request' is set
       if @api_client.config.client_side_validation && password_update_request.nil?
         fail ArgumentError, "Missing the required parameter 'password_update_request' when calling AuthApi.update_password"
@@ -409,9 +376,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AuthApi#update_password\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

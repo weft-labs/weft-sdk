@@ -37,9 +37,6 @@ module Weft
     # @option opts [String] :idempotency_key Opaque caller-generated retry key. Reusing the same key for the same buyer converges on one paid fetch; keys are hashed and namespaced by buyer before storage. Send this header for every unattended or retryable paid request.
     # @return [Array<(FetchResponse, Integer, Hash)>] FetchResponse data, response status code and response headers
     def fetch_with_http_info(fetch_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: FetchApi.fetch ...'
-      end
       # verify the required parameter 'fetch_request' is set
       if @api_client.config.client_side_validation && fetch_request.nil?
         fail ArgumentError, "Missing the required parameter 'fetch_request' when calling FetchApi.fetch"
@@ -97,9 +94,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: FetchApi#fetch\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

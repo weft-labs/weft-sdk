@@ -638,7 +638,22 @@ export async function runCli(
           scope: token.scope,
           expiry: new Date(Date.now() + token.expires_in * 1000).toISOString(),
         };
-        await writeStoredCredentials(env, oauth);
+        const active = await withCredentialsLock(env, async () => {
+          const current = await readStoredCredentials(env);
+          if (isOAuthCredentials(current)) return current;
+          if (
+            !isLegacyBootstrapCredentials(current) ||
+            JSON.stringify(current) !== JSON.stringify(stored)
+          ) {
+            throw new CliError(
+              EXIT_AUTH,
+              "CREDENTIALS_CHANGED",
+              "Stored credentials changed; rerun auth status",
+            );
+          }
+          await writeStoredCredentials(env, oauth);
+          return oauth;
+        });
         writeOut(
           `${JSON.stringify({
             schema_version: "1",
@@ -647,7 +662,7 @@ export async function runCli(
             data: {
               status: "consumed",
               authentication: "oauth",
-              scope: token.scope,
+              scope: active.scope,
             },
           })}\n`,
         );

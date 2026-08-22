@@ -36,9 +36,23 @@ class SmokeTest < Minitest::Test
       client.call_api(:post, '/api/v1/auth/sign_in')
     end
 
+    operation_secret = Struct.new(:temporary_api_key).new('operation-secret')
+    client.stub(:call_api, [operation_secret, 200, { 'X-Secret' => 'header-secret' }]) do
+      Weft::AgentBootstrapApi.new(client).create_account_bootstrap_with_http_info(
+        Weft::AccountBootstrapRequest.new(
+          :email => 'agent@example.com',
+          :agent_name => 'Agent',
+          :host_name => 'CLI',
+          :reason => 'Test'
+        )
+      )
+    end
+
     refute_includes output.string, 'request-secret'
     refute_includes output.string, 'password-secret'
     refute_includes output.string, 'response-secret'
+    refute_includes output.string, 'operation-secret'
+    refute_includes output.string, 'header-secret'
     assert_includes output.string, 'POST /api/v1/auth/sign_in -> 200'
   end
 

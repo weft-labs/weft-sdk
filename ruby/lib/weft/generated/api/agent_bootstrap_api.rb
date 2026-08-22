@@ -35,9 +35,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AccountBootstrapStatusResponse, Integer, Hash)>] AccountBootstrapStatusResponse data, response status code and response headers
     def cancel_account_bootstrap_with_http_info(id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AgentBootstrapApi.cancel_account_bootstrap ...'
-      end
       # verify the required parameter 'id' is set
       if @api_client.config.client_side_validation && id.nil?
         fail ArgumentError, "Missing the required parameter 'id' when calling AgentBootstrapApi.cancel_account_bootstrap"
@@ -81,9 +78,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AgentBootstrapApi#cancel_account_bootstrap\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -103,9 +97,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AccountBootstrapCreatedResponse, Integer, Hash)>] AccountBootstrapCreatedResponse data, response status code and response headers
     def create_account_bootstrap_with_http_info(account_bootstrap_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AgentBootstrapApi.create_account_bootstrap ...'
-      end
       # verify the required parameter 'account_bootstrap_request' is set
       if @api_client.config.client_side_validation && account_bootstrap_request.nil?
         fail ArgumentError, "Missing the required parameter 'account_bootstrap_request' when calling AgentBootstrapApi.create_account_bootstrap"
@@ -149,9 +140,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AgentBootstrapApi#create_account_bootstrap\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -169,9 +157,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(AccountBootstrapStatusResponse, Integer, Hash)>] AccountBootstrapStatusResponse data, response status code and response headers
     def get_account_bootstrap_with_http_info(id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AgentBootstrapApi.get_account_bootstrap ...'
-      end
       # verify the required parameter 'id' is set
       if @api_client.config.client_side_validation && id.nil?
         fail ArgumentError, "Missing the required parameter 'id' when calling AgentBootstrapApi.get_account_bootstrap"
@@ -215,9 +200,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AgentBootstrapApi#get_account_bootstrap\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

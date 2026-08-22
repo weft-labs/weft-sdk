@@ -31,9 +31,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
     def get_open_api_document_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_open_api_document ...'
-      end
       # resource path
       local_var_path = '/docs/openapi.yaml'
 
@@ -68,9 +65,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_open_api_document\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

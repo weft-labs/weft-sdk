@@ -35,9 +35,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(ResourceEnrollmentResponse, Integer, Hash)>] ResourceEnrollmentResponse data, response status code and response headers
     def enroll_resource_with_http_info(resource_enrollment_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: ResourcesApi.enroll_resource ...'
-      end
       # verify the required parameter 'resource_enrollment_request' is set
       if @api_client.config.client_side_validation && resource_enrollment_request.nil?
         fail ArgumentError, "Missing the required parameter 'resource_enrollment_request' when calling ResourcesApi.enroll_resource"
@@ -81,9 +78,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: ResourcesApi#enroll_resource\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

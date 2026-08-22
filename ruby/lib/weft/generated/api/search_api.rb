@@ -37,9 +37,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(CuratedMarketplaceContract, Integer, Hash)>] CuratedMarketplaceContract data, response status code and response headers
     def get_curated_marketplace_contract_with_http_info(digest, operation_id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: SearchApi.get_curated_marketplace_contract ...'
-      end
       # verify the required parameter 'digest' is set
       if @api_client.config.client_side_validation && digest.nil?
         fail ArgumentError, "Missing the required parameter 'digest' when calling SearchApi.get_curated_marketplace_contract"
@@ -92,9 +89,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: SearchApi#get_curated_marketplace_contract\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -114,9 +108,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(SearchResponse, Integer, Hash)>] SearchResponse data, response status code and response headers
     def search_with_http_info(search_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: SearchApi.search ...'
-      end
       # verify the required parameter 'search_request' is set
       if @api_client.config.client_side_validation && search_request.nil?
         fail ArgumentError, "Missing the required parameter 'search_request' when calling SearchApi.search"
@@ -160,9 +151,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: SearchApi#search\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

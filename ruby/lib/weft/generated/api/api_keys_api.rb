@@ -35,9 +35,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(ApiKeyCreatedResponse, Integer, Hash)>] ApiKeyCreatedResponse data, response status code and response headers
     def create_api_key_with_http_info(create_api_key_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: APIKeysApi.create_api_key ...'
-      end
       # verify the required parameter 'create_api_key_request' is set
       if @api_client.config.client_side_validation && create_api_key_request.nil?
         fail ArgumentError, "Missing the required parameter 'create_api_key_request' when calling APIKeysApi.create_api_key"
@@ -81,9 +78,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: APIKeysApi#create_api_key\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -101,9 +95,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(ApiKeyListResponse, Integer, Hash)>] ApiKeyListResponse data, response status code and response headers
     def list_api_keys_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: APIKeysApi.list_api_keys ...'
-      end
       # resource path
       local_var_path = '/api/v1/api_keys'
 
@@ -138,9 +129,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: APIKeysApi#list_api_keys\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -158,9 +146,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(MessageResponse, Integer, Hash)>] MessageResponse data, response status code and response headers
     def revoke_api_key_with_http_info(id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: APIKeysApi.revoke_api_key ...'
-      end
       # verify the required parameter 'id' is set
       if @api_client.config.client_side_validation && id.nil?
         fail ArgumentError, "Missing the required parameter 'id' when calling APIKeysApi.revoke_api_key"
@@ -199,9 +184,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: APIKeysApi#revoke_api_key\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

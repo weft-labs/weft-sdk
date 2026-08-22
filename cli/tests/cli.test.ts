@@ -453,6 +453,69 @@ describe("weft CLI", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it("does not replace credentials written during a legacy exchange", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-legacy-race-"));
+    const credFile = join(dir, "credentials.json");
+    const legacy = {
+      version: 1,
+      type: "bootstrap",
+      base_url: "https://legacy.example",
+      bootstrap_id: "legacy-boot-id",
+      temporary_api_key: "legacy-temp-key",
+      device_code: "legacy-device-code",
+      client_id: "legacy-client-id",
+      expiry: "2026-08-22T15:00:00Z",
+      polling_interval: 5,
+    };
+    const replacement = {
+      base_url: "https://new.example",
+      id: "new-boot-id",
+      status: "pending",
+      capabilities: ["search", "status", "cancel"],
+      expires_at: "2026-08-22T16:00:00Z",
+      approval: { method: "email_link", expires_in: 1800, interval: 5 },
+      temporary_api_key: "new-temp-key",
+    };
+    writeFileSync(credFile, JSON.stringify(legacy));
+
+    const io = capture();
+    const fetchApi = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { status: "consumed" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      )
+      .mockImplementationOnce(async () => {
+        writeFileSync(credFile, JSON.stringify(replacement));
+        return new Response(
+          JSON.stringify({
+            access_token: "stale-access-token",
+            refresh_token: "stale-refresh-token",
+            token_type: "Bearer",
+            scope: "balance fetch search",
+            expires_in: 3600,
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      });
+
+    expect(
+      await runCli(["auth", "status"], {
+        ...io,
+        env: { WEFT_CREDENTIALS_FILE: credFile },
+        fetchApi,
+      }),
+    ).toBe(EXIT_AUTH);
+    expect(JSON.parse(io.err[0]).error.code).toBe("CREDENTIALS_CHANGED");
+    expect(JSON.parse(readFileSync(credFile, "utf8"))).toEqual(replacement);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it("keeps the same bootstrap token after claim and writes merged status", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-claimed-"));
     const credFile = join(dir, "credentials.json");

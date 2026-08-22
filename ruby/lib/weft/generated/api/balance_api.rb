@@ -33,9 +33,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(BalanceResponse, Integer, Hash)>] BalanceResponse data, response status code and response headers
     def get_balance_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: BalanceApi.get_balance ...'
-      end
       # resource path
       local_var_path = '/api/v1/balance'
 
@@ -70,9 +67,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: BalanceApi#get_balance\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

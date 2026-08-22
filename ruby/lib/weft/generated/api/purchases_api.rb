@@ -33,9 +33,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(PurchaseResponse, Integer, Hash)>] PurchaseResponse data, response status code and response headers
     def get_purchase_with_http_info(id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: PurchasesApi.get_purchase ...'
-      end
       # verify the required parameter 'id' is set
       if @api_client.config.client_side_validation && id.nil?
         fail ArgumentError, "Missing the required parameter 'id' when calling PurchasesApi.get_purchase"
@@ -74,9 +71,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: PurchasesApi#get_purchase\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
 
@@ -98,9 +92,6 @@ module Weft
     # @option opts [Integer] :per_page Items per page (default to 25)
     # @return [Array<(PurchaseListResponse, Integer, Hash)>] PurchaseListResponse data, response status code and response headers
     def list_purchases_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: PurchasesApi.list_purchases ...'
-      end
       if @api_client.config.client_side_validation && !opts[:'per_page'].nil? && opts[:'per_page'] > 100
         fail ArgumentError, 'invalid value for "opts[:"per_page"]" when calling PurchasesApi.list_purchases, must be smaller than or equal to 100.'
       end
@@ -141,9 +132,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: PurchasesApi#list_purchases\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end

@@ -33,9 +33,6 @@ module Weft
     # @param [Hash] opts the optional parameters
     # @return [Array<(MeResponse, Integer, Hash)>] MeResponse data, response status code and response headers
     def get_me_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AccountApi.get_me ...'
-      end
       # resource path
       local_var_path = '/api/v1/me'
 
@@ -70,9 +67,6 @@ module Weft
       )
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AccountApi#get_me\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
       return data, status_code, headers
     end
   end
