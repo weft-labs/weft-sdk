@@ -1,6 +1,6 @@
 ---
 name: weft-cli
-description: Use the Weft CLI to search the agent web, pay x402-protected endpoints, or bootstrap Weft when no credential exists. Drives `@weft-labs/cli`: create a temporary search-only identity, hand the account to the human by email, resume through OAuth, then read balance and buy within the user's spending policy. This is the shell-based CLI surface, not the Claude plugin's `weft` MCP Skill or the hosted `weft-mcp` usage Skill.
+description: Use the Weft CLI to search the agent web, pay x402-protected endpoints, or bootstrap Weft when no credential exists. Drives `@weft-labs/cli`: create a temporary search-only identity, hand the account to the human by email, promote the same bearer after approval, then read balance and buy within the user's spending policy. This is the shell-based CLI surface, not the Claude plugin's `weft` MCP Skill or the hosted `weft-mcp` usage Skill.
 ---
 
 # Weft CLI
@@ -66,21 +66,23 @@ weft bootstrap --email "human@example.com" \
 
 This creates a temporary bootstrap identity, emails a claim link to that address
 only, and stores the temporary credential in a local credential file that only
-the current user can read. The response reports the bootstrap `id`, `status`
-(`pending`), the granted `capabilities`, the expiry, and the approval details
-the human needs.
+the current user can read. The response reports the bootstrap `id`, `status`,
+`capabilities`, expiry, and `approval` details. Use that approval interval for
+status polling.
 
-The temporary credential is a `wbt_` bearer token. Treat it as a secret:
+The credential is a `wbt_` bearer token. Treat it as a secret:
 
 - It is **secret** — never print it, log it, paste it into chat, put it in a
   commit, or send it to the human. The CLI keeps it in its credential file for
   you.
-- It is **temporary** — it expires 30 minutes after creation and cannot be
-  refreshed.
-- It is **search-only** — its capabilities are `search`, `status`, and `cancel`.
-  It cannot read balance, run a paid fetch, touch a wallet, transfer or withdraw
-  funds, or change a seller or organization. Those calls refuse, and retrying
-  will not change the answer.
+- It is **temporary before claim**. Its search-only claim window expires after
+  30 minutes. Pre-claim capabilities are exactly `search`, `status`, and
+  `cancel`.
+- After approval, the same bearer is durable until revoked. Its capabilities
+  become exactly `identity`, `search`, `balance`, `fetch`, `purchases`,
+  `status`, and `revoke`.
+- Seller, organization, API-key administration, dashboard-session, transfer,
+  withdrawal, and MCP surfaces refuse it before and after claim.
 
 ### 3. Search while the bootstrap is pending
 
@@ -97,9 +99,9 @@ account.
 Tell them, in your own words: an email from Weft is on the way to the address
 they gave; opening its link is the only way to finish setup. On that page the
 human creates a Weft account or signs in to the one they already have, sees the
-agent name, host, reason, requested scopes, and the searches already run, and
-then approves or rejects. An existing user must sign in freshly — holding the
-email link is not enough to attach the agent to their account.
+agent name, host, reason, and the searches already run, and then approves or
+rejects. An existing user must sign in freshly — holding the email link is not
+enough to attach the agent to their account.
 
 Show the user code from the bootstrap response so the human can confirm they
 are approving this session and not another one. The tokenized claim link exists
@@ -120,31 +122,26 @@ Act on the status:
 | Status | What it means | What to do |
 |---|---|---|
 | `pending` | Waiting for the human. Search still works. | Keep searching if useful, keep polling at the given interval. |
-| `claimed` | The human approved. Temporary search remains available until OAuth delivery succeeds. | Finish the OAuth handoff in step 6. |
+| `claimed` | The human approved. The same bearer is durable with the fixed post-claim capabilities. | Continue with ordinary commands. |
 | `rejected` | The human declined. Terminal. | Stop. Do not create a second bootstrap for the same request; ask the user what they want instead. |
 | `expired` | The 30-minute window passed without a claim. Terminal. | Tell the user the link timed out and offer to start a new bootstrap. |
-| `consumed` | The OAuth tokens were delivered. The temporary credential is dead. Terminal. | Use the OAuth credential; the `wbt_` token is finished. |
+| `revoked` | The human disconnected the credential. Terminal; all later authentication fails. | Start a new bootstrap only if the human requests it. |
 
-These are server lifecycle states. `weft auth status` handles `claimed` by
-performing the OAuth exchange and emits `consumed` after successful delivery;
-it does not emit an intermediate `claimed` result.
+These are server lifecycle states. `weft auth status` returns server-side status
+directly; after `claimed`, the CLI keeps using the same bearer and does not call
+an OAuth token endpoint.
 
 If the user abandons the setup, do nothing: an unclaimed bootstrap expires by
 itself after 30 minutes. Cancelling early is also a bootstrap capability; check
 `weft --help` for its exact spelling before using it.
 
-`rejected`, `expired`, and `consumed` are terminal — nothing you run brings the
-bootstrap back. A `pending` or `claimed` bootstrap can search. A `claimed`
-bootstrap also keeps status and OAuth token exchange until successful token
-delivery consumes it.
+`rejected`, `expired`, and `revoked` are terminal. A `pending` bootstrap can
+search; a `claimed` credential can use only its fixed durable capabilities.
 
-### 6. Resume through OAuth
+### 6. Verify normal auth and ask for wallet funding
 
-After `claimed`, the CLI completes OAuth device authorization and replaces the
-temporary credential with the scoped tokens the human approved. The status moves
-to `consumed` once the tokens are delivered. From here the same session
-continues with ordinary authenticated commands — no new key is pasted, and no
-permanent `wk_` key travels through the agent.
+After `weft auth status` reports `claimed`, continue with normal authenticated
+commands. The same bearer now resolves to the human's account:
 
 Verify with:
 
@@ -161,8 +158,8 @@ then continue.
 
 ## Paid usage
 
-Once an authenticated credential exists — from the OAuth handoff above or from
-an existing `WEFT_API_KEY`:
+Once an authenticated credential exists, from the claimed bootstrap flow above
+or an existing `WEFT_API_KEY`:
 
 ```sh
 weft balance
@@ -185,6 +182,8 @@ The CLI first uses an explicit `--api-key-stdin` credential, then
 expiring OAuth credential without printing it. It rejects an API key passed as
 a command argument so keys never reach shell history or a process listing.
 Never echo any credential — `wbt_`, `wk_`, or an OAuth token — into your output.
+Existing stored OAuth credentials remain compatible, but a new bootstrap never
+registers an OAuth client or exchanges a device code.
 
 ## Errors
 

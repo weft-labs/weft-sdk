@@ -28,7 +28,7 @@ bootstrap="$(weft bootstrap \
   --reason "$REASON")"
 printf '%s\n' "$bootstrap"
 POLL_INTERVAL="$(printf '%s' "$bootstrap" | node -e \
-  'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(String(JSON.parse(s).data.polling_interval)))')"
+   'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(String(JSON.parse(s).data.approval.interval)))')"
 
 # 3. Search immediately. The temporary credential is search-only and expires
 #    30 minutes after creation.
@@ -38,8 +38,7 @@ weft search "weather data API"
 #    the user code from the bootstrap envelope above; the claim link is only in
 #    the email.
 # 5. Poll at the interval the bootstrap response returned. A claimed response
-#    completes the OAuth exchange and reports consumed. Other terminal states
-#    need a new bootstrap.
+#    means the same bearer is durable with its fixed post-claim capabilities.
 while :; do
   sleep "$POLL_INTERVAL"
   auth="$(weft auth status)"
@@ -48,8 +47,8 @@ while :; do
     'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(JSON.parse(s).data.status))')"
   case "$status" in
     pending) ;;
-    consumed) break ;;
-    rejected|expired)
+    claimed) break ;;
+    rejected|expired|revoked)
       echo "Bootstrap ended with status: $status" >&2
       exit 1
       ;;
@@ -60,8 +59,9 @@ while :; do
   esac
 done
 
-# 6. After approval the CLI replaces the temporary credential with the OAuth
-#    tokens the human approved, and ordinary commands work again.
+# 6. After approval the CLI keeps the same bearer. It does not register an OAuth
+#    client or exchange a device code. Ordinary commands now use its durable
+#    identity, search, balance, fetch, purchases, status, and revoke capabilities.
 weft me
 
 # 7. Claiming provisions an empty wallet. Ask the human to fund it before any

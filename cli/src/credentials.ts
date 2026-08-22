@@ -17,15 +17,18 @@ const LOCK_RETRY_MS = 50;
 const LOCK_TIMEOUT_MS = 10_000;
 
 export interface BootstrapCredentials {
-  version: 1;
-  type: "bootstrap";
   base_url: string;
-  bootstrap_id: string;
+  id: string;
+  status: string;
+  capabilities: string[];
+  expires_at: string | null;
+  approval: {
+    method: string;
+    expires_in: number;
+    interval: number;
+    user_code?: string;
+  };
   temporary_api_key: string;
-  device_code: string;
-  client_id: string;
-  expiry: string;
-  polling_interval: number;
 }
 
 export interface OAuthCredentials {
@@ -50,15 +53,19 @@ function isBootstrapCredentials(
   value: Record<string, unknown>,
 ): BootstrapCredentials | undefined {
   if (
-    value.type === "bootstrap" &&
-    typeof value.version === "number" &&
     typeof value.base_url === "string" &&
-    typeof value.bootstrap_id === "string" &&
-    typeof value.temporary_api_key === "string" &&
-    typeof value.device_code === "string" &&
-    typeof value.client_id === "string" &&
-    typeof value.expiry === "string" &&
-    typeof value.polling_interval === "number"
+    typeof value.id === "string" &&
+    typeof value.status === "string" &&
+    Array.isArray(value.capabilities) &&
+    value.capabilities.every((capability) => typeof capability === "string") &&
+    (typeof value.expires_at === "string" || value.expires_at === null) &&
+    isObject(value.approval) &&
+    typeof value.approval.method === "string" &&
+    typeof value.approval.expires_in === "number" &&
+    typeof value.approval.interval === "number" &&
+    (value.approval.user_code === undefined ||
+      typeof value.approval.user_code === "string") &&
+    typeof value.temporary_api_key === "string"
   ) {
     return value as BootstrapCredentials;
   }

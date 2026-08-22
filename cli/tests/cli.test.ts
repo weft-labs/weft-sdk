@@ -106,26 +106,23 @@ describe("weft CLI", () => {
     expect(fetchApi).not.toHaveBeenCalled();
   });
 
-  it("bootstraps with correct DCR/create payload and stores bootstrap secrets atomically", async () => {
+  it("bootstraps with single create request and stores bootstrap data atomically", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-bootstrap-"));
     const credFile = join(dir, "credentials.json");
     const io = capture();
     const responses = [
       {
-        client_id: "oauth-client-id",
-      },
-      {
         data: {
           id: "boot-id",
           status: "pending",
-          capabilities: ["balance", "fetch", "search"],
+          capabilities: ["search", "status", "cancel"],
           expires_at: "2026-01-01T00:00:00Z",
           temporary_api_key: "temp-api-key-123",
-          device_code: "device-abc",
           approval: {
-            method: "device",
-            interval: 7,
+            method: "email_link",
+            interval: 42,
             expires_in: 1200,
+            user_code: "ABCD-1234",
           },
         },
       },
@@ -133,28 +130,16 @@ describe("weft CLI", () => {
     const fetchApi = vi
       .fn()
       .mockImplementation(async (_url: string, init: RequestInit) => {
+        expect(_url).toBe("https://api.example/api/v1/account_bootstraps");
         const body = (init.body as string) ?? "";
         const item = responses.shift()!;
-        if (_url.includes("/oauth/register")) {
-          const parsed = JSON.parse(body);
-          expect(parsed.client_name).toBe("Weft CLI");
-          expect(parsed.redirect_uris).toEqual(["http://localhost/callback"]);
-          expect(parsed.grant_types).toEqual([
-            "urn:ietf:params:oauth:grant-type:device_code",
-            "refresh_token",
-          ]);
-          expect(parsed.token_endpoint_auth_method).toBe("none");
-          expect(parsed.scope).toBe("balance fetch search");
-        }
         if (_url.includes("/api/v1/account_bootstraps")) {
           const parsed = JSON.parse(body);
-          expect(parsed.oauth_client_id).toBe("oauth-client-id");
           expect(parsed.host_name).toBe("Weft CLI");
-          expect(parsed.requested_scopes).toEqual([
-            "balance",
-            "fetch",
-            "search",
-          ]);
+          expect(parsed.oauth_client_id).toBeUndefined();
+          expect(parsed.requested_scopes).toBeUndefined();
+          expect(parsed.oauth_client_name).toBeUndefined();
+          expect(_url).toBe("https://api.example/api/v1/account_bootstraps");
         }
 
         return new Response(JSON.stringify(item), {
@@ -183,22 +168,29 @@ describe("weft CLI", () => {
     );
 
     expect(code).toBe(EXIT_SUCCESS);
-    expect(fetchApi).toHaveBeenCalledTimes(2);
+    expect(fetchApi).toHaveBeenCalledTimes(1);
     const output = JSON.parse(io.out[0]);
     expect(output.data.status).toBe("pending");
     expect(output.data).not.toHaveProperty("temporary_api_key");
-    expect(output.data).not.toHaveProperty("device_code");
+    expect(output.data).toHaveProperty("approval");
 
     const saved = JSON.parse(readFileSync(credFile, "utf8"));
     expect(saved).toMatchObject({
-      type: "bootstrap",
-      bootstrap_id: "boot-id",
+      base_url: "https://api.example",
+      id: "boot-id",
+      status: "pending",
+      capabilities: ["search", "status", "cancel"],
+      expires_at: "2026-01-01T00:00:00Z",
+      approval: {
+        interval: 42,
+      },
       temporary_api_key: "temp-api-key-123",
-      device_code: "device-abc",
-      client_id: "oauth-client-id",
-      polling_interval: 7,
-      expiry: "2026-01-01T00:00:00Z",
     });
+    expect(saved).not.toHaveProperty("type");
+    expect(saved).not.toHaveProperty("bootstrap_id");
+    expect(saved).not.toHaveProperty("device_code");
+    expect(saved).not.toHaveProperty("client_id");
+    expect(saved).not.toHaveProperty("polling_interval");
     const fileMode = statSync(credFile).mode & 0o777;
     const parentMode = statSync(dir).mode & 0o777;
     expect(fileMode).toBe(0o600);
@@ -237,15 +229,17 @@ describe("weft CLI", () => {
     writeFileSync(
       credFile,
       JSON.stringify({
-        version: 1,
-        type: "bootstrap",
         base_url: "https://api.example",
-        bootstrap_id: "boot-id",
+        id: "boot-id",
+        status: "pending",
+        capabilities: ["search", "status", "cancel"],
+        expires_at: "2026-01-01T00:00:00Z",
+        approval: {
+          method: "email_link",
+          expires_in: 1200,
+          interval: 7,
+        },
         temporary_api_key: "stored-temp-key",
-        device_code: "dev-code",
-        client_id: "client-id",
-        expiry: "2026-01-01T00:00:00Z",
-        polling_interval: 5,
       }),
     );
 
@@ -265,9 +259,14 @@ describe("weft CLI", () => {
     );
 
     expect(
-      await runCli(["me"], {
+      await runCli(["--base-url", "https://runtime.example", "me"], {
         ...io,
-        env: { WEFT_CREDENTIALS_FILE: credFile, WEFT_API_KEY: "", HOME: "" },
+        env: {
+          WEFT_CREDENTIALS_FILE: credFile,
+          WEFT_BASE_URL: "https://fallback.example",
+          WEFT_API_KEY: "",
+          HOME: "",
+        },
         fetchApi,
       }),
     ).toBe(EXIT_SUCCESS);
@@ -285,15 +284,17 @@ describe("weft CLI", () => {
     writeFileSync(
       credFile,
       JSON.stringify({
-        version: 1,
-        type: "bootstrap",
         base_url: "https://api.example",
-        bootstrap_id: "boot-id",
+        id: "boot-id",
+        status: "pending",
+        capabilities: ["search", "status", "cancel"],
+        expires_at: "2026-01-01T00:00:00Z",
+        approval: {
+          method: "email_link",
+          expires_in: 1200,
+          interval: 7,
+        },
         temporary_api_key: "stored-temp-key",
-        device_code: "dev-code",
-        client_id: "client-id",
-        expiry: "2026-01-01T00:00:00Z",
-        polling_interval: 5,
       }),
     );
     const io = capture();
@@ -318,15 +319,17 @@ describe("weft CLI", () => {
     writeFileSync(
       credFile,
       JSON.stringify({
-        version: 1,
-        type: "bootstrap",
         base_url: "https://api.example",
-        bootstrap_id: "boot-id",
+        id: "boot-id",
+        status: "pending",
+        capabilities: ["search", "status", "cancel"],
+        expires_at: "2026-01-01T00:00:00Z",
+        approval: {
+          method: "email_link",
+          expires_in: 1200,
+          interval: 7,
+        },
         temporary_api_key: "stored-temp-key",
-        device_code: "dev-code",
-        client_id: "client-id",
-        expiry: "2026-01-01T00:00:00Z",
-        polling_interval: 7,
       }),
     );
 
@@ -359,7 +362,10 @@ describe("weft CLI", () => {
     ).toBe(EXIT_SUCCESS);
     expect(JSON.parse(io.out[0])).toMatchObject({
       ok: true,
-      data: { status: "pending" },
+      data: {
+        id: "boot-id",
+        status: "pending",
+      },
     });
     expect(fetchApi).toHaveBeenCalledWith(
       "https://api.example/api/v1/account_bootstraps/boot-id",
@@ -368,21 +374,23 @@ describe("weft CLI", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("exchanges claimed bootstrap for OAuth tokens and replaces credentials", async () => {
+  it("keeps the same bootstrap token after claim and writes merged status", async () => {
     const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-claimed-"));
     const credFile = join(dir, "credentials.json");
     writeFileSync(
       credFile,
       JSON.stringify({
-        version: 1,
-        type: "bootstrap",
         base_url: "https://api.example",
-        bootstrap_id: "boot-id",
+        id: "boot-id",
+        status: "pending",
+        capabilities: ["search", "status", "cancel"],
+        expires_at: "2026-01-01T00:00:00Z",
+        approval: {
+          method: "email_link",
+          expires_in: 1200,
+          interval: 7,
+        },
         temporary_api_key: "stored-temp-key",
-        device_code: "dev-code",
-        client_id: "client-id",
-        expiry: "2026-01-01T00:00:00Z",
-        polling_interval: 7,
       }),
     );
 
@@ -399,36 +407,26 @@ describe("weft CLI", () => {
               data: {
                 id: "boot-id",
                 status: "claimed",
+                capabilities: [
+                  "identity",
+                  "search",
+                  "balance",
+                  "fetch",
+                  "purchases",
+                  "status",
+                  "revoke",
+                ],
+                expires_at: null,
+                approval: {
+                  method: "email_link",
+                  expires_in: 0,
+                  interval: 11,
+                },
               },
             }),
             {
               status: 200,
               headers: { "content-type": "application/json" },
-            },
-          );
-        }
-
-        if (url === "https://api.example/oauth/token") {
-          const form = new URLSearchParams(init.body as string);
-          expect(form.get("grant_type")).toBe(
-            "urn:ietf:params:oauth:grant-type:device_code",
-          );
-          expect(form.get("device_code")).toBe("dev-code");
-          expect(form.get("client_id")).toBe("client-id");
-          expect(form.get("name")).toBe("Weft CLI");
-          return new Response(
-            JSON.stringify({
-              access_token: "access-token",
-              token_type: "Bearer",
-              expires_in: 1200,
-              refresh_token: "refresh-token",
-              scope: "balance fetch search",
-            }),
-            {
-              status: 200,
-              headers: {
-                "content-type": "application/json",
-              },
             },
           );
         }
@@ -444,38 +442,131 @@ describe("weft CLI", () => {
       }),
     ).toBe(EXIT_SUCCESS);
     const output = JSON.parse(io.out[0]);
-    expect(output.data).toEqual({
-      status: "consumed",
-      authentication: "oauth",
-      scope: "balance fetch search",
+    expect(output.data).toMatchObject({
+      id: "boot-id",
+      status: "claimed",
+      capabilities: [
+        "identity",
+        "search",
+        "balance",
+        "fetch",
+        "purchases",
+        "status",
+        "revoke",
+      ],
+      expires_at: null,
+      approval: {
+        interval: 11,
+      },
     });
-    expect(JSON.stringify(output)).not.toContain("access-token");
-    expect(JSON.stringify(output)).not.toContain("refresh-token");
+    expect(JSON.stringify(output)).not.toContain("stored-temp-key");
 
     const after = JSON.parse(readFileSync(credFile, "utf8"));
-    expect(after.type).toBe("oauth");
-    expect(after.client_id).toBe("client-id");
-    expect(after.access_token).toBe("access-token");
-    expect(after).not.toHaveProperty("temporary_api_key");
+    expect(after).toMatchObject({
+      id: "boot-id",
+      status: "claimed",
+      capabilities: [
+        "identity",
+        "search",
+        "balance",
+        "fetch",
+        "purchases",
+        "status",
+        "revoke",
+      ],
+      temporary_api_key: "stored-temp-key",
+    });
 
     const repeated = capture();
+    const repeatedFetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              id: "boot-id",
+              status: "claimed",
+              capabilities: [
+                "identity",
+                "search",
+                "balance",
+                "fetch",
+                "purchases",
+                "status",
+                "revoke",
+              ],
+              expires_at: null,
+              approval: {
+                method: "email_link",
+                expires_in: 0,
+                interval: 11,
+              },
+            },
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+    );
     expect(
       await runCli(["auth", "status"], {
         ...repeated,
         env: { WEFT_CREDENTIALS_FILE: credFile },
-        fetchApi: vi.fn(() => {
-          throw new Error("auth status must not call the server after OAuth");
-        }),
+        fetchApi: repeatedFetch,
       }),
     ).toBe(EXIT_SUCCESS);
     expect(JSON.parse(repeated.out[0])).toMatchObject({
       ok: true,
-      data: {
-        status: "consumed",
-        authentication: "oauth",
-        scope: "balance fetch search",
-      },
+      data: { status: "claimed" },
     });
+    expect(repeatedFetch).toHaveBeenCalledTimes(1);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("treats revoked bootstrap status as an authentication failure without printing the bearer", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "weft-cli-auth-revoked-"));
+    const credFile = join(dir, "credentials.json");
+    writeFileSync(
+      credFile,
+      JSON.stringify({
+        base_url: "https://api.example",
+        id: "boot-id",
+        status: "claimed",
+        capabilities: [
+          "identity",
+          "search",
+          "balance",
+          "fetch",
+          "purchases",
+          "status",
+          "revoke",
+        ],
+        expires_at: null,
+        approval: {
+          method: "email_link",
+          expires_in: 0,
+          interval: 7,
+        },
+        temporary_api_key: "revoked-bootstrap-secret",
+      }),
+    );
+    const io = capture();
+
+    expect(
+      await runCli(["auth", "status"], {
+        ...io,
+        env: { WEFT_CREDENTIALS_FILE: credFile },
+        fetchApi: async () =>
+          new Response(
+            JSON.stringify({
+              error: { code: "unauthorized", message: "Invalid credential" },
+            }),
+            { status: 401, headers: { "content-type": "application/json" } },
+          ),
+      }),
+    ).toBe(EXIT_AUTH);
+    expect(io.out).toEqual([]);
+    expect(io.err.join(" ")).not.toContain("revoked-bootstrap-secret");
     rmSync(dir, { recursive: true, force: true });
   });
 

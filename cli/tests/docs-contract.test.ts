@@ -35,7 +35,7 @@ const BOOTSTRAP_STATES = [
   "claimed",
   "rejected",
   "expired",
-  "consumed",
+  "revoked",
 ] as const;
 
 const SKILL_TARGETS = [
@@ -130,7 +130,7 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       "weft search",
       "claim email",
       "weft auth status",
-      "OAuth",
+      "same bearer",
       "fund the wallet",
     ];
     let cursor = 0;
@@ -144,7 +144,7 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("states that wbt_ is secret, temporary, and search-only", () => {
+  it("states the exact pre-claim and durable post-claim wbt_ contract", () => {
     for (const [label, document] of [
       ["SKILL.md", SKILL],
       ["cli/README.md", README],
@@ -153,13 +153,24 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
         "wbt_",
       );
       expect(document.toLowerCase()).toMatch(/secret/);
-      expect(document.toLowerCase()).toMatch(/temporary/);
+      expect(document.toLowerCase()).toMatch(/temporary before claim/);
       expect(document.toLowerCase()).toMatch(/search-only/);
+      expect(document.toLowerCase()).toMatch(/durable/);
+      expect(document.toLowerCase()).toMatch(/until revoked/);
       expect(
         document.toLowerCase(),
         `${label} must give the 30-minute expiry`,
       ).toMatch(/30 minutes|30-minute/);
-      for (const capability of ["`search`", "`status`", "`cancel`"]) {
+      for (const capability of [
+        "`identity`",
+        "`search`",
+        "`balance`",
+        "`fetch`",
+        "`purchases`",
+        "`status`",
+        "`cancel`",
+        "`revoke`",
+      ]) {
         expect(document).toContain(capability);
       }
     }
@@ -179,12 +190,14 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("explains that claimed is consumed inside auth status", () => {
+  it("explains claimed same-bearer promotion without token exchange", () => {
     for (const document of [SKILL, README]) {
+      expect(document).toMatch(/auth status[\s\S]{0,200}claimed/i);
+      expect(document).toMatch(/same bearer/i);
       expect(document).toMatch(
-        /auth status[\s\S]{0,100}claimed[\s\S]{0,100}consumed/i,
+        /does not call|never requests[\s\S]{0,80}OAuth/i,
       );
-      expect(document).toMatch(/does not emit an intermediate `claimed`/i);
+      expect(document).not.toMatch(/`consumed`/);
     }
   });
 
@@ -234,9 +247,10 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
   });
 
-  it("documents claimed-state search and stored OAuth credentials", () => {
+  it("documents claimed-state search and stored OAuth compatibility", () => {
     for (const document of [SKILL, README, INVENTORY]) {
-      expect(document).toMatch(/claimed[\s\S]{0,100}search/i);
+      expect(document).toContain("`claimed`");
+      expect(document).toContain("`search`");
     }
     for (const document of [SKILL, README, TYPESCRIPT_README, INVENTORY]) {
       expect(document).toMatch(/stored[\s\S]{0,100}OAuth/i);
