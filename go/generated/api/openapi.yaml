@@ -18,16 +18,24 @@ info:
     surfaces and require an `ax_live_*` resource key. The two key types are
     not interchangeable.
 
-    All errors share the envelope defined by `ErrorResponse`, except the
+    Agent bootstrap is a separate, temporary path. A `wbt_*` bootstrap bearer
+    can call search plus its own status/cancel operations for 30 minutes. It
+    never resolves to a User and cannot call wallet, balance, fetch, seller,
+    organization, API-key, or MCP surfaces.
+
+    Bootstrap lifecycle successes follow the API-standard `{ "data": ... }`
+    envelope. All errors share the envelope defined by `ErrorResponse`, except the
     buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke
     envelopes carrying additional context — see `SearchErrorResponse` and
     `FetchErrorResponse`.
   title: Weft API
-  version: 0.11.0
+  version: 0.14.0
 servers:
 - description: Production
   url: https://weft.network
 tags:
+- description: Temporary search-only access followed by a human email claim.
+  name: Agent Bootstrap
 - description: Account creation and authentication flows.
   name: Auth
 - description: Current user account information.
@@ -75,6 +83,141 @@ paths:
                 type: string
           description: OpenAPI 3.1 document (YAML)
       summary: Fetch this OpenAPI document
+  /api/v1/account_bootstraps:
+    post:
+      description: |
+        Creates a 30-minute, search-only bootstrap and emails a separate claim
+        link to the supplied address. The response includes one-time device
+        credentials and is deliberately identical for new and existing account
+        emails and never contains the claim token.
+        Rate limits apply per IP, normalized email, and OAuth client; request
+        bodies over 4 KiB are rejected before parsing. The bootstrap row and
+        one-time credentials are committed only after the mail relay accepts the
+        claim email. A retryable 503 leaves no bootstrap row behind.
+      operationId: createAccountBootstrap
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountBootstrapRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountBootstrapCreatedResponse"
+          description: Bootstrap created after the claim email is accepted for delivery
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Claim email delivery is temporarily unavailable; no bootstrap
+            was created and the request may be retried
+          headers:
+            Retry-After:
+              description: "Suggested delay before retrying, in seconds."
+              explode: false
+              schema:
+                pattern: "^[1-9][0-9]*$"
+                type: string
+              style: simple
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Request body exceeds the 4 KiB limit
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Invalid context, OAuth client, or requested scopes"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitResponse"
+          description: Rate limit exceeded
+      security: []
+      summary: Create a temporary agent bootstrap
+      tags:
+      - Agent Bootstrap
+  /api/v1/account_bootstraps/{id}:
+    delete:
+      description: |
+        Pending and claimed bootstraps become rejected. A consumed bootstrap
+        also revokes the delivered OAuth grant and all refresh descendants.
+        Repeated cancellation is idempotent.
+      operationId: cancelAccountBootstrap
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^boot_[A-Za-z0-9_-]+$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountBootstrapStatusResponse"
+          description: Rejected terminal lifecycle status
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unknown ID or non-matching bootstrap credential
+      security:
+      - bootstrapAuth: []
+      summary: Cancel a bootstrap and revoke delivered OAuth access
+      tags:
+      - Agent Bootstrap
+    get:
+      operationId: getAccountBootstrap
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^boot_[A-Za-z0-9_-]+$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountBootstrapStatusResponse"
+          description: "Current lifecycle and polling guidance, including terminal\
+            \ expiry status"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unknown ID or non-matching bootstrap credential
+      security:
+      - bootstrapAuth: []
+      summary: Read bootstrap lifecycle status
+      tags:
+      - Agent Bootstrap
+    parameters:
+    - explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        pattern: "^boot_[A-Za-z0-9_-]+$"
+        type: string
+      style: simple
   /api/v1/resources/enroll:
     post:
       description: |
@@ -389,9 +532,9 @@ paths:
         Read-only snapshot for the buyer behind the bearer token. The
         response always includes a `promo` block — values are zero in v1
         and fill in once the freemium promo ledger ships, without a
-        shape change. `wallet.balance_usdc` is fetched live from Privy;
-        if Privy is unreachable the field returns `"0.00"` rather than
-        erroring the whole call.
+        shape change. Base USDC and Tempo balances are fetched
+        server-side through Crossmint. If Crossmint is unreachable, the
+        balance fields are `null`; consumers must not interpret that as zero.
 
         Account-scoped: the bearer must be a buyer-scoped API key.
       operationId: getBalance
@@ -423,6 +566,61 @@ paths:
       summary: "Get wallet, spending policy, and current-window spend"
       tags:
       - Balance
+  /contracts/curated-marketplace/{digest}/{operation_id}.json:
+    get:
+      description: |
+        Public, content-addressed detail document linked from compact hosted-MCP
+        search results. A matching document is cacheable for one year and
+        immutable. The digest is the SHA-256 of the canonical JSON document.
+        Every reviewed endpoint includes its request and response evidence;
+        asynchronous endpoints also include the authored submit-and-poll
+        lifecycle, identity-header reuse, terminal states, and known gaps.
+      operationId: getCuratedMarketplaceContract
+      parameters:
+      - explode: false
+        in: path
+        name: digest
+        required: true
+        schema:
+          pattern: "^[0-9a-f]{64}$"
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: operation_id
+        required: true
+        schema:
+          pattern: "^[A-Za-z0-9_-]+$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuratedMarketplaceContract"
+          description: Full immutable operation contract
+          headers:
+            Cache-Control:
+              description: "public, max-age=31536000, immutable"
+              explode: false
+              schema:
+                type: string
+              style: simple
+            ETag:
+              description: Quoted SHA-256 document digest
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "304":
+          description: The caller already has the document identified by ETag
+        "404":
+          description: Unknown operation or digest mismatch
+      security: []
+      summary: Get a curated marketplace operation contract
+      tags:
+      - Search
   /api/v1/search:
     post:
       description: |
@@ -435,9 +633,14 @@ paths:
         (the reasoning form) XOR `price_atomic` in integer micro-USD (the
         settlement form) — mutually exclusive, set at most one.
 
-        Account-scoped: the bearer token must be a buyer-scoped API key.
-        Free for authenticated buyers in v1; billing is planned for a later
-        release.
+        Account-scoped: the bearer token must be a buyer-scoped API key, an
+        OAuth token carrying `search`, or a pending or claimed `wbt_*` bootstrap
+        bearer. Bootstrap access never resolves to a User. A claim keeps
+        temporary search available until successful OAuth token delivery
+        consumes the bootstrap, avoiding an access gap during credential
+        replacement. Rejection, cancellation, expiry, and consumption end
+        temporary search. Bootstrap search is limited to 60 requests per
+        credential and 120 per IP each hour.
 
         Response negotiation: `Accept: application/json` (default) returns
         the structured envelope; `Accept: text/markdown` returns a rendered
@@ -487,6 +690,12 @@ paths:
             `max_results`, an unknown top-level parameter, or invalid
             `filters` (unknown filter key/operator, bad enum value, or a
             sub-filter without exactly one operator). See the `error` code.
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitResponse"
+          description: Bootstrap search rate limit exceeded
         "502":
           content:
             application/json:
@@ -591,10 +800,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/fetch_403_response"
           description: |
-            Policy violation, denylisted recipient, or a merchant challenge on a
+            Policy violation, missing Crossmint payment permission
+            (`PAYMENT_AUTHORIZATION_REQUIRED` — `details` carries the
+            wallet-page URL where the authenticated user can enable Base and
+            Tempo payments), denylisted recipient, or a merchant challenge on a
             chain outside the wallet's own environment — a testnet wallet may
             not pay a mainnet challenge, nor the reverse
-            (`WALLET_ENVIRONMENT_MISMATCH`; terminal, not retryable). All three
+            (`WALLET_ENVIRONMENT_MISMATCH`; terminal, not retryable). All four
             use `FetchErrorResponse`. Alternatively an OAuth access token
             lacking the `fetch` scope (`InsufficientScopeResponse`, RFC 6750
             `insufficient_scope`, with a `WWW-Authenticate` challenge). The two
@@ -608,6 +820,11 @@ paths:
             `IDEMPOTENCY_CONFLICT` — this buyer already used the supplied
             `Idempotency-Key` for a different fetch request. Generate a new key
             for the new operation; retry the original operation unchanged.
+
+            Or `WALLET_SETUP_INCOMPLETE` — the buyer's wallet has not been
+            created yet, so there is nothing to pay from. `details.wallet_url`
+            carries the page where the authenticated user finishes setup. No
+            retry succeeds until they do. Both use `FetchErrorResponse`.
         "413":
           content:
             application/json:
@@ -643,6 +860,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: Settlement signing failed on Weft's side (`SETTLEMENT_FAILED`).
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchErrorResponse"
+          description: |
+            `SETTLEMENT_PENDING` — the payment was submitted and the wallet
+            provider had not reached a terminal state before Weft's polling
+            budget ran out. NOTHING is known to have failed: the charge may
+            already have settled, so this is not `SETTLEMENT_FAILED` and the
+            amount is not lost. `details.retry_with_same_idempotency_key` is
+            `true`.
+
+            Retry the identical request shortly. Sending the same
+            `Idempotency-Key` resumes the same provider operation; a caller that
+            sends no key is also safe, because Weft resumes its own in-flight
+            operation for the same merchant, amount and network rather than
+            opening a second one. Either way the retry resolves the original
+            payment instead of charging twice.
       security:
       - bearerAuth: []
       summary: Pay-and-fetch any URL (x402 proxy)
@@ -834,6 +1070,258 @@ paths:
       - Purchases
 components:
   schemas:
+    AccountBootstrapRequest:
+      additionalProperties: false
+      example:
+        reason: reason
+        requested_scopes:
+        - balance
+        - balance
+        agent_name: agent_name
+        email: email
+        host_name: host_name
+        oauth_client_id: oauth_client_id
+      properties:
+        email:
+          format: email
+          maxLength: 320
+          type: string
+        agent_name:
+          maxLength: 100
+          minLength: 1
+          type: string
+        host_name:
+          maxLength: 100
+          type: string
+        reason:
+          maxLength: 500
+          type: string
+        oauth_client_id:
+          description: Existing dynamically registered or seeded OAuth client ID.
+          type: string
+        requested_scopes:
+          items:
+            enum:
+            - balance
+            - fetch
+            - search
+            type: string
+          type: array
+          uniqueItems: true
+      required:
+      - agent_name
+      - email
+      - oauth_client_id
+      - requested_scopes
+    AccountBootstrapCreated:
+      additionalProperties: false
+      example:
+        capabilities:
+        - search
+        - search
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        temporary_api_key: temporary_api_key
+        approval:
+          method: email_link
+          user_code: user_code
+          interval: 1
+          expires_in: 0
+        device_code: device_code
+        id: id
+        status: pending
+      properties:
+        id:
+          pattern: "^boot_[A-Za-z0-9_-]+$"
+          type: string
+        status:
+          enum:
+          - pending
+          - claimed
+          - rejected
+          - expired
+          - consumed
+          type: string
+        capabilities:
+          items:
+            enum:
+            - search
+            - status
+            - cancel
+            type: string
+          type: array
+          uniqueItems: true
+        expires_at:
+          format: date-time
+          type: string
+        approval:
+          $ref: "#/components/schemas/AccountBootstrapCreatedApproval"
+        temporary_api_key:
+          description: Returned once. Store as a secret; it cannot be recovered.
+          pattern: "^wbt_[A-Za-z0-9_-]+$"
+          type: string
+        device_code:
+          description: Returned once. Poll the OAuth token endpoint with this secret.
+          minLength: 32
+          type: string
+      required:
+      - approval
+      - capabilities
+      - device_code
+      - expires_at
+      - id
+      - status
+      - temporary_api_key
+    AccountBootstrapCreatedResponse:
+      additionalProperties: false
+      example:
+        data:
+          capabilities:
+          - search
+          - search
+          expires_at: 2000-01-23T04:56:07.000+00:00
+          temporary_api_key: temporary_api_key
+          approval:
+            method: email_link
+            user_code: user_code
+            interval: 1
+            expires_in: 0
+          device_code: device_code
+          id: id
+          status: pending
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountBootstrapCreated"
+      required:
+      - data
+    AccountBootstrapStatusResponse:
+      additionalProperties: false
+      example:
+        data:
+          capabilities:
+          - search
+          - search
+          expires_at: 2000-01-23T04:56:07.000+00:00
+          approval:
+            method: email_link
+            interval: 1
+            expires_in: 0
+          id: id
+          status: pending
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountBootstrapStatus"
+      required:
+      - data
+    AccountBootstrapStatus:
+      additionalProperties: false
+      example:
+        capabilities:
+        - search
+        - search
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        approval:
+          method: email_link
+          interval: 1
+          expires_in: 0
+        id: id
+        status: pending
+      properties:
+        id:
+          pattern: "^boot_[A-Za-z0-9_-]+$"
+          type: string
+        status:
+          enum:
+          - pending
+          - claimed
+          - rejected
+          - expired
+          - consumed
+          type: string
+        capabilities:
+          items:
+            enum:
+            - search
+            - status
+            - cancel
+            type: string
+          type: array
+          uniqueItems: true
+        expires_at:
+          format: date-time
+          type: string
+        approval:
+          $ref: "#/components/schemas/AccountBootstrapApproval"
+      required:
+      - approval
+      - capabilities
+      - expires_at
+      - id
+      - status
+    AccountBootstrapApproval:
+      additionalProperties: false
+      example:
+        method: email_link
+        interval: 1
+        expires_in: 0
+      properties:
+        method:
+          enum:
+          - email_link
+          type: string
+        expires_in:
+          minimum: 0
+          type: integer
+        interval:
+          description: Minimum status polling interval in seconds.
+          minimum: 1
+          type: integer
+      required:
+      - expires_in
+      - interval
+      - method
+    AccountBootstrapCreatedApproval:
+      additionalProperties: false
+      example:
+        method: email_link
+        user_code: user_code
+        interval: 1
+        expires_in: 0
+      properties:
+        method:
+          enum:
+          - email_link
+          type: string
+        expires_in:
+          minimum: 0
+          type: integer
+        interval:
+          description: Minimum OAuth device-token polling interval in seconds.
+          minimum: 1
+          type: integer
+        user_code:
+          description: Show this code to the human; approval requires a matching normalized
+            code.
+          pattern: "^[A-Z0-9]{4}-[A-Z0-9]{4}$"
+          type: string
+      required:
+      - expires_in
+      - interval
+      - method
+      - user_code
+    RateLimitResponse:
+      example:
+        error_description: error_description
+        error: too_many_requests
+      properties:
+        error:
+          enum:
+          - too_many_requests
+          type: string
+        error_description:
+          type: string
+      required:
+      - error
+      - error_description
     ErrorResponse:
       description: |
         Standard error envelope returned by all `/api/v1` endpoints except
@@ -1813,8 +2301,10 @@ components:
           balance_usd: "0.00"
         wallet:
           address: address
+          provider: crossmint
           total_usd: "15.34"
           balance_usdc: "12.34"
+          tempo_address: tempo_address
           tempo_usd: "3.00"
           network: network
         spent_today_usd: "0.0005"
@@ -1876,22 +2366,33 @@ components:
     Wallet:
       example:
         address: address
+        provider: crossmint
         total_usd: "15.34"
         balance_usdc: "12.34"
+        tempo_address: tempo_address
         tempo_usd: "3.00"
         network: network
       properties:
+        provider:
+          description: Crossmint is the only buyer-wallet provider.
+          enum:
+          - crossmint
+          type: string
         address:
-          description: EVM address of the buyer's Privy-managed wallet. Null if no
-            wallet provisioned.
+          description: Base smart-wallet address. Null only when Crossmint is unavailable.
+          type: string
+          nullable: true
+        tempo_address:
+          description: Paired Tempo smart-wallet address. Null only when Crossmint
+            is unavailable.
           type: string
           nullable: true
         balance_usdc:
-          description: "Live Base USDC balance, exact to the micro-dollar (up to 6\
-            \ decimals, minimum 2). Returns \"0.00\" if the upstream wallet provider\
-            \ is unreachable."
+          description: |
+            Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
           example: "12.34"
           type: string
+          nullable: true
         tempo_usd:
           description: |
             Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never "0.00"; it means "we couldn't determine it", and `total_usd` then reflects the Base component only.
@@ -1905,13 +2406,16 @@ components:
           type: string
           nullable: true
         network:
-          description: Wallet network (e.g. `base-sepolia`).
+          description: |
+            Selected Crossmint environment (`base_sepolia` or `base_mainnet`).
           type: string
           nullable: true
       required:
       - address
       - balance_usdc
       - network
+      - provider
+      - tempo_address
       - tempo_usd
       - total_usd
     SpendingPolicy:
@@ -1947,6 +2451,16 @@ components:
             - x402
             - x402
             eq: x402
+          execution_mode:
+            in:
+            - sync
+            - sync
+            eq: sync
+          method:
+            in:
+            - GET
+            - GET
+            eq: GET
           price:
             range_lte: range_lte
             gte: gte
@@ -1959,11 +2473,18 @@ components:
             lte: 0
             eq: 0
             range_gte: 0
+          weft_fetch_compatible: true
           type:
             in:
             - api
             - api
             eq: api
+          category:
+            in:
+            - in
+            - in
+            eq: eq
+          include_unknown_prices: false
       properties:
         query:
           description: Free-text query. Required and non-empty.
@@ -2005,6 +2526,16 @@ components:
           - x402
           - x402
           eq: x402
+        execution_mode:
+          in:
+          - sync
+          - sync
+          eq: sync
+        method:
+          in:
+          - GET
+          - GET
+          eq: GET
         price:
           range_lte: range_lte
           gte: gte
@@ -2017,11 +2548,18 @@ components:
           lte: 0
           eq: 0
           range_gte: 0
+        weft_fetch_compatible: true
         type:
           in:
           - api
           - api
           eq: api
+        category:
+          in:
+          - in
+          - in
+          eq: eq
+        include_unknown_prices: false
       properties:
         price:
           $ref: "#/components/schemas/SearchPriceUsdFilter"
@@ -2031,6 +2569,21 @@ components:
           $ref: "#/components/schemas/SearchResourceTypeFilter"
         protocol:
           $ref: "#/components/schemas/SearchProtocolFilter"
+        category:
+          $ref: "#/components/schemas/SearchStringSetFilter"
+        method:
+          $ref: "#/components/schemas/SearchMethodFilter"
+        execution_mode:
+          $ref: "#/components/schemas/SearchExecutionModeFilter"
+        weft_fetch_compatible:
+          description: True requires at least one access method whose paid request
+            is supported by the current Weft fetch runtime. For async operations this
+            can mean submission-only coverage followed by the provider workflow.
+          type: boolean
+        include_unknown_prices:
+          default: false
+          description: "With a price constraint, also retain dynamic and unknown prices."
+          type: boolean
     SearchPriceUsdFilter:
       additionalProperties: false
       description: |
@@ -2164,6 +2717,75 @@ components:
             type: string
           minItems: 1
           type: array
+    SearchStringSetFilter:
+      additionalProperties: false
+      example:
+        in:
+        - in
+        - in
+        eq: eq
+      properties:
+        eq:
+          type: string
+        in:
+          items:
+            type: string
+          minItems: 1
+          type: array
+    SearchMethodFilter:
+      additionalProperties: false
+      example:
+        in:
+        - GET
+        - GET
+        eq: GET
+      properties:
+        eq:
+          enum:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - HEAD
+          - OPTIONS
+          type: string
+        in:
+          items:
+            enum:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - HEAD
+            - OPTIONS
+            type: string
+          minItems: 1
+          type: array
+    SearchExecutionModeFilter:
+      additionalProperties: false
+      example:
+        in:
+        - sync
+        - sync
+        eq: sync
+      properties:
+        eq:
+          enum:
+          - sync
+          - async
+          - stream
+          type: string
+        in:
+          items:
+            enum:
+            - sync
+            - async
+            - stream
+            type: string
+          minItems: 1
+          type: array
     SearchResponse:
       description: The weft-search-platform `POST /v1/search` response envelope.
       example:
@@ -2193,31 +2815,75 @@ components:
         result_count: 0
         embedder_model: embedder_model
         results:
-        - score: 0.7061401241503109
+        - score: 0.20271230230023218
           capability:
             capability_id: capability_id
             capability_type: capability_type
           endpoints:
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2236,26 +2902,76 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2274,37 +2990,87 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           provider:
             origin_domains:
             - origin_domains
             - origin_domains
             provider_id: provider_id
             display_name: display_name
-        - score: 0.7061401241503109
+        - score: 0.20271230230023218
           capability:
             capability_id: capability_id
             capability_type: capability_type
           endpoints:
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2323,26 +3089,76 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           - primary_protocol: primary_protocol
-            settlements: 5
+            settlements: 9
+            execution:
+              mode: sync
             operated_by_id: operated_by_id
             resource_type: resource_type
             endpoint_id: endpoint_id
+            source:
+              snapshot_version: 7
+              catalog: curated_marketplace
+              captured_at: 2000-01-23T04:56:07.000+00:00
             settled_via_facilitator_id: settled_via_facilitator_id
             url: url
             operator_type: first_party
-            latency_p50_ms: 2
+            latency_p50_ms: 3
             call:
               example_request: "{}"
               method: method
               input_schema: "{}"
               example_response: ""
+            output: "{}"
+            access_methods:
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
+            - weft_fetch:
+                reason: reason
+                contract_version: 2
+                state: supported
+              protocol: x402
+              scheme: scheme
+              terms: "{}"
+              price: "{}"
+              merchant: "{}"
+              asset: asset
+              access_method_id: access_method_id
+              network: network
+              asset_decimals: 5
+              status: listed
             price:
               last_observed_at: 2000-01-23T04:56:07.000+00:00
               atomic: 1
               live_verified: true
               indexed_usd: indexed_usd
               source: probe
+            service:
+              name: name
+              id: id
+            callability:
+              missing:
+              - missing
+              - missing
+              state: complete
             last_verified_at: 2000-01-23T04:56:07.000+00:00
             payment:
             - protocol: protocol
@@ -2361,6 +3177,12 @@ components:
               pay_to: pay_to
               network: network
               facilitator: facilitator
+            output_schema: "{}"
+            operation:
+              name: name
+              description: description
+              id: id
+            compatibility: "{}"
           provider:
             origin_domains:
             - origin_domains
@@ -2518,33 +3340,135 @@ components:
       - query_trace_id
       - results
       - warnings
+    CuratedMarketplaceContract:
+      example:
+        schema_version: 0
+        request:
+          key: ""
+        evidence:
+        - key: ""
+        - key: ""
+        provider:
+          key: ""
+        access_methods:
+        - key: ""
+        - key: ""
+        service:
+          key: ""
+        operation:
+          key: ""
+        snapshot:
+          key: ""
+      properties:
+        schema_version:
+          enum:
+          - 1
+          type: integer
+        snapshot:
+          additionalProperties: true
+          type: object
+        provider:
+          additionalProperties: true
+          type: object
+        service:
+          additionalProperties: true
+          type: object
+        operation:
+          additionalProperties: true
+          type: object
+        request:
+          additionalProperties: true
+          type: object
+        access_methods:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+        evidence:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+      required:
+      - access_methods
+      - evidence
+      - operation
+      - provider
+      - request
+      - schema_version
+      - service
+      - snapshot
     SearchResult:
       example:
-        score: 0.7061401241503109
+        score: 0.20271230230023218
         capability:
           capability_id: capability_id
           capability_type: capability_type
         endpoints:
         - primary_protocol: primary_protocol
-          settlements: 5
+          settlements: 9
+          execution:
+            mode: sync
           operated_by_id: operated_by_id
           resource_type: resource_type
           endpoint_id: endpoint_id
+          source:
+            snapshot_version: 7
+            catalog: curated_marketplace
+            captured_at: 2000-01-23T04:56:07.000+00:00
           settled_via_facilitator_id: settled_via_facilitator_id
           url: url
           operator_type: first_party
-          latency_p50_ms: 2
+          latency_p50_ms: 3
           call:
             example_request: "{}"
             method: method
             input_schema: "{}"
             example_response: ""
+          output: "{}"
+          access_methods:
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
           price:
             last_observed_at: 2000-01-23T04:56:07.000+00:00
             atomic: 1
             live_verified: true
             indexed_usd: indexed_usd
             source: probe
+          service:
+            name: name
+            id: id
+          callability:
+            missing:
+            - missing
+            - missing
+            state: complete
           last_verified_at: 2000-01-23T04:56:07.000+00:00
           payment:
           - protocol: protocol
@@ -2563,26 +3487,76 @@ components:
             pay_to: pay_to
             network: network
             facilitator: facilitator
+          output_schema: "{}"
+          operation:
+            name: name
+            description: description
+            id: id
+          compatibility: "{}"
         - primary_protocol: primary_protocol
-          settlements: 5
+          settlements: 9
+          execution:
+            mode: sync
           operated_by_id: operated_by_id
           resource_type: resource_type
           endpoint_id: endpoint_id
+          source:
+            snapshot_version: 7
+            catalog: curated_marketplace
+            captured_at: 2000-01-23T04:56:07.000+00:00
           settled_via_facilitator_id: settled_via_facilitator_id
           url: url
           operator_type: first_party
-          latency_p50_ms: 2
+          latency_p50_ms: 3
           call:
             example_request: "{}"
             method: method
             input_schema: "{}"
             example_response: ""
+          output: "{}"
+          access_methods:
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
+          - weft_fetch:
+              reason: reason
+              contract_version: 2
+              state: supported
+            protocol: x402
+            scheme: scheme
+            terms: "{}"
+            price: "{}"
+            merchant: "{}"
+            asset: asset
+            access_method_id: access_method_id
+            network: network
+            asset_decimals: 5
+            status: listed
           price:
             last_observed_at: 2000-01-23T04:56:07.000+00:00
             atomic: 1
             live_verified: true
             indexed_usd: indexed_usd
             source: probe
+          service:
+            name: name
+            id: id
+          callability:
+            missing:
+            - missing
+            - missing
+            state: complete
           last_verified_at: 2000-01-23T04:56:07.000+00:00
           payment:
           - protocol: protocol
@@ -2601,6 +3575,12 @@ components:
             pay_to: pay_to
             network: network
             facilitator: facilitator
+          output_schema: "{}"
+          operation:
+            name: name
+            description: description
+            id: id
+          compatibility: "{}"
         provider:
           origin_domains:
           - origin_domains
@@ -2656,25 +3636,69 @@ components:
     SearchEndpointHit:
       example:
         primary_protocol: primary_protocol
-        settlements: 5
+        settlements: 9
+        execution:
+          mode: sync
         operated_by_id: operated_by_id
         resource_type: resource_type
         endpoint_id: endpoint_id
+        source:
+          snapshot_version: 7
+          catalog: curated_marketplace
+          captured_at: 2000-01-23T04:56:07.000+00:00
         settled_via_facilitator_id: settled_via_facilitator_id
         url: url
         operator_type: first_party
-        latency_p50_ms: 2
+        latency_p50_ms: 3
         call:
           example_request: "{}"
           method: method
           input_schema: "{}"
           example_response: ""
+        output: "{}"
+        access_methods:
+        - weft_fetch:
+            reason: reason
+            contract_version: 2
+            state: supported
+          protocol: x402
+          scheme: scheme
+          terms: "{}"
+          price: "{}"
+          merchant: "{}"
+          asset: asset
+          access_method_id: access_method_id
+          network: network
+          asset_decimals: 5
+          status: listed
+        - weft_fetch:
+            reason: reason
+            contract_version: 2
+            state: supported
+          protocol: x402
+          scheme: scheme
+          terms: "{}"
+          price: "{}"
+          merchant: "{}"
+          asset: asset
+          access_method_id: access_method_id
+          network: network
+          asset_decimals: 5
+          status: listed
         price:
           last_observed_at: 2000-01-23T04:56:07.000+00:00
           atomic: 1
           live_verified: true
           indexed_usd: indexed_usd
           source: probe
+        service:
+          name: name
+          id: id
+        callability:
+          missing:
+          - missing
+          - missing
+          state: complete
         last_verified_at: 2000-01-23T04:56:07.000+00:00
         payment:
         - protocol: protocol
@@ -2693,6 +3717,12 @@ components:
           pay_to: pay_to
           network: network
           facilitator: facilitator
+        output_schema: "{}"
+        operation:
+          name: name
+          description: description
+          id: id
+        compatibility: "{}"
       properties:
         endpoint_id:
           type: string
@@ -2721,6 +3751,29 @@ components:
           items:
             $ref: "#/components/schemas/SearchPaymentOffer"
           type: array
+        access_methods:
+          items:
+            $ref: "#/components/schemas/SearchAccessMethod"
+          type: array
+        service:
+          $ref: "#/components/schemas/SearchCuratedService"
+        operation:
+          $ref: "#/components/schemas/SearchCuratedOperation"
+        output_schema:
+          type: object
+          nullable: true
+        output:
+          type: object
+          nullable: true
+        execution:
+          $ref: "#/components/schemas/SearchCuratedExecution"
+        callability:
+          $ref: "#/components/schemas/SearchCuratedCallability"
+        compatibility:
+          type: object
+          nullable: true
+        source:
+          $ref: "#/components/schemas/SearchCuratedSource"
         operator_type:
           description: |
             Who you are actually paying. `first_party` = operated by the provider
@@ -2884,6 +3937,159 @@ components:
           nullable: true
       required:
       - protocol
+    SearchAccessMethod:
+      example:
+        weft_fetch:
+          reason: reason
+          contract_version: 2
+          state: supported
+        protocol: x402
+        scheme: scheme
+        terms: "{}"
+        price: "{}"
+        merchant: "{}"
+        asset: asset
+        access_method_id: access_method_id
+        network: network
+        asset_decimals: 5
+        status: listed
+      properties:
+        access_method_id:
+          type: string
+        protocol:
+          enum:
+          - x402
+          - mpp
+          - free
+          type: string
+        scheme:
+          type: string
+          nullable: true
+        network:
+          type: string
+          nullable: true
+        asset:
+          type: string
+          nullable: true
+        asset_decimals:
+          type: integer
+          nullable: true
+        price:
+          type: object
+        merchant:
+          type: object
+        terms:
+          type: object
+        status:
+          enum:
+          - listed
+          - observed
+          - unavailable
+          type: string
+        weft_fetch:
+          $ref: "#/components/schemas/SearchWeftFetchCompatibility"
+      required:
+      - access_method_id
+      - price
+      - protocol
+      - weft_fetch
+    SearchWeftFetchCompatibility:
+      example:
+        reason: reason
+        contract_version: 2
+        state: supported
+      properties:
+        state:
+          enum:
+          - supported
+          - unsupported
+          - unknown
+          type: string
+        reason:
+          type: string
+        contract_version:
+          type: integer
+      required:
+      - contract_version
+      - reason
+      - state
+    SearchCuratedService:
+      example:
+        name: name
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SearchCuratedOperation:
+      example:
+        name: name
+        description: description
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+    SearchCuratedExecution:
+      example:
+        mode: sync
+      properties:
+        mode:
+          enum:
+          - sync
+          - async
+          - stream
+          type: string
+          nullable: true
+    SearchCuratedCallability:
+      example:
+        missing:
+        - missing
+        - missing
+        state: complete
+      properties:
+        state:
+          enum:
+          - complete
+          - incomplete
+          type: string
+        missing:
+          items:
+            type: string
+          type: array
+      required:
+      - missing
+      - state
+    SearchCuratedSource:
+      example:
+        snapshot_version: 7
+        catalog: curated_marketplace
+        captured_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        catalog:
+          enum:
+          - curated_marketplace
+          type: string
+        snapshot_version:
+          type: integer
+        captured_at:
+          format: date-time
+          type: string
+      required:
+      - captured_at
+      - catalog
+      - snapshot_version
     SearchErrorResponse:
       description: |
         Bespoke error envelope returned by `/api/v1/search` for `422`, `502`,
@@ -2918,9 +4124,11 @@ components:
           Accept: application/json
           User-Agent: my-agent/1.0
         method: GET
+        operation_id: operation_id
         body: FetchRequest_body
         max_cost_usd: "0.05"
         url: https://x402.api.agentmail.to/v0/inboxes
+        access_method_id: access_method_id
         search_id: 11111111-1111-4111-8111-111111111111
       properties:
         url:
@@ -2975,6 +4183,12 @@ components:
             a fetch.
           example: 11111111-1111-4111-8111-111111111111
           format: uuid
+          type: string
+        operation_id:
+          description: Advisory operation id returned by search.
+          type: string
+        access_method_id:
+          description: Advisory access-method id returned by search.
           type: string
       required:
       - url
@@ -3148,11 +4362,14 @@ components:
           - IDEMPOTENCY_CONFLICT
           - EXCEEDED_MAX_COST
           - INSUFFICIENT_BALANCE
+          - PAYMENT_AUTHORIZATION_REQUIRED
+          - WALLET_SETUP_INCOMPLETE
           - MERCHANT_RETURNED_NON_402
           - ARTIFACT_TOO_LARGE
           - DENYLISTED_RECIPIENT
           - WALLET_ENVIRONMENT_MISMATCH
           - SETTLEMENT_FAILED
+          - SETTLEMENT_PENDING
           - UNSUPPORTED_PAYMENT_METHOD
           - UNSUPPORTED_ASSET
           - POLICY_VIOLATION_MAX_TX
@@ -3194,9 +4411,11 @@ components:
           example: "0.00"
           type: string
         wallet_usdc:
-          description: Live Base USDC balance.
+          description: |
+            Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero.
           example: "12.34"
           type: string
+          nullable: true
         tempo_usd:
           description: |
             Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never "0.00" for an unread component.
@@ -3290,5 +4509,15 @@ components:
   securitySchemes:
     bearerAuth:
       bearerFormat: APIKey
+      description: Dashboard `wk_*` key or OAuth token; search also accepts a pending
+        or claimed `wbt_*` bootstrap bearer until OAuth token delivery consumes it.
+      scheme: bearer
+      type: http
+    bootstrapAuth:
+      bearerFormat: BootstrapToken
+      description: "Temporary `wbt_*` credential. Search requires a pending or claimed,\
+        \ unexpired bootstrap and ends when OAuth token delivery consumes it; status\
+        \ remains readable after expiry so polling clients can observe the terminal\
+        \ state."
       scheme: bearer
       type: http
