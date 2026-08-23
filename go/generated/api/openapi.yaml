@@ -869,7 +869,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchErrorResponse"
-          description: Settlement signing failed on Weft's side (`SETTLEMENT_FAILED`).
+          description: |
+            Settlement signing failed on Weft's side (`SETTLEMENT_FAILED`).
+            `details.reason` carries the wallet-provider sentence and
+            `details.protocol` names the rail it failed on (`x402` or `mpp`) —
+            a 402 may announce both, and Weft picks one, so the rail is not
+            derivable from the merchant or the URL. Absent only when the
+            failure happened while building the credential, which already
+            identifies its own rail.
         "504":
           content:
             application/json:
