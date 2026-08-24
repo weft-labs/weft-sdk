@@ -28,10 +28,9 @@ class FetchBalanceSnapshot(BaseModel):
     """ # noqa: E501
     promo_usd: StrictStr
     wallet_usdc: StrictStr = Field(description="Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero. ")
-    tempo_usd: StrictStr = Field(description="Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component. ")
-    total_usd: StrictStr = Field(description="Aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable. ")
+    total_usd: StrictStr = Field(description="Aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the Base USDC provider is unreachable. ")
     spent_today_usd: StrictStr
-    __properties: ClassVar[List[str]] = ["promo_usd", "wallet_usdc", "tempo_usd", "total_usd", "spent_today_usd"]
+    __properties: ClassVar[List[str]] = ["promo_usd", "wallet_usdc", "total_usd", "spent_today_usd"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -86,7 +85,6 @@ class FetchBalanceSnapshot(BaseModel):
         _obj = cls.model_validate({
             "promo_usd": obj.get("promo_usd"),
             "wallet_usdc": obj.get("wallet_usdc"),
-            "tempo_usd": obj.get("tempo_usd"),
             "total_usd": obj.get("total_usd"),
             "spent_today_usd": obj.get("spent_today_usd")
         })

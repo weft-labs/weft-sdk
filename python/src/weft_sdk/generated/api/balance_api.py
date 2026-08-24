@@ -54,7 +54,7 @@ class BalanceApi:
     ) -> BalanceResponse:
         """Get wallet, spending policy, and current-window spend
 
-        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. Base USDC and Tempo balances are fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
+        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. The Base USDC balance is fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
 
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -119,7 +119,7 @@ class BalanceApi:
     ) -> ApiResponse[BalanceResponse]:
         """Get wallet, spending policy, and current-window spend
 
-        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. Base USDC and Tempo balances are fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
+        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. The Base USDC balance is fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
 
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
@@ -184,7 +184,7 @@ class BalanceApi:
     ) -> RESTResponseType:
         """Get wallet, spending policy, and current-window spend
 
-        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. Base USDC and Tempo balances are fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
+        Read-only snapshot for the buyer behind the bearer token. The response always includes a `promo` block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. The Base USDC balance is fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are `null`; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying `balance`, or a claimed `wbt_*` bearer.
 
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request

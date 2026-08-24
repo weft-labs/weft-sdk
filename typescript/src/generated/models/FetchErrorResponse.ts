@@ -99,7 +99,6 @@ export const FetchErrorResponseErrorEnum = {
     SettlementFailed: 'SETTLEMENT_FAILED',
     SettlementPending: 'SETTLEMENT_PENDING',
     UnsupportedPaymentMethod: 'UNSUPPORTED_PAYMENT_METHOD',
-    UnsupportedAsset: 'UNSUPPORTED_ASSET',
     PolicyViolationMaxTx: 'POLICY_VIOLATION_MAX_TX',
     PolicyViolationDaily: 'POLICY_VIOLATION_DAILY',
     PolicyViolationWeekly: 'POLICY_VIOLATION_WEEKLY'

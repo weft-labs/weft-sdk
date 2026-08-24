@@ -6,17 +6,15 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Provider** | **string** | Crossmint is the only buyer-wallet provider. |
 **Address** | **string** | Base smart-wallet address. Null only when Crossmint is unavailable. |
-**TempoAddress** | **string** | Paired Tempo smart-wallet address. Null only when Crossmint is unavailable. |
 **BalanceUsdc** | **string** | Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
-**TempoUsd** | **string** | Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet&#39;s paired Tempo chain, exact to the micro-dollar. &#x60;null&#x60; when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \&quot;0.00\&quot;; it means \&quot;we couldn&#39;t determine it\&quot;, and &#x60;total_usd&#x60; then reflects the Base component only.  |
-**TotalUsd** | **string** | Single aggregated USD balance &#x3D; Base USDC + Tempo dollar tokens, exact to the micro-dollar. When &#x60;tempo_usd&#x60; is null (unavailable/unallowlisted) this equals &#x60;balance_usdc&#x60; alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.  |
+**TotalUsd** | **string** | Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.  |
 **Network** | **string** | Selected Crossmint environment (&#x60;base_sepolia&#x60; or &#x60;base_mainnet&#x60;).  |
 
 ## Methods
 
 ### NewWallet
 
-`func NewWallet(provider string, address string, tempoAddress string, balanceUsdc string, tempoUsd string, totalUsd string, network string, ) *Wallet`
+`func NewWallet(provider string, address string, balanceUsdc string, totalUsd string, network string, ) *Wallet`
 
 NewWallet instantiates a new Wallet object
 This constructor will assign default values to properties that have it defined,
@@ -71,26 +69,6 @@ and a boolean to check if the value has been set.
 SetAddress sets Address field to given value.
 
 
-### GetTempoAddress
-
-`func (o *Wallet) GetTempoAddress() string`
-
-GetTempoAddress returns the TempoAddress field if non-nil, zero value otherwise.
-
-### GetTempoAddressOk
-
-`func (o *Wallet) GetTempoAddressOk() (*string, bool)`
-
-GetTempoAddressOk returns a tuple with the TempoAddress field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTempoAddress
-
-`func (o *Wallet) SetTempoAddress(v string)`
-
-SetTempoAddress sets TempoAddress field to given value.
-
-
 ### GetBalanceUsdc
 
 `func (o *Wallet) GetBalanceUsdc() string`
@@ -109,26 +87,6 @@ and a boolean to check if the value has been set.
 `func (o *Wallet) SetBalanceUsdc(v string)`
 
 SetBalanceUsdc sets BalanceUsdc field to given value.
-
-
-### GetTempoUsd
-
-`func (o *Wallet) GetTempoUsd() string`
-
-GetTempoUsd returns the TempoUsd field if non-nil, zero value otherwise.
-
-### GetTempoUsdOk
-
-`func (o *Wallet) GetTempoUsdOk() (*string, bool)`
-
-GetTempoUsdOk returns a tuple with the TempoUsd field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTempoUsd
-
-`func (o *Wallet) SetTempoUsd(v string)`
-
-SetTempoUsd sets TempoUsd field to given value.
 
 
 ### GetTotalUsd

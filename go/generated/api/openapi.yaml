@@ -541,7 +541,7 @@ paths:
         Read-only snapshot for the buyer behind the bearer token. The
         response always includes a `promo` block — values are zero in v1
         and fill in once the freemium promo ledger ships, without a
-        shape change. Base USDC and Tempo balances are fetched
+        shape change. The Base USDC balance is fetched
         server-side through Crossmint. If Crossmint is unreachable, the
         balance fields are `null`; consumers must not interpret that as zero.
 
@@ -812,8 +812,8 @@ paths:
           description: |
             Policy violation, missing Crossmint payment permission
             (`PAYMENT_AUTHORIZATION_REQUIRED` — `details` carries the
-            wallet-page URL where the authenticated user can enable Base and
-            Tempo payments), denylisted recipient, or a merchant challenge on a
+            wallet-page URL where the authenticated user can enable
+            payments), denylisted recipient, or a merchant challenge on a
             chain outside the wallet's own environment — a testnet wallet may
             not pay a mainnet challenge, nor the reverse
             (`WALLET_ENVIRONMENT_MISMATCH`; terminal, not retryable). All four
@@ -848,11 +848,8 @@ paths:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: |
             Invalid request fields, method, cost, body, headers, idempotency
-            key, or URL; a merchant payment method Weft cannot sign
-            (`UNSUPPORTED_PAYMENT_METHOD`), or a merchant settlement token Weft
-            can never settle (`UNSUPPORTED_ASSET` — settlement is exact-asset
-            and the token's on-chain `currency()` is not USD; terminal for
-            this merchant, funds untouched, `details.asset` names it).
+            key, or URL; or a merchant payment method Weft cannot sign
+            (`UNSUPPORTED_PAYMENT_METHOD`).
         "424":
           content:
             application/json:
@@ -995,8 +992,8 @@ paths:
         `signed_events`, so rejected and pending attempts are included.
 
         Scoped to the buyer's own merchant spend, matching the dashboard's
-        Purchases page. Internal signings are excluded: the Tempo refill
-        self-transfer (`rebalance`) and operator signings (`manual`) are not
+        Purchases page. Internal signings are excluded: historical refill
+        self-transfers (`rebalance`) and operator signings (`manual`) are not
         payments the buyer made and never appear here.
       operationId: listPurchases
       parameters:
@@ -2335,10 +2332,8 @@ components:
         wallet:
           address: address
           provider: crossmint
-          total_usd: "15.34"
+          total_usd: "12.34"
           balance_usdc: "12.34"
-          tempo_address: tempo_address
-          tempo_usd: "3.00"
           network: network
         spent_today_usd: "0.0005"
         spent_week_usd: "3.10"
@@ -2400,10 +2395,8 @@ components:
       example:
         address: address
         provider: crossmint
-        total_usd: "15.34"
+        total_usd: "12.34"
         balance_usdc: "12.34"
-        tempo_address: tempo_address
-        tempo_usd: "3.00"
         network: network
       properties:
         provider:
@@ -2415,27 +2408,16 @@ components:
           description: Base smart-wallet address. Null only when Crossmint is unavailable.
           type: string
           nullable: true
-        tempo_address:
-          description: Paired Tempo smart-wallet address. Null only when Crossmint
-            is unavailable.
-          type: string
-          nullable: true
         balance_usdc:
           description: |
             Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
           example: "12.34"
           type: string
           nullable: true
-        tempo_usd:
-          description: |
-            Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never "0.00"; it means "we couldn't determine it", and `total_usd` then reflects the Base component only.
-          example: "3.00"
-          type: string
-          nullable: true
         total_usd:
           description: |
-            Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
-          example: "15.34"
+            Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
+          example: "12.34"
           type: string
           nullable: true
         network:
@@ -2448,8 +2430,6 @@ components:
       - balance_usdc
       - network
       - provider
-      - tempo_address
-      - tempo_usd
       - total_usd
     SpendingPolicy:
       example:
@@ -4369,9 +4349,8 @@ components:
         balance:
           promo_usd: "0.00"
           spent_today_usd: "0.42"
-          total_usd: "15.34"
+          total_usd: "12.34"
           wallet_usdc: "12.34"
-          tempo_usd: "3.00"
         details:
           key: ""
         error: EXCEEDED_MAX_COST
@@ -4404,7 +4383,6 @@ components:
           - SETTLEMENT_FAILED
           - SETTLEMENT_PENDING
           - UNSUPPORTED_PAYMENT_METHOD
-          - UNSUPPORTED_ASSET
           - POLICY_VIOLATION_MAX_TX
           - POLICY_VIOLATION_DAILY
           - POLICY_VIOLATION_WEEKLY
@@ -4436,9 +4414,8 @@ components:
       example:
         promo_usd: "0.00"
         spent_today_usd: "0.42"
-        total_usd: "15.34"
+        total_usd: "12.34"
         wallet_usdc: "12.34"
-        tempo_usd: "3.00"
       properties:
         promo_usd:
           example: "0.00"
@@ -4449,16 +4426,10 @@ components:
           example: "12.34"
           type: string
           nullable: true
-        tempo_usd:
-          description: |
-            Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never "0.00" for an unread component.
-          example: "3.00"
-          type: string
-          nullable: true
         total_usd:
           description: |
-            Aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable.
-          example: "15.34"
+            Aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the Base USDC provider is unreachable.
+          example: "12.34"
           type: string
           nullable: true
         spent_today_usd:
@@ -4467,7 +4438,6 @@ components:
       required:
       - promo_usd
       - spent_today_usd
-      - tempo_usd
       - total_usd
       - wallet_usdc
     fetch_403_response:

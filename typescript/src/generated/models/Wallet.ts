@@ -32,12 +32,6 @@ export interface Wallet {
      */
     address: string;
     /**
-     * Paired Tempo smart-wallet address. Null only when Crossmint is unavailable.
-     * @type {string}
-     * @memberof Wallet
-     */
-    tempoAddress: string;
-    /**
      * Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
      *
      * @type {string}
@@ -45,14 +39,7 @@ export interface Wallet {
      */
     balanceUsdc: string;
     /**
-     * Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never "0.00"; it means "we couldn't determine it", and `total_usd` then reflects the Base component only.
-     *
-     * @type {string}
-     * @memberof Wallet
-     */
-    tempoUsd: string;
-    /**
-     * Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
+     * Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
      *
      * @type {string}
      * @memberof Wallet
@@ -83,9 +70,7 @@ export type WalletProviderEnum = typeof WalletProviderEnum[keyof typeof WalletPr
 export function instanceOfWallet(value: object): value is Wallet {
     if (!('provider' in value) || value['provider'] === undefined) return false;
     if (!('address' in value) || value['address'] === undefined) return false;
-    if (!('tempoAddress' in value) || value['tempoAddress'] === undefined) return false;
     if (!('balanceUsdc' in value) || value['balanceUsdc'] === undefined) return false;
-    if (!('tempoUsd' in value) || value['tempoUsd'] === undefined) return false;
     if (!('totalUsd' in value) || value['totalUsd'] === undefined) return false;
     if (!('network' in value) || value['network'] === undefined) return false;
     return true;
@@ -103,9 +88,7 @@ export function WalletFromJSONTyped(json: any, ignoreDiscriminator: boolean): Wa
 
         'provider': json['provider'],
         'address': json['address'],
-        'tempoAddress': json['tempo_address'],
         'balanceUsdc': json['balance_usdc'],
-        'tempoUsd': json['tempo_usd'],
         'totalUsd': json['total_usd'],
         'network': json['network'],
     };
@@ -124,9 +107,7 @@ export function WalletToJSONTyped(value?: Wallet | null, ignoreDiscriminator: bo
 
         'provider': value['provider'],
         'address': value['address'],
-        'tempo_address': value['tempoAddress'],
         'balance_usdc': value['balanceUsdc'],
-        'tempo_usd': value['tempoUsd'],
         'total_usd': value['totalUsd'],
         'network': value['network'],
     };

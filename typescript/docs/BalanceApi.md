@@ -14,7 +14,7 @@ All URIs are relative to *https://weft.network*
 
 Get wallet, spending policy, and current-window spend
 
-Read-only snapshot for the buyer behind the bearer token. The response always includes a &#x60;promo&#x60; block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. Base USDC and Tempo balances are fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are &#x60;null&#x60;; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying &#x60;balance&#x60;, or a claimed &#x60;wbt_*&#x60; bearer.
+Read-only snapshot for the buyer behind the bearer token. The response always includes a &#x60;promo&#x60; block — values are zero in v1 and fill in once the freemium promo ledger ships, without a shape change. The Base USDC balance is fetched server-side through Crossmint. If Crossmint is unreachable, the balance fields are &#x60;null&#x60;; consumers must not interpret that as zero.  Account-scoped: the bearer must be a buyer-scoped API key, an OAuth access token carrying &#x60;balance&#x60;, or a claimed &#x60;wbt_*&#x60; bearer.
 
 ### Example
 

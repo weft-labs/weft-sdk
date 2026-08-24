@@ -24,9 +24,7 @@ type FetchBalanceSnapshot struct {
 	PromoUsd string `json:"promo_usd"`
 	// Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero.
 	WalletUsdc string `json:"wallet_usdc"`
-	// Aggregated USD of allowlisted Tempo dollar tokens, exact to the micro-dollar. `null` when UNKNOWN (RPC read failed or no token allowlisted for the paired chain) — never \"0.00\" for an unread component.
-	TempoUsd string `json:"tempo_usd"`
-	// Aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. Equals `wallet_usdc` alone when `tempo_usd` is null. Null when the Base USDC provider is unreachable.
+	// Aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the Base USDC provider is unreachable.
 	TotalUsd string `json:"total_usd"`
 	SpentTodayUsd string `json:"spent_today_usd"`
 }
@@ -37,11 +35,10 @@ type _FetchBalanceSnapshot FetchBalanceSnapshot
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, tempoUsd string, totalUsd string, spentTodayUsd string) *FetchBalanceSnapshot {
+func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, totalUsd string, spentTodayUsd string) *FetchBalanceSnapshot {
 	this := FetchBalanceSnapshot{}
 	this.PromoUsd = promoUsd
 	this.WalletUsdc = walletUsdc
-	this.TempoUsd = tempoUsd
 	this.TotalUsd = totalUsd
 	this.SpentTodayUsd = spentTodayUsd
 	return &this
@@ -101,30 +98,6 @@ func (o *FetchBalanceSnapshot) GetWalletUsdcOk() (*string, bool) {
 // SetWalletUsdc sets field value
 func (o *FetchBalanceSnapshot) SetWalletUsdc(v string) {
 	o.WalletUsdc = v
-}
-
-// GetTempoUsd returns the TempoUsd field value
-func (o *FetchBalanceSnapshot) GetTempoUsd() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TempoUsd
-}
-
-// GetTempoUsdOk returns a tuple with the TempoUsd field value
-// and a boolean to check if the value has been set.
-func (o *FetchBalanceSnapshot) GetTempoUsdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TempoUsd, true
-}
-
-// SetTempoUsd sets field value
-func (o *FetchBalanceSnapshot) SetTempoUsd(v string) {
-	o.TempoUsd = v
 }
 
 // GetTotalUsd returns the TotalUsd field value
@@ -187,7 +160,6 @@ func (o FetchBalanceSnapshot) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["promo_usd"] = o.PromoUsd
 	toSerialize["wallet_usdc"] = o.WalletUsdc
-	toSerialize["tempo_usd"] = o.TempoUsd
 	toSerialize["total_usd"] = o.TotalUsd
 	toSerialize["spent_today_usd"] = o.SpentTodayUsd
 	return toSerialize, nil
@@ -200,7 +172,6 @@ func (o *FetchBalanceSnapshot) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"promo_usd",
 		"wallet_usdc",
-		"tempo_usd",
 		"total_usd",
 		"spent_today_usd",
 	}

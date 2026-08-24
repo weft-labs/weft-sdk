@@ -25,13 +25,9 @@ type Wallet struct {
 	Provider string `json:"provider"`
 	// Base smart-wallet address. Null only when Crossmint is unavailable.
 	Address string `json:"address"`
-	// Paired Tempo smart-wallet address. Null only when Crossmint is unavailable.
-	TempoAddress string `json:"tempo_address"`
 	// Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
 	BalanceUsdc string `json:"balance_usdc"`
-	// Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only.
-	TempoUsd string `json:"tempo_usd"`
-	// Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
+	// Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
 	TotalUsd string `json:"total_usd"`
 	// Selected Crossmint environment (`base_sepolia` or `base_mainnet`).
 	Network string `json:"network"`
@@ -43,13 +39,11 @@ type _Wallet Wallet
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWallet(provider string, address string, tempoAddress string, balanceUsdc string, tempoUsd string, totalUsd string, network string) *Wallet {
+func NewWallet(provider string, address string, balanceUsdc string, totalUsd string, network string) *Wallet {
 	this := Wallet{}
 	this.Provider = provider
 	this.Address = address
-	this.TempoAddress = tempoAddress
 	this.BalanceUsdc = balanceUsdc
-	this.TempoUsd = tempoUsd
 	this.TotalUsd = totalUsd
 	this.Network = network
 	return &this
@@ -111,30 +105,6 @@ func (o *Wallet) SetAddress(v string) {
 	o.Address = v
 }
 
-// GetTempoAddress returns the TempoAddress field value
-func (o *Wallet) GetTempoAddress() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TempoAddress
-}
-
-// GetTempoAddressOk returns a tuple with the TempoAddress field value
-// and a boolean to check if the value has been set.
-func (o *Wallet) GetTempoAddressOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TempoAddress, true
-}
-
-// SetTempoAddress sets field value
-func (o *Wallet) SetTempoAddress(v string) {
-	o.TempoAddress = v
-}
-
 // GetBalanceUsdc returns the BalanceUsdc field value
 func (o *Wallet) GetBalanceUsdc() string {
 	if o == nil {
@@ -157,30 +127,6 @@ func (o *Wallet) GetBalanceUsdcOk() (*string, bool) {
 // SetBalanceUsdc sets field value
 func (o *Wallet) SetBalanceUsdc(v string) {
 	o.BalanceUsdc = v
-}
-
-// GetTempoUsd returns the TempoUsd field value
-func (o *Wallet) GetTempoUsd() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TempoUsd
-}
-
-// GetTempoUsdOk returns a tuple with the TempoUsd field value
-// and a boolean to check if the value has been set.
-func (o *Wallet) GetTempoUsdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TempoUsd, true
-}
-
-// SetTempoUsd sets field value
-func (o *Wallet) SetTempoUsd(v string) {
-	o.TempoUsd = v
 }
 
 // GetTotalUsd returns the TotalUsd field value
@@ -243,9 +189,7 @@ func (o Wallet) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["provider"] = o.Provider
 	toSerialize["address"] = o.Address
-	toSerialize["tempo_address"] = o.TempoAddress
 	toSerialize["balance_usdc"] = o.BalanceUsdc
-	toSerialize["tempo_usd"] = o.TempoUsd
 	toSerialize["total_usd"] = o.TotalUsd
 	toSerialize["network"] = o.Network
 	return toSerialize, nil
@@ -258,9 +202,7 @@ func (o *Wallet) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"provider",
 		"address",
-		"tempo_address",
 		"balance_usdc",
-		"tempo_usd",
 		"total_usd",
 		"network",
 	}
