@@ -848,8 +848,7 @@ paths:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: |
             Invalid request fields, method, cost, body, headers, idempotency
-            key, or URL; or a merchant payment method Weft cannot sign
-            (`UNSUPPORTED_PAYMENT_METHOD`).
+            key, or URL.
         "424":
           content:
             application/json:
@@ -4382,7 +4381,6 @@ components:
           - WALLET_ENVIRONMENT_MISMATCH
           - SETTLEMENT_FAILED
           - SETTLEMENT_PENDING
-          - UNSUPPORTED_PAYMENT_METHOD
           - POLICY_VIOLATION_MAX_TX
           - POLICY_VIOLATION_DAILY
           - POLICY_VIOLATION_WEEKLY

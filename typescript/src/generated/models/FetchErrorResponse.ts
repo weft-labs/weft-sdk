@@ -98,7 +98,6 @@ export const FetchErrorResponseErrorEnum = {
     WalletEnvironmentMismatch: 'WALLET_ENVIRONMENT_MISMATCH',
     SettlementFailed: 'SETTLEMENT_FAILED',
     SettlementPending: 'SETTLEMENT_PENDING',
-    UnsupportedPaymentMethod: 'UNSUPPORTED_PAYMENT_METHOD',
     PolicyViolationMaxTx: 'POLICY_VIOLATION_MAX_TX',
     PolicyViolationDaily: 'POLICY_VIOLATION_DAILY',
     PolicyViolationWeekly: 'POLICY_VIOLATION_WEEKLY'
