@@ -21,16 +21,10 @@ module Weft
     # Base smart-wallet address. Null only when Crossmint is unavailable.
     attr_accessor :address
 
-    # Paired Tempo smart-wallet address. Null only when Crossmint is unavailable.
-    attr_accessor :tempo_address
-
     # Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
     attr_accessor :balance_usdc
 
-    # Aggregated USD value of the allowlisted Tempo TIP-20 dollar tokens on the wallet's paired Tempo chain, exact to the micro-dollar. `null` when the value is UNKNOWN — the Tempo RPC read failed, or no dollar token is allowlisted for that chain yet (e.g. Tempo mainnet pre-launch). A null here is never \"0.00\"; it means \"we couldn't determine it\", and `total_usd` then reflects the Base component only.
-    attr_accessor :tempo_usd
-
-    # Single aggregated USD balance = Base USDC + Tempo dollar tokens, exact to the micro-dollar. When `tempo_usd` is null (unavailable/unallowlisted) this equals `balance_usdc` alone. Null when the Base USDC provider is unreachable, because the surface never claims zero for a component it could not read.
+    # Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
     attr_accessor :total_usd
 
     # Selected Crossmint environment (`base_sepolia` or `base_mainnet`).
@@ -63,9 +57,7 @@ module Weft
       {
         :'provider' => :'provider',
         :'address' => :'address',
-        :'tempo_address' => :'tempo_address',
         :'balance_usdc' => :'balance_usdc',
-        :'tempo_usd' => :'tempo_usd',
         :'total_usd' => :'total_usd',
         :'network' => :'network'
       }
@@ -86,9 +78,7 @@ module Weft
       {
         :'provider' => :'String',
         :'address' => :'String',
-        :'tempo_address' => :'String',
         :'balance_usdc' => :'String',
-        :'tempo_usd' => :'String',
         :'total_usd' => :'String',
         :'network' => :'String'
       }
@@ -128,22 +118,10 @@ module Weft
         self.address = nil
       end
 
-      if attributes.key?(:'tempo_address')
-        self.tempo_address = attributes[:'tempo_address']
-      else
-        self.tempo_address = nil
-      end
-
       if attributes.key?(:'balance_usdc')
         self.balance_usdc = attributes[:'balance_usdc']
       else
         self.balance_usdc = nil
-      end
-
-      if attributes.key?(:'tempo_usd')
-        self.tempo_usd = attributes[:'tempo_usd']
-      else
-        self.tempo_usd = nil
       end
 
       if attributes.key?(:'total_usd')
@@ -172,16 +150,8 @@ module Weft
         invalid_properties.push('invalid value for "address", address cannot be nil.')
       end
 
-      if @tempo_address.nil?
-        invalid_properties.push('invalid value for "tempo_address", tempo_address cannot be nil.')
-      end
-
       if @balance_usdc.nil?
         invalid_properties.push('invalid value for "balance_usdc", balance_usdc cannot be nil.')
-      end
-
-      if @tempo_usd.nil?
-        invalid_properties.push('invalid value for "tempo_usd", tempo_usd cannot be nil.')
       end
 
       if @total_usd.nil?
@@ -203,9 +173,7 @@ module Weft
       provider_validator = EnumAttributeValidator.new('String', ["crossmint"])
       return false unless provider_validator.valid?(@provider)
       return false if @address.nil?
-      return false if @tempo_address.nil?
       return false if @balance_usdc.nil?
-      return false if @tempo_usd.nil?
       return false if @total_usd.nil?
       return false if @network.nil?
       true
@@ -232,16 +200,6 @@ module Weft
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] tempo_address Value to be assigned
-    def tempo_address=(tempo_address)
-      if tempo_address.nil?
-        fail ArgumentError, 'tempo_address cannot be nil'
-      end
-
-      @tempo_address = tempo_address
-    end
-
-    # Custom attribute writer method with validation
     # @param [Object] balance_usdc Value to be assigned
     def balance_usdc=(balance_usdc)
       if balance_usdc.nil?
@@ -249,16 +207,6 @@ module Weft
       end
 
       @balance_usdc = balance_usdc
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] tempo_usd Value to be assigned
-    def tempo_usd=(tempo_usd)
-      if tempo_usd.nil?
-        fail ArgumentError, 'tempo_usd cannot be nil'
-      end
-
-      @tempo_usd = tempo_usd
     end
 
     # Custom attribute writer method with validation
@@ -288,9 +236,7 @@ module Weft
       self.class == o.class &&
           provider == o.provider &&
           address == o.address &&
-          tempo_address == o.tempo_address &&
           balance_usdc == o.balance_usdc &&
-          tempo_usd == o.tempo_usd &&
           total_usd == o.total_usd &&
           network == o.network
     end
@@ -304,7 +250,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [provider, address, tempo_address, balance_usdc, tempo_usd, total_usd, network].hash
+      [provider, address, balance_usdc, total_usd, network].hash
     end
 
     # Builds the object from hash

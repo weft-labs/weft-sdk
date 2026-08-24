@@ -9,7 +9,6 @@ Name | Type
 ------------ | -------------
 `promoUsd` | string
 `walletUsdc` | string
-`tempoUsd` | string
 `totalUsd` | string
 `spentTodayUsd` | string
 
@@ -22,8 +21,7 @@ import type { FetchBalanceSnapshot } from '@weft-labs/sdk'
 const example = {
   "promoUsd": 0.00,
   "walletUsdc": 12.34,
-  "tempoUsd": 3.00,
-  "totalUsd": 15.34,
+  "totalUsd": 12.34,
   "spentTodayUsd": 0.42,
 } satisfies FetchBalanceSnapshot
 

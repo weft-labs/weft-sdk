@@ -37,7 +37,7 @@ GetBalance Get wallet, spending policy, and current-window spend
 Read-only snapshot for the buyer behind the bearer token. The
 response always includes a `promo` block — values are zero in v1
 and fill in once the freemium promo ledger ships, without a
-shape change. Base USDC and Tempo balances are fetched
+shape change. The Base USDC balance is fetched
 server-side through Crossmint. If Crossmint is unreachable, the
 balance fields are `null`; consumers must not interpret that as zero.
 
