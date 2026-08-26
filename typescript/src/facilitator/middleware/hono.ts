@@ -129,6 +129,25 @@ class HonoAdapter implements HTTPAdapter {
 }
 
 /**
+ * Flatten a `Headers` instance into the plain record `HTTPTransportContext`
+ * expects. Header names are already lowercased by `Headers`; the settlement
+ * override lookup in `@x402/core` compares case-insensitively either way.
+ *
+ * @param headers - Response headers set by the route handler, if any
+ * @returns A plain record, or undefined when there is no response yet
+ */
+function toHeaderRecord(
+  headers: Headers | undefined,
+): Record<string, string> | undefined {
+  if (!headers) return undefined;
+  const record: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    record[key] = value;
+  });
+  return record;
+}
+
+/**
  * Create a Hono middleware that requires x402 payment for the given routes.
  *
  * Product identity declared on `config` (`name`, `type`, `tags`, `iconUrl`) is
@@ -271,6 +290,13 @@ export function weftPaymentMiddlewareHono(
           const settleResult = await httpServer.processSettlement(
             paymentPayload,
             paymentRequirements,
+            undefined,
+            // The route handler signals a settlement override (a metered amount
+            // below the signed maximum) through a response header.
+            // `processSettlement` only reads that off `transportContext`, so
+            // omitting this settles the full authorised amount and makes
+            // `upto` behave exactly like `exact`.
+            { request: context, responseHeaders: toHeaderRecord(res?.headers) },
           );
 
           if (!settleResult.success) {

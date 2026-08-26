@@ -176,6 +176,7 @@ async function driveExpress(
     writeHead: (() => res) as (...args: unknown[]) => typeof res,
     write: (() => true) as (...args: unknown[]) => boolean,
     end: (() => res) as (...args: unknown[]) => typeof res,
+    getHeaders: () => captured.headers,
     flushHeaders: () => undefined,
   };
 

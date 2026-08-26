@@ -158,6 +158,7 @@ async function driveExpress(
     writeHead: () => res,
     write: () => true,
     end: () => res,
+    getHeaders: () => captured.headers,
     flushHeaders: () => undefined,
   };
 
@@ -713,6 +714,7 @@ describe("apiKey authenticates settlement and attributes verification", () => {
       writeHead: (() => res) as (...args: unknown[]) => typeof res,
       write: (() => true) as (...args: unknown[]) => boolean,
       end: (() => res) as (...args: unknown[]) => typeof res,
+      getHeaders: () => captured.headers,
       flushHeaders: () => undefined,
     };
     await middleware(unpaidReq, res, vi.fn());
