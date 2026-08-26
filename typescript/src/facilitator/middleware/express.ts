@@ -1,3 +1,4 @@
+import type { OutgoingHttpHeaders } from "node:http";
 import {
   HTTPRequestContext,
   PaywallConfig,
@@ -28,6 +29,11 @@ interface ExpressRequest {
 interface ExpressResponse {
   status(code: number): ExpressResponse;
   setHeader(name: string, value: string): ExpressResponse;
+  /**
+   * Headers the route handler has set. Read at settlement time so a
+   * `Settlement-Overrides` header reaches the facilitator.
+   */
+  getHeaders(): OutgoingHttpHeaders;
   send(body: unknown): ExpressResponse;
   json(body: unknown): ExpressResponse;
   statusCode: number;
@@ -126,6 +132,24 @@ class ExpressAdapter implements HTTPAdapter {
   getBody(): unknown {
     return this.req.body;
   }
+}
+
+/**
+ * Flatten Node's outgoing headers into the plain record
+ * `HTTPTransportContext` expects. Array values (a repeated header) are joined,
+ * numbers stringified; the settlement override lookup in `@x402/core` compares
+ * header names case-insensitively.
+ *
+ * @param headers - Response headers set by the route handler
+ * @returns A plain string record
+ */
+function toHeaderRecord(headers: OutgoingHttpHeaders): Record<string, string> {
+  const record: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (value === undefined) continue;
+    record[key] = Array.isArray(value) ? value.join(",") : String(value);
+  }
+  return record;
 }
 
 /**
@@ -350,6 +374,16 @@ export function weftPaymentMiddleware(
           const settleResult = await httpServer.processSettlement(
             paymentPayload,
             paymentRequirements,
+            undefined,
+            // The route handler signals a settlement override (a metered amount
+            // below the signed maximum) through a response header.
+            // `processSettlement` only reads that off `transportContext`, so
+            // omitting this settles the full authorised amount and makes
+            // `upto` behave exactly like `exact`.
+            {
+              request: context,
+              responseHeaders: toHeaderRecord(res.getHeaders()),
+            },
           );
 
           if (!settleResult.success) {

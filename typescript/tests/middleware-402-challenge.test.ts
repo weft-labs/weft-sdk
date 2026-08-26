@@ -121,6 +121,9 @@ async function callExpress(
       captured.headers[name] = value;
       return res;
     },
+    getHeaders() {
+      return captured.headers;
+    },
     send(body: unknown) {
       captured.body = body;
       return res;
