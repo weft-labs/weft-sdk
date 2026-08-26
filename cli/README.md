@@ -52,15 +52,19 @@ weft me
 weft balance
 ```
 
-The `npm install -g` command also installs the `weft-cli` Skill for supported
-agent hosts already present on the machine. It does not create configuration
-for absent hosts or replace a different existing Skill. Restart the agent host
-after the first install. Package managers and install flags that block
-dependency scripts also block Skill installation. Set
-`WEFT_SKIP_SKILL_INSTALL=1` before installation to opt out. npm does not run
-package uninstall hooks, so `npm rm -g @weft-labs/cli` leaves the Skill in
-place; remove the host's `skills/weft-cli` directory if you also want to remove
-the Skill.
+The `npm install -g` command also installs the `weft` Skill (`SKILL.md` plus
+`rules/cli.md`, vendored from
+[weft-labs/skills](https://github.com/weft-labs/skills)) for supported agent
+hosts already present on the machine. It does not create configuration for
+absent hosts or replace a different existing Skill. If an earlier version of
+this package installed the retired `weft-cli` Skill, the installer removes
+that copy after the `weft` Skill is in place; a hand-edited or user-owned
+`weft-cli` copy stays untouched. Restart the agent host after the first
+install. Package managers and install flags that block dependency scripts also
+block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` before installation
+to opt out. npm does not run package uninstall hooks, so
+`npm rm -g @weft-labs/cli` leaves the Skill in place; remove the host's
+`skills/weft` directory if you also want to remove the Skill.
 
 `weft bootstrap` registers its OAuth client, creates the bootstrap, and writes
 the temporary and device credentials to a local credential file created with
