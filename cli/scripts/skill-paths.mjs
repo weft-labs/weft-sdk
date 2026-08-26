@@ -4,14 +4,18 @@ import { join } from "node:path";
 
 export const home = process.env.HOME || process.env.USERPROFILE || homedir();
 
+/** Files that make up the `weft` Skill, relative to the skill directory. */
+export const skillFiles = ["SKILL.md", "rules/cli.md"];
+
+/** [detection root, skill directory] pairs, both relative to `home`. */
 export const targets = [
-  [".agents", ".agents/skills/weft-cli/SKILL.md"],
-  [".claude", ".claude/skills/weft-cli/SKILL.md"],
-  [".cursor", ".cursor/skills/weft-cli/SKILL.md"],
-  [".cline", ".cline/skills/weft-cli/SKILL.md"],
-  [".config/opencode", ".config/opencode/skills/weft-cli/SKILL.md"],
-  [".openclaw", ".openclaw/skills/weft-cli/SKILL.md"],
-  [".hermes", ".hermes/skills/weft-cli/SKILL.md"],
+  [".agents", ".agents/skills/weft"],
+  [".claude", ".claude/skills/weft"],
+  [".cursor", ".cursor/skills/weft"],
+  [".cline", ".cline/skills/weft"],
+  [".config/opencode", ".config/opencode/skills/weft"],
+  [".openclaw", ".openclaw/skills/weft"],
+  [".hermes", ".hermes/skills/weft"],
 ];
 
 export async function isDetectedHost(relativeRoot) {

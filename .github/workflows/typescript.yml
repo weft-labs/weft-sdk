@@ -10,6 +10,7 @@ on:
       - "pnpm-workspace.yaml"
       - "spec/**"
       - "scripts/**"
+      - "skills/**"
       # Self-test: a change to this workflow must run this workflow, otherwise
       # CI-config regressions land unexercised.
       - ".github/workflows/typescript.yml"
@@ -29,6 +30,7 @@ on:
       - "pnpm-workspace.yaml"
       - "spec/**"
       - "scripts/**"
+      - "skills/**"
 
 # Default GITHUB_TOKEN is read-only for the whole workflow. The publish job
 # overrides this with its own job-level `permissions:` (id-token: write for

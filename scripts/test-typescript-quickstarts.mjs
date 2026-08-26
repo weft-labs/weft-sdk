@@ -142,23 +142,26 @@ try {
     env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
   });
 
-  const publicSkill = await readFile(
-    new URL("../skills/weft-cli/SKILL.md", import.meta.url),
-    "utf8",
-  );
-  for (const destination of [
-    ".agents/skills/weft-cli/SKILL.md",
-    ".claude/skills/weft-cli/SKILL.md",
-    ".cursor/skills/weft-cli/SKILL.md",
-    ".cline/skills/weft-cli/SKILL.md",
-    ".config/opencode/skills/weft-cli/SKILL.md",
-    ".openclaw/skills/weft-cli/SKILL.md",
-    ".hermes/skills/weft-cli/SKILL.md",
-  ]) {
-    if (
-      (await readFile(join(skillHome, destination), "utf8")) !== publicSkill
-    ) {
-      throw new Error(`Packed CLI did not install ${destination}`);
+  for (const file of ["SKILL.md", "rules/cli.md"]) {
+    const publicSkill = await readFile(
+      new URL(`../skills/weft/${file}`, import.meta.url),
+      "utf8",
+    );
+    for (const root of [
+      ".agents",
+      ".claude",
+      ".cursor",
+      ".cline",
+      ".config/opencode",
+      ".openclaw",
+      ".hermes",
+    ]) {
+      const destination = join(root, "skills", "weft", file);
+      if (
+        (await readFile(join(skillHome, destination), "utf8")) !== publicSkill
+      ) {
+        throw new Error(`Packed CLI did not install ${destination}`);
+      }
     }
   }
 
