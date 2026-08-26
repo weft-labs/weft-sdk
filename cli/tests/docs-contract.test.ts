@@ -357,6 +357,66 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     rmSync(bundledRoot, { recursive: true, force: true });
   });
 
+  it("repairs a crash-interrupted upgrade instead of refusing it", () => {
+    const home = mkdtempSync(join(tmpdir(), "weft-skill-repair-"));
+    const bundledRoot = fileURLToPath(
+      new URL("../dist/weft-skill", import.meta.url),
+    );
+    mkdirSync(join(home, HOST_ROOTS[0]), { recursive: true });
+    execFileSync(process.execPath, [
+      fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
+    ]);
+    runInstaller(home);
+
+    // Simulate a crash mid-upgrade: the bundle moved on, one file was
+    // already renamed into place, the other file and the ownership marker
+    // still hold the previous version.
+    const nextSkill = `${SKILL}\n<!-- v2 -->\n`;
+    const nextRules = `${CLI_RULES}\n<!-- v2 -->\n`;
+    writeFileSync(join(bundledRoot, "SKILL.md"), nextSkill);
+    writeFileSync(join(bundledRoot, "rules/cli.md"), nextRules);
+    const directory = join(home, HOST_ROOTS[0], "skills", "weft");
+    writeFileSync(join(directory, "SKILL.md"), nextSkill);
+
+    runInstaller(home);
+    expect(readFileSync(join(directory, "SKILL.md"), "utf8")).toBe(nextSkill);
+    expect(readFileSync(join(directory, "rules/cli.md"), "utf8")).toBe(
+      nextRules,
+    );
+    expect(readFileSync(join(directory, ".weft-owner.json"), "utf8")).toBe(
+      markerFor({ "SKILL.md": nextSkill, "rules/cli.md": nextRules }),
+    );
+
+    rmSync(home, { recursive: true, force: true });
+    rmSync(bundledRoot, { recursive: true, force: true });
+  });
+
+  it("skips a Skill directory whose ownership marker is a symlink", () => {
+    const home = mkdtempSync(join(tmpdir(), "weft-skill-marker-link-"));
+    const outside = mkdtempSync(join(tmpdir(), "weft-skill-marker-out-"));
+    execFileSync(process.execPath, [
+      fileURLToPath(new URL("../scripts/prepare-skill.mjs", import.meta.url)),
+    ]);
+    const directory = join(home, HOST_ROOTS[0], "skills", "weft");
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(outside, "marker.json"), "{}");
+    symlinkSync(
+      join(outside, "marker.json"),
+      join(directory, ".weft-owner.json"),
+    );
+
+    expect(() => runInstaller(home)).not.toThrow();
+    expect(existsSync(join(directory, "SKILL.md"))).toBe(false);
+    expect(readFileSync(join(outside, "marker.json"), "utf8")).toBe("{}");
+
+    rmSync(home, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+    rmSync(new URL("../dist/weft-skill", import.meta.url), {
+      recursive: true,
+      force: true,
+    });
+  });
+
   it("migrates a package-owned weft-cli Skill and keeps user copies", () => {
     const home = mkdtempSync(join(tmpdir(), "weft-skill-migrate-"));
     execFileSync(process.execPath, [

@@ -109,7 +109,7 @@ for (const [hostRoot, relativeDirectory] of targets) {
   try {
     if (!(await isDetectedHost(hostRoot))) continue;
     let symlinked = await containsSymlink(relativeDirectory);
-    for (const file of skillFiles) {
+    for (const file of [...skillFiles, ".weft-owner.json"]) {
       if (symlinked) break;
       symlinked = await containsSymlink(join(relativeDirectory, file));
     }
@@ -149,14 +149,36 @@ for (const [hostRoot, relativeDirectory] of targets) {
     }
 
     if (anyExisting) {
-      // Every file already on disk must match the recorded ownership marker,
-      // otherwise the copy is user-owned or user-modified and stays.
-      if (marker !== markerFor(existing)) {
+      // Every file already on disk must match the hash the ownership marker
+      // recorded for it, or the incoming canonical content — the latter is
+      // exactly what a crash mid-upgrade leaves behind, so a rerun repairs
+      // it. Anything else is user-owned or user-modified and stays.
+      let recorded;
+      try {
+        recorded = marker === undefined ? undefined : JSON.parse(marker).sha256;
+      } catch {
+        recorded = undefined;
+      }
+      const packageOwned =
+        typeof recorded === "object" &&
+        recorded !== null &&
+        skillFiles.every((file) => {
+          const content = existing.get(file);
+          if (content === undefined) return true;
+          return (
+            recorded[file] === sha256(content) || content === skill.get(file)
+          );
+        });
+      if (!packageOwned) {
         console.warn(
           `Kept existing Skill at ${directory}. Remove it and reinstall @weft-labs/cli to use the weft Skill.`,
         );
         continue;
       }
+      // Stage every file first, then rename them all, so a crash never
+      // leaves a half-written file and at worst leaves the mixed
+      // old/canonical state the ownership check above repairs.
+      const staged = [];
       for (const file of skillFiles) {
         const target = join(directory, file);
         await mkdir(dirname(target), { recursive: true });
@@ -165,6 +187,9 @@ for (const [hostRoot, relativeDirectory] of targets) {
           encoding: "utf8",
           mode: 0o600,
         });
+        staged.push([temporary, target]);
+      }
+      for (const [temporary, target] of staged) {
         await rename(temporary, target);
       }
     } else {
