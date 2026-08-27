@@ -117,7 +117,6 @@ try {
         "@weft-labs/sdk": `file:${sdkArchive}`,
       },
       pnpm: {
-        onlyBuiltDependencies: ["@weft-labs/cli"],
         overrides: {
           "@weft-labs/sdk": `file:${sdkArchive}`,
         },
@@ -125,8 +124,7 @@ try {
     }),
   );
 
-  const skillHome = join(temporaryDirectory, "skill-home");
-  for (const root of [
+  const hostRoots = [
     ".agents",
     ".claude",
     ".cursor",
@@ -134,36 +132,74 @@ try {
     ".config/opencode",
     ".openclaw",
     ".hermes",
-  ]) {
-    await mkdir(join(skillHome, root), { recursive: true });
-  }
-  await run("pnpm", ["install"], {
-    cwd: temporaryDirectory,
-    env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
-  });
+  ];
 
-  for (const file of ["SKILL.md", "rules/cli.md"]) {
-    const publicSkill = await readFile(
-      new URL(`../skills/weft/${file}`, import.meta.url),
-      "utf8",
-    );
-    for (const root of [
-      ".agents",
-      ".claude",
-      ".cursor",
-      ".cline",
-      ".config/opencode",
-      ".openclaw",
-      ".hermes",
-    ]) {
-      const destination = join(root, "skills", "weft", file);
-      if (
-        (await readFile(join(skillHome, destination), "utf8")) !== publicSkill
-      ) {
-        throw new Error(`Packed CLI did not install ${destination}`);
+  async function agentHome(name) {
+    const directory = join(temporaryDirectory, name);
+    for (const root of hostRoots) {
+      await mkdir(join(directory, root), { recursive: true });
+    }
+    return directory;
+  }
+
+  async function assertSkillInstalled(home, label) {
+    for (const file of ["SKILL.md", "rules/cli.md"]) {
+      const publicSkill = await readFile(
+        new URL(`../skills/weft/${file}`, import.meta.url),
+        "utf8",
+      );
+      for (const root of hostRoots) {
+        const destination = join(root, "skills", "weft", file);
+        const installed = await readFile(join(home, destination), "utf8").catch(
+          (error) => {
+            if (error.code === "ENOENT") return undefined;
+            throw error;
+          },
+        );
+        if (installed !== publicSkill) {
+          throw new Error(
+            `${label} did not install ${destination} (${
+              installed === undefined ? "missing" : "content differs"
+            })`,
+          );
+        }
       }
     }
   }
+
+  const skillHome = await agentHome("skill-home");
+  // The quickstart install gets its own pnpm store. Sharing the caller's store
+  // would make this gate depend on whether that store is warm, which is state
+  // no commit controls.
+  await run(
+    "pnpm",
+    ["install", "--store-dir", join(temporaryDirectory, "pnpm-store")],
+    {
+      cwd: temporaryDirectory,
+      env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
+    },
+  );
+
+  // Installing the package must not touch the machine on its own. The Skill
+  // arrives from `weft skill install` or from the first ordinary command, so
+  // no package manager or store state can silently skip it.
+  const untouched = await readFile(
+    join(skillHome, ".agents", "skills", "weft", "SKILL.md"),
+    "utf8",
+  ).catch((error) => {
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  });
+  if (untouched !== undefined) {
+    throw new Error("Packed CLI installed the Skill from a package hook");
+  }
+
+  const weftBinary = join(temporaryDirectory, "node_modules", ".bin", "weft");
+  await run(weftBinary, ["skill", "install"], {
+    cwd: temporaryDirectory,
+    env: { ...process.env, HOME: skillHome, USERPROFILE: "" },
+  });
+  await assertSkillInstalled(skillHome, "weft skill install");
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
@@ -198,6 +234,15 @@ try {
     throw new Error("Packed TypeScript quickstart did not decode account data");
   }
 
+  // The safety net: an ordinary command installs the Skill for a user who
+  // never runs `weft skill install`.
+  const firstRunHome = await agentHome("first-run-home");
+  await run(weftBinary, ["me"], {
+    cwd: temporaryDirectory,
+    env: { ...env, HOME: firstRunHome, USERPROFILE: "" },
+  });
+  await assertSkillInstalled(firstRunHome, "first weft command");
+
   const cliResult = await run(
     "sh",
     [join(installedCli, "examples", "cli-quickstart.sh")],
@@ -217,7 +262,7 @@ try {
   }
 
   if (
-    requests.length !== 4 ||
+    requests.length !== 5 ||
     requests.some(
       (request) => request.authorization !== "Bearer wk_quickstart_fixture",
     )

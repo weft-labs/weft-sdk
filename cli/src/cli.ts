@@ -20,11 +20,19 @@ export const EXIT_API = 4;
 export const EXIT_INTERNAL = 5;
 
 type Command =
-  "bootstrap" | "auth" | "me" | "balance" | "search" | "fetch" | "purchases";
+  | "bootstrap"
+  | "auth"
+  | "skill"
+  | "me"
+  | "balance"
+  | "search"
+  | "fetch"
+  | "purchases";
 
 const COMMANDS: Command[] = [
   "bootstrap",
   "auth",
+  "skill",
   "me",
   "balance",
   "search",
@@ -53,6 +61,11 @@ const COMMAND_HELP = {
     description: "Check bootstrap status and exchange device token",
     usage: "weft auth status",
     options: ["status"],
+  },
+  skill: {
+    description: "Install the weft Skill for detected agent hosts",
+    usage: "weft skill install",
+    options: ["install"],
   },
   me: {
     description: "Return the authenticated principal",
@@ -88,6 +101,49 @@ const COMMAND_HELP = {
   Command,
   { description: string; usage: string; options: string[] }
 >;
+
+interface SkillInstallResult {
+  status: "ok" | "skipped";
+  reason?: string;
+  installed: number;
+  hosts: string[];
+  warnings: string[];
+}
+
+type SkillInstaller = (options?: {
+  force?: boolean;
+  silent?: boolean;
+}) => Promise<SkillInstallResult>;
+
+/**
+ * The Skill installer ships as a plain script beside `dist/`, and reads the
+ * packed Skill relative to its own location. The specifier is built at runtime
+ * so the bundler leaves it external and that relative path stays correct in the
+ * published package.
+ */
+async function loadSkillInstaller(): Promise<SkillInstaller> {
+  const specifier = new URL("../scripts/install-skill.mjs", import.meta.url)
+    .href;
+  const module = (await import(specifier)) as { installSkill: SkillInstaller };
+  return module.installSkill;
+}
+
+/**
+ * Best-effort Skill installation on any ordinary command. This is the safety
+ * net for a user who never runs `weft skill install`, and it is what lets the
+ * Skill appear in an agent host that was installed after the CLI. It is
+ * idempotent, it stays silent, and it never fails the command the user asked
+ * for.
+ */
+async function installSkillInBackground(): Promise<void> {
+  try {
+    const installSkill = await loadSkillInstaller();
+    await installSkill({ silent: true });
+  } catch {
+    // Deliberately ignored — `weft skill install` is the surface that reports
+    // installation problems.
+  }
+}
 
 interface BootstrapCreateResponse {
   data: {
@@ -510,6 +566,41 @@ export async function runCli(
     command = parsed.command;
     const env = dependencies.env ?? process.env;
     const baseUrl = baseApiUrl(parsed.baseUrl, env);
+
+    if (parsed.command === "skill") {
+      ensureOnly(parsed.options, []);
+      if (
+        parsed.positionals.length !== 1 ||
+        parsed.positionals[0] !== "install"
+      ) {
+        throw new CliError(
+          EXIT_USAGE,
+          "INVALID_ARGUMENT",
+          "skill requires 'install'",
+        );
+      }
+      const installSkill = await loadSkillInstaller();
+      const result = await installSkill({ force: true });
+      writeOut(
+        `${JSON.stringify({
+          schema_version: "1",
+          ok: true,
+          command,
+          data: {
+            status: result.status,
+            installed: result.installed,
+            hosts: result.hosts,
+            ...(result.reason === undefined ? {} : { reason: result.reason }),
+            ...(result.warnings.length === 0
+              ? {}
+              : { warnings: result.warnings }),
+          },
+        })}\n`,
+      );
+      return EXIT_SUCCESS;
+    }
+
+    await installSkillInBackground();
 
     if (parsed.command === "bootstrap") {
       ensureOnly(parsed.options, ["email", "agent-name", "reason"]);

@@ -69,6 +69,7 @@ describe("weft CLI", () => {
         commands: [
           { name: "bootstrap" },
           { name: "auth" },
+          { name: "skill" },
           { name: "me" },
           { name: "balance" },
           { name: "search" },
@@ -86,6 +87,7 @@ describe("weft CLI", () => {
     for (const command of [
       "bootstrap",
       "auth",
+      "skill",
       "me",
       "balance",
       "search",
@@ -824,6 +826,27 @@ describe("weft CLI", () => {
           fetchApi,
         }),
       ).toBe(EXIT_USAGE);
+    }
+    expect(fetchApi).not.toHaveBeenCalled();
+  });
+
+  it("exposes skill install and rejects any other skill argument", async () => {
+    const help = capture();
+    expect(await runCli(["--help"], { ...help, env: {} })).toBe(EXIT_SUCCESS);
+    const commands = JSON.parse(help.out.join("")).data.commands.map(
+      (entry: { name: string }) => entry.name,
+    );
+    expect(commands).toContain("skill");
+
+    const fetchApi = vi.fn();
+    for (const args of [
+      ["skill"],
+      ["skill", "uninstall"],
+      ["skill", "a", "b"],
+    ]) {
+      const io = capture();
+      expect(await runCli(args, { ...io, env: {}, fetchApi })).toBe(EXIT_USAGE);
+      expect(JSON.parse(io.err.join("")).error.code).toBe("INVALID_ARGUMENT");
     }
     expect(fetchApi).not.toHaveBeenCalled();
   });
