@@ -22,7 +22,6 @@
     "test:unit": "vitest run",
     "lint:check": "eslint",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "postinstall": "node scripts/install-skill.mjs",
     "prepack": "node scripts/prepare-skill.mjs",
     "prepublishOnly": "pnpm run build"
   },

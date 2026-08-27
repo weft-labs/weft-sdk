@@ -52,19 +52,36 @@ weft me
 weft balance
 ```
 
-The `npm install -g` command also installs the `weft` Skill (`SKILL.md` plus
-`rules/cli.md`, vendored from
-[weft-labs/skills](https://github.com/weft-labs/skills)) for supported agent
-hosts already present on the machine. It does not create configuration for
-absent hosts or replace a different existing Skill. If an earlier version of
-this package installed the retired `weft-cli` Skill, the installer removes
-that copy after the `weft` Skill is in place; a hand-edited or user-owned
-`weft-cli` copy stays untouched. Restart the agent host after the first
-install. Package managers and install flags that block dependency scripts also
-block Skill installation. Set `WEFT_SKIP_SKILL_INSTALL=1` before installation
-to opt out. npm does not run package uninstall hooks, so
-`npm rm -g @weft-labs/cli` leaves the Skill in place; remove the host's
-`skills/weft` directory if you also want to remove the Skill.
+### The `weft` Skill
+
+Installing the package does not write to the machine. Install the `weft` Skill
+(`SKILL.md` plus `rules/cli.md`, vendored from
+[weft-labs/skills](https://github.com/weft-labs/skills)) with:
+
+```bash
+weft skill install
+```
+
+Any ordinary command installs it too, so an agent that runs `weft search`
+before anyone reads this section still gets the Skill. Both paths are the same
+idempotent operation, and running either again is safe.
+
+Earlier versions installed the Skill from an `npm` package hook. That hook was
+removed: `pnpm` and `bun` block dependency scripts by default, and `pnpm`
+replays a cached package without re-running them, so the hook could be skipped
+with no error and no Skill. Running it from the CLI removes that whole class of
+silent failure, and it also picks up an agent host installed after the CLI —
+the hook only ever ran once, at package install time.
+
+The installer writes only for supported agent hosts already present on the
+machine. It does not create configuration for absent hosts or replace a
+different existing Skill. If an earlier version of this package installed the
+retired `weft-cli` Skill, the installer removes that copy after the `weft`
+Skill is in place; a hand-edited or user-owned `weft-cli` copy stays
+untouched. Restart the agent host after the first install. Set
+`WEFT_SKIP_SKILL_INSTALL=1` to opt out of both paths. Removing the package
+leaves the Skill in place; remove the host's `skills/weft` directory if you
+also want to remove the Skill.
 
 `weft bootstrap` registers its OAuth client, creates the bootstrap, and writes
 the temporary and device credentials to a local credential file created with
