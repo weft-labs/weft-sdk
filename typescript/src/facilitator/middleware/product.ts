@@ -189,6 +189,12 @@ export interface WeftProductDeclaration extends WeftProductIdentity {
  * A seller whose surface is part API and part MCP needs to say so per route,
  * so the SDK accepts `type` here, consumes it into the reserved tag, and never
  * passes the field itself down to the resource server.
+ *
+ * The inherited `extensions` map gains one capability here: any value may be a
+ * `WeftDynamicExtension` callback instead of a static object, resolved per
+ * request at the same point as `price`. The field is already typed
+ * `Record<string, unknown>` upstream, so this needs no wider type — only the
+ * middleware registering the resolver for those keys.
  */
 export interface WeftRouteConfig extends RouteConfig {
   /** Product kind for this route; overrides {@link WeftProductIdentity.type}. */
@@ -271,19 +277,21 @@ function isSingleRoute(routes: WeftRoutesConfig): routes is WeftRouteConfig {
 }
 
 /** Reports identity the seller declared but that will not ship as written. */
-type Warn = (message: string) => void;
+export type Warn = (message: string) => void;
 
 /**
  * Build a warning sink that emits each distinct message once.
  *
  * Product-level identity is applied to every route, so an over-long tag would
- * otherwise produce one identical line per route at boot. Warnings are emitted
- * when the middleware is built, never per request, so they land in boot output
- * rather than in a payment path.
+ * otherwise produce one identical line per route at boot. Identity warnings are
+ * all emitted when the middleware is built, so they land in boot output rather
+ * than in a payment path; the one sink that runs per request — a failing
+ * {@link WeftDynamicExtension} — leans on the same de-duplication to stay one
+ * line per distinct problem instead of one per request.
  *
  * @returns A warn function that suppresses repeats
  */
-function createWarn(): Warn {
+export function createWarn(): Warn {
   const seen = new Set<string>();
 
   return (message: string) => {

@@ -361,6 +361,57 @@ reserved tag — `weft:type:api`, `weft:type:agent`, `weft:type:mcp`. That is wh
 five in total. Any `weft:type:*` value you put in `tags` yourself is dropped
 with a warning — declare `type` instead.
 
+#### Stamping the request on the payment
+
+`extensions` on a route carries structured metadata to the buyer and on to the
+settlement, alongside the `weft.product` declaration above. Any key in it may
+be a **callback instead of a static value**, evaluated where `price` is
+evaluated — while the challenge for that request is built:
+
+```js
+weftPaymentMiddleware(
+  {
+    "POST /v1/generate": {
+      accepts: [{ scheme: "exact", network, payTo, price: quoteFromBody }],
+      extensions: {
+        "acme.request": async (context) => {
+          const { model, max_tokens } = await context.adapter.getBody();
+          return { info: { model, max_tokens } };
+        },
+      },
+    },
+  },
+  { apiKey, name: "Acme Image API", type: "api" },
+);
+```
+
+That is how a seller who prices per request — from a model name, a token
+budget, a page count — can also say what the buyer asked for. The buyer's
+client echoes the resolved value onto the payment, and the facilitator relays
+it onto the settlement, so it is there to display next to the amount.
+
+`await context.adapter.getBody()` rather than `context.adapter.getBody()`: the
+body is a promise on Hono and a plain value on Express.
+
+Two rules:
+
+- **Be deterministic for one request.** The challenge is built twice — once for
+  the unpaid request, once for the buyer's paid retry — and the buyer's echo is
+  checked against the second one. A clock, a counter or a random value in here
+  fails that check and costs you the sale, not just the blob. Derive the value
+  from the request.
+- **It is display-only.** By the time it reaches a consumer it is
+  unauthenticated buyer input, like every echoed extension. Attribution keys on
+  the API key that settled the payment, never on this.
+
+Anything the callback cannot deliver costs the blob and never the payment: a
+callback that throws, returns a non-object, returns something that is not JSON,
+or returns more than 16 KiB — the facilitator's relay cap for the whole
+extensions object — has its key dropped from the challenge, with one `[weft]`
+line saying which and why. The rest of the declaration, `weft.product`
+included, ships as normal. Return `undefined` to skip a request deliberately;
+that one is silent.
+
 #### What the SDK trims, and why
 
 The x402 protocol's `ResourceInfo` is narrow, and a buyer that validates the
