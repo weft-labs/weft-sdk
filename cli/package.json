@@ -1,6 +1,6 @@
 {
   "name": "@weft-labs/cli",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Command-line client for the Weft buyer runtime",
   "type": "module",
   "bin": {
