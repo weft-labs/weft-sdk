@@ -1,10 +1,10 @@
-# Weft::DefaultApi
+# Weft::DocumentationApi
 
 All URIs are relative to *https://weft.network*
 
 | Method | HTTP request | Description |
 | ------ | ------------ | ----------- |
-| [**get_open_api_document**](DefaultApi.md#get_open_api_document) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document |
+| [**get_open_api_document**](DocumentationApi.md#get_open_api_document) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document |
 
 
 ## get_open_api_document
@@ -19,14 +19,14 @@ Fetch this OpenAPI document
 require 'time'
 require 'weft-sdk'
 
-api_instance = Weft::DefaultApi.new
+api_instance = Weft::DocumentationApi.new
 
 begin
   # Fetch this OpenAPI document
   result = api_instance.get_open_api_document
   p result
 rescue Weft::ApiError => e
-  puts "Error when calling DefaultApi->get_open_api_document: #{e}"
+  puts "Error when calling DocumentationApi->get_open_api_document: #{e}"
 end
 ```
 
@@ -44,7 +44,7 @@ begin
   p headers # => { ... }
   p data # => String
 rescue Weft::ApiError => e
-  puts "Error when calling DefaultApi->get_open_api_document_with_http_info: #{e}"
+  puts "Error when calling DocumentationApi->get_open_api_document_with_http_info: #{e}"
 end
 ```
 
