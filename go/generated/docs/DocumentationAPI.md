@@ -1,10 +1,10 @@
-# \DefaultAPI
+# \DocumentationAPI
 
 All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetOpenApiDocument**](DefaultAPI.md#GetOpenApiDocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
+[**GetOpenApiDocument**](DocumentationAPI.md#GetOpenApiDocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
 
 
 
@@ -30,13 +30,13 @@ func main() {
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.DefaultAPI.GetOpenApiDocument(context.Background()).Execute()
+	resp, r, err := apiClient.DocumentationAPI.GetOpenApiDocument(context.Background()).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.GetOpenApiDocument``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `DocumentationAPI.GetOpenApiDocument``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
 	// response from `GetOpenApiDocument`: string
-	fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.GetOpenApiDocument`: %v\n", resp)
+	fmt.Fprintf(os.Stdout, "Response from `DocumentationAPI.GetOpenApiDocument`: %v\n", resp)
 }
 ```
 
