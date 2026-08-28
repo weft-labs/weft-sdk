@@ -27,6 +27,8 @@ export {
 export {
   registerDynamicExtensions,
   MAX_EXTENSION_BYTES,
+  WEFT_REQUEST_EXTENSION_KEY,
+  WEFT_REQUEST_INFO_SCHEMA,
   type WeftDynamicExtension,
 } from "./extensions";
 

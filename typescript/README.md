@@ -374,9 +374,9 @@ weftPaymentMiddleware(
     "POST /v1/generate": {
       accepts: [{ scheme: "exact", network, payTo, price: quoteFromBody }],
       extensions: {
-        "acme.request": async (context) => {
+        "weft.request": async (context) => {
           const { model, max_tokens } = await context.adapter.getBody();
-          return { info: { model, max_tokens } };
+          return { model, max_tokens };
         },
       },
     },
@@ -389,6 +389,20 @@ That is how a seller who prices per request — from a model name, a token
 budget, a page count — can also say what the buyer asked for. The buyer's
 client echoes the resolved value onto the payment, and the facilitator relays
 it onto the settlement, so it is there to display next to the amount.
+
+`weft.request` is the key to reach for. Under it the SDK owns the envelope: the
+callback returns the `info` payload alone and a published JSON Schema is
+stamped beside it, the same way `weft.product` is assembled from the fields you
+declare. That schema is deliberately open — what a request asked for is your
+vocabulary, not ours — so what it publishes is a posture rather than a field
+list: seller-authored, display-only, key nothing on it.
+
+`weft.product` says what is being sold and is fixed at boot. `weft.request`
+says what this one call asked for. Any *other* key works too and ships your
+value verbatim, envelope and all — the escape hatch if you need your own
+namespace on the wire. Prefer the named key: x402 extensions are named
+capabilities with published contracts, and a key each seller invents is
+readable by nobody but Weft.
 
 `await context.adapter.getBody()` rather than `context.adapter.getBody()`: the
 body is a promise on Hono and a plain value on Express.

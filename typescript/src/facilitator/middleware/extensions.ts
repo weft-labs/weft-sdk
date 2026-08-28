@@ -21,13 +21,20 @@ import type { WeftRouteConfig, WeftRoutesConfig } from "./product";
  * {
  *   accepts: [{ scheme, network, payTo, price: quote }],
  *   extensions: {
- *     "acme.request": async (context) => {
+ *     [WEFT_REQUEST_EXTENSION_KEY]: async (context) => {
  *       const { model, max_tokens } = (await context.adapter.getBody()) as Body;
- *       return { info: { model, max_tokens } };
+ *       return { model, max_tokens };
  *     },
  *   },
  * }
  * ```
+ *
+ * {@link WEFT_REQUEST_EXTENSION_KEY} is the key to reach for. Under it the SDK
+ * owns the envelope: the callback returns the `info` payload alone and the
+ * published {@link WEFT_REQUEST_INFO_SCHEMA} is stamped beside it, exactly as
+ * `weft.product` is assembled from declared fields. Under any other key the
+ * resolved value ships verbatim, envelope and all — the escape hatch for a
+ * seller who needs their own namespace on the wire.
  *
  * Two rules the callback has to hold to.
  *
@@ -49,6 +56,46 @@ import type { WeftRouteConfig, WeftRoutesConfig } from "./product";
 export type WeftDynamicExtension = (
   context: HTTPRequestContext,
 ) => unknown | Promise<unknown>;
+
+/**
+ * Extension key for the seller's per-request context.
+ *
+ * The one *named* key this mechanism ships, and the one to use unless a
+ * seller needs their own namespace on the wire. x402 extensions are named
+ * capabilities with published contracts — discovery, receipts, gas sponsoring
+ * — registered and reviewed rather than invented per seller. A key that any
+ * seller may invent is a metadata channel wearing an extension's clothes, so
+ * the SDK publishes one key with one contract and leaves the free-form form
+ * as the deliberate exception.
+ *
+ * Sits beside {@link WEFT_PRODUCT_EXTENSION_KEY}, and divides cleanly from it:
+ * `weft.product` says what is being sold and is fixed at boot; `weft.request`
+ * says what this one call asked for and is resolved per request.
+ */
+export const WEFT_REQUEST_EXTENSION_KEY = "weft.request";
+
+/**
+ * JSON Schema (Draft 2020-12) for the `weft.request` extension's `info`.
+ *
+ * Ships verbatim as the extension's `schema` member. Deliberately open where
+ * `WEFT_PRODUCT_INFO_SCHEMA` is closed: what a request asked for is the
+ * seller's vocabulary — `{model, max_tokens}` for one rail, `{pages}` for
+ * another — and no schema Weft could author would fit them all.
+ *
+ * The contract it publishes is therefore not a field list but a posture: this
+ * key holds seller-authored, display-only context for one request, and a
+ * consumer must key nothing on it. `additionalProperties: true` states that
+ * openness rather than leaving it to be inferred from an absent constraint.
+ */
+export const WEFT_REQUEST_INFO_SCHEMA = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  title: "Weft per-request context",
+  description:
+    "Seller-authored context for one paid request, for display only. " +
+    "Unauthenticated buyer input by the time it is read; key nothing on it.",
+  type: "object",
+  additionalProperties: true,
+} as const;
 
 /**
  * Largest serialized extensions object, in bytes, the SDK will put on a
@@ -238,7 +285,17 @@ function dynamicExtension(key: string, warn: Warn): ResourceServerExtension {
         return dropKey(context, key);
       }
 
-      const bytes = projectedBytes(context, key, wire) ?? byteLength(json);
+      // The named key owns its envelope: the callback returns `info` alone
+      // and the published schema is stamped beside it, the same assembly
+      // `weft.product` goes through. Wrapped before measuring, so the cap
+      // counts what actually ships. Any other key ships the resolved value
+      // exactly as the seller built it.
+      const value =
+        key === WEFT_REQUEST_EXTENSION_KEY
+          ? { info: wire, schema: WEFT_REQUEST_INFO_SCHEMA }
+          : wire;
+
+      const bytes = projectedBytes(context, key, value) ?? byteLength(json);
       if (bytes > MAX_EXTENSION_BYTES) {
         warn(
           `extensions[${key}] takes the challenge's extensions to ${bytes} ` +
@@ -250,7 +307,7 @@ function dynamicExtension(key: string, warn: Warn): ResourceServerExtension {
         return dropKey(context, key);
       }
 
-      return wire;
+      return value;
     },
   };
 }

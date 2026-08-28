@@ -20,6 +20,8 @@ import {
 import { weftPaymentMiddlewareHono } from "../src/facilitator/middleware/hono";
 import {
   MAX_EXTENSION_BYTES,
+  WEFT_REQUEST_EXTENSION_KEY,
+  WEFT_REQUEST_INFO_SCHEMA,
   type WeftDynamicExtension,
 } from "../src/facilitator/middleware/extensions";
 import {
@@ -639,6 +641,135 @@ describe("the advertised value is what the wire carries", () => {
     expect(recorded.some((request) => request.url.endsWith("/settle"))).toBe(
       true,
     );
+  });
+});
+
+/**
+ * `weft.request` is the one named key this mechanism ships, and the shape a
+ * consumer can actually be told about: the SDK owns the envelope, so the
+ * callback returns `info` alone and the published schema always travels with
+ * it. Everything else keeps the free-form contract, which is what makes it an
+ * escape hatch rather than the default.
+ */
+describe("the named weft.request key carries its own contract", () => {
+  /**
+   * Drive one challenge whose named key is resolved per request.
+   *
+   * @param extension - The callback declared under `weft.request`
+   * @returns The decoded challenge
+   */
+  async function namedChallenge(extension: unknown): Promise<PaymentRequired> {
+    const middleware = weftPaymentMiddleware(
+      {
+        "POST /v1/generate": {
+          accepts: {
+            scheme: "exact",
+            network: NETWORK,
+            payTo: PAY_TO,
+            price: "$0.01",
+          },
+          extensions: { [WEFT_REQUEST_EXTENSION_KEY]: extension },
+        },
+      } as WeftRoutesConfig,
+      { ...baseConfig, type: "api", productId: "prod_9f2c" },
+    );
+    return decodeChallenge(await driveExpress(middleware));
+  }
+
+  it("wraps what the callback returns as info, beside the schema", async () => {
+    const challenge = await namedChallenge(async (context: HTTPRequestContext) => {
+      const body = (await context.adapter.getBody()) as { model: string };
+      return { model: body.model };
+    });
+
+    expect(challenge.extensions?.[WEFT_REQUEST_EXTENSION_KEY]).toEqual({
+      info: { model: "flux" },
+      schema: WEFT_REQUEST_INFO_SCHEMA,
+    });
+  });
+
+  it("publishes an open info contract, unlike weft.product", async () => {
+    const challenge = await namedChallenge(() => ({ model: "flux" }));
+
+    const extension = challenge.extensions?.[WEFT_REQUEST_EXTENSION_KEY] as {
+      schema: Record<string, unknown>;
+    };
+    expect(extension.schema.$schema).toBe(
+      "https://json-schema.org/draft/2020-12/schema",
+    );
+    // Deliberately open: what a request asked for is the seller's vocabulary,
+    // so the contract states a posture, not a field list.
+    expect(extension.schema.additionalProperties).toBe(true);
+    expect(extension.schema.description).toContain("display only");
+  });
+
+  it("sits beside weft.product, which stays fixed at boot", async () => {
+    const challenge = await namedChallenge(() => ({ model: "flux" }));
+
+    expect(
+      (
+        challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY] as { info: unknown }
+      ).info,
+    ).toEqual({ kind: "api", product_id: "prod_9f2c" });
+  });
+
+  it("leaves any other key's value exactly as the seller built it", async () => {
+    const middleware = weftPaymentMiddleware(
+      routesWith(() => ({ info: { model: "flux" }, schema: { own: true } })),
+      baseConfig,
+    );
+    const challenge = decodeChallenge(await driveExpress(middleware));
+
+    expect(challenge.extensions?.[KEY]).toEqual({
+      info: { model: "flux" },
+      schema: { own: true },
+    });
+  });
+
+  it("counts the envelope against the relay cap", async () => {
+    const challenge = await namedChallenge(() => ({
+      blob: "x".repeat(MAX_EXTENSION_BYTES - 64),
+    }));
+
+    expect(challenge.extensions?.[WEFT_REQUEST_EXTENSION_KEY]).toBeUndefined();
+    expect(challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY]).toBeDefined();
+    expect(warnings.join("\n")).toContain("relay cap");
+  });
+
+  it("is echoed with its schema and reaches the facilitator", async () => {
+    const middleware = weftPaymentMiddleware(
+      {
+        "POST /v1/generate": {
+          accepts: {
+            scheme: "exact",
+            network: NETWORK,
+            payTo: PAY_TO,
+            price: "$0.01",
+          },
+          extensions: {
+            [WEFT_REQUEST_EXTENSION_KEY]: () => ({ model: "flux" }),
+          },
+        },
+      } as WeftRoutesConfig,
+      baseConfig,
+    );
+    const challenge = decodeChallenge(await driveExpress(middleware));
+    const payload = await buyerClient().createPaymentPayload(challenge);
+
+    const paid = await driveExpress(middleware, {
+      headers: { "payment-signature": encodePaymentSignatureHeader(payload) },
+      handler: true,
+    });
+
+    expect(paid.status).toBe(200);
+    const settle = recorded.find((request) => request.url.endsWith("/settle"));
+    const body = settle?.body as {
+      paymentPayload: { extensions: Record<string, unknown> };
+    };
+    expect(body.paymentPayload.extensions[WEFT_REQUEST_EXTENSION_KEY]).toEqual({
+      info: { model: "flux" },
+      schema: WEFT_REQUEST_INFO_SCHEMA,
+    });
   });
 });
 
