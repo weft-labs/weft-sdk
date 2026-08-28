@@ -5,7 +5,7 @@ export * from './AccountApi';
 export * from './AgentBootstrapApi';
 export * from './AuthApi';
 export * from './BalanceApi';
-export * from './DefaultApi';
+export * from './DocumentationApi';
 export * from './FetchApi';
 export * from './PaymentsApi';
 export * from './PurchasesApi';

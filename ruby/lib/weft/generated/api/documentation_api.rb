@@ -13,31 +13,29 @@ Generator version: 7.19.0
 require 'cgi'
 
 module Weft
-  class AccountApi
+  class DocumentationApi
     attr_accessor :api_client
 
     def initialize(api_client = ApiClient.default)
       @api_client = api_client
     end
-    # Get the current credential principal
-    # Returns the seller Organization represented by an `ax_live_*` resource key, or the buyer User represented by a `wk_*` account key, OAuth access token, or claimed `wbt_*` bearer. Branch on `data.principal_type`.
+    # Fetch this OpenAPI document
     # @param [Hash] opts the optional parameters
-    # @return [MeResponse]
-    def get_me(opts = {})
-      data, _status_code, _headers = get_me_with_http_info(opts)
+    # @return [String]
+    def get_open_api_document(opts = {})
+      data, _status_code, _headers = get_open_api_document_with_http_info(opts)
       data
     end
 
-    # Get the current credential principal
-    # Returns the seller Organization represented by an &#x60;ax_live_*&#x60; resource key, or the buyer User represented by a &#x60;wk_*&#x60; account key, OAuth access token, or claimed &#x60;wbt_*&#x60; bearer. Branch on &#x60;data.principal_type&#x60;.
+    # Fetch this OpenAPI document
     # @param [Hash] opts the optional parameters
-    # @return [Array<(MeResponse, Integer, Hash)>] MeResponse data, response status code and response headers
-    def get_me_with_http_info(opts = {})
+    # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
+    def get_open_api_document_with_http_info(opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: AccountApi.get_me ...'
+        @api_client.config.logger.debug 'Calling API: DocumentationApi.get_open_api_document ...'
       end
       # resource path
-      local_var_path = '/api/v1/me'
+      local_var_path = '/docs/openapi.yaml'
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -45,7 +43,7 @@ module Weft
       # header parameters
       header_params = opts[:header_params] || {}
       # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      header_params['Accept'] = @api_client.select_header_accept(['application/yaml']) unless header_params['Accept']
 
       # form parameters
       form_params = opts[:form_params] || {}
@@ -54,13 +52,13 @@ module Weft
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'MeResponse'
+      return_type = opts[:debug_return_type] || 'String'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+      auth_names = opts[:debug_auth_names] || []
 
       new_options = opts.merge(
-        :operation => :"AccountApi.get_me",
+        :operation => :"DocumentationApi.get_open_api_document",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -71,7 +69,7 @@ module Weft
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: AccountApi#get_me\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DocumentationApi#get_open_api_document\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end

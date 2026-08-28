@@ -18,6 +18,14 @@ info:
     in this document are seller administration surfaces and require an
     `ax_live_*` resource key. These credential types are not interchangeable.
 
+    This document is a deliberate subset of the `/api/v1` surface, not an
+    inventory of it. The seller-side management endpoints — `/api/v1/agents`,
+    `/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with
+    an `ax_live_*` key but are intentionally left undocumented: they are
+    dashboard-facing and not part of the published client contract. Nothing
+    outside this document is a supported contract, and the response-validation
+    gate in `config/environments/test.rb` enforces only what is declared here.
+
     Before claim, a `wbt_*` bearer is temporary and permits only search plus its
     own status/cancel operations for 30 minutes. Human approval binds it to the
     User and promotes the same secret to durable identity, search, balance,
@@ -74,6 +82,8 @@ tags:
     self-register so its human controller can later claim it from the
     dashboard.
   name: Resources
+- description: "This document, served for tooling that reads the spec directly."
+  name: Documentation
 paths:
   /docs/openapi.yaml:
     get:
@@ -86,6 +96,8 @@ paths:
                 type: string
           description: OpenAPI 3.1 document (YAML)
       summary: Fetch this OpenAPI document
+      tags:
+      - Documentation
   /api/v1/account_bootstraps:
     post:
       description: |
