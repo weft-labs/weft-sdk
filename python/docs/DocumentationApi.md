@@ -1,10 +1,10 @@
-# weft_sdk.generated.DefaultApi
+# weft_sdk.generated.DocumentationApi
 
 All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**get_open_api_document**](DefaultApi.md#get_open_api_document) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document
+[**get_open_api_document**](DocumentationApi.md#get_open_api_document) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document
 
 
 # **get_open_api_document**
@@ -30,15 +30,15 @@ configuration = weft_sdk.generated.Configuration(
 # Enter a context with an instance of the API client
 with weft_sdk.generated.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = weft_sdk.generated.DefaultApi(api_client)
+    api_instance = weft_sdk.generated.DocumentationApi(api_client)
 
     try:
         # Fetch this OpenAPI document
         api_response = api_instance.get_open_api_document()
-        print("The response of DefaultApi->get_open_api_document:\n")
+        print("The response of DocumentationApi->get_open_api_document:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->get_open_api_document: %s\n" % e)
+        print("Exception when calling DocumentationApi->get_open_api_document: %s\n" % e)
 ```
 
 
