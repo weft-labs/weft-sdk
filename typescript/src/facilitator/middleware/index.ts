@@ -25,6 +25,14 @@ export {
 } from "./product";
 
 export {
+  registerDynamicExtensions,
+  MAX_EXTENSION_BYTES,
+  WEFT_REQUEST_EXTENSION_KEY,
+  WEFT_REQUEST_INFO_SCHEMA,
+  type WeftDynamicExtension,
+} from "./extensions";
+
+export {
   WEFT_API_KEY_HEADER,
   WEFT_DECLARED_HEADER,
   type WeftAdapterName,

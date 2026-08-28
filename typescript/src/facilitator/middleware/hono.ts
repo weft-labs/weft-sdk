@@ -14,6 +14,7 @@ import {
   WeftProductDeclaration,
   WeftRoutesConfig,
 } from "./product";
+import { registerDynamicExtensions } from "./extensions";
 
 interface HonoRequest {
   method: string;
@@ -168,6 +169,7 @@ export function weftPaymentMiddlewareHono(
     buildFacilitatorAuthHeaders("hono", config?.apiKey, config ?? {}),
   );
   const resourceServer = new x402ResourceServer(facilitatorClient);
+  registerDynamicExtensions(resourceServer, routes);
 
   if (config?.schemes) {
     config.schemes.forEach(({ network, server: schemeServer }) => {

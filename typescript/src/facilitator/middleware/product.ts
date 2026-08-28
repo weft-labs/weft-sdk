@@ -189,6 +189,12 @@ export interface WeftProductDeclaration extends WeftProductIdentity {
  * A seller whose surface is part API and part MCP needs to say so per route,
  * so the SDK accepts `type` here, consumes it into the reserved tag, and never
  * passes the field itself down to the resource server.
+ *
+ * The inherited `extensions` map gains one capability here: any value may be a
+ * `WeftDynamicExtension` callback instead of a static object, resolved per
+ * request at the same point as `price`. The field is already typed
+ * `Record<string, unknown>` upstream, so this needs no wider type — only the
+ * middleware registering the resolver for those keys.
  */
 export interface WeftRouteConfig extends RouteConfig {
   /** Product kind for this route; overrides {@link WeftProductIdentity.type}. */
@@ -270,27 +276,42 @@ function isSingleRoute(routes: WeftRoutesConfig): routes is WeftRouteConfig {
   return "accepts" in routes;
 }
 
-/** Reports identity the seller declared but that will not ship as written. */
-type Warn = (message: string) => void;
+/**
+ * Reports identity the seller declared but that will not ship as written.
+ *
+ * `dedupeKey` names the *problem*, and defaults to the message. A caller whose
+ * message carries per-occurrence detail — an exception message, a byte count —
+ * must pass one, or every occurrence is both a fresh log line and a permanent
+ * entry in the sink's memory.
+ */
+export type Warn = (message: string, dedupeKey?: string) => void;
 
 /**
- * Build a warning sink that emits each distinct message once.
+ * Build a warning sink that emits each distinct problem once.
  *
  * Product-level identity is applied to every route, so an over-long tag would
- * otherwise produce one identical line per route at boot. Warnings are emitted
- * when the middleware is built, never per request, so they land in boot output
- * rather than in a payment path.
+ * otherwise produce one identical line per route at boot. Identity warnings are
+ * all emitted when the middleware is built, so they land in boot output rather
+ * than in a payment path; the one sink that runs per request — a failing
+ * {@link WeftDynamicExtension} — leans on the same de-duplication to stay one
+ * line per distinct problem instead of one per request.
+ *
+ * That per-request use is why the key is separable from the message. A sink
+ * that remembered whole messages would, for a callback whose failure carries a
+ * request id, log every request and grow a set that is never collected — a
+ * memory leak in a payment path, dressed as de-duplication.
  *
  * @returns A warn function that suppresses repeats
  */
-function createWarn(): Warn {
+export function createWarn(): Warn {
   const seen = new Set<string>();
 
-  return (message: string) => {
-    if (seen.has(message)) {
+  return (message: string, dedupeKey?: string) => {
+    const key = dedupeKey ?? message;
+    if (seen.has(key)) {
       return;
     }
-    seen.add(message);
+    seen.add(key);
     console.warn(`[weft] ${message}`);
   };
 }

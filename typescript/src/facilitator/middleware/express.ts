@@ -15,6 +15,7 @@ import {
   WeftProductDeclaration,
   WeftRoutesConfig,
 } from "./product";
+import { registerDynamicExtensions } from "./extensions";
 
 interface ExpressRequest {
   method: string;
@@ -173,6 +174,7 @@ export function weftPaymentMiddleware(
     buildFacilitatorAuthHeaders("express", config?.apiKey, config ?? {}),
   );
   const resourceServer = new x402ResourceServer(facilitatorClient);
+  registerDynamicExtensions(resourceServer, routes);
 
   if (config?.schemes) {
     config.schemes.forEach(({ network, server: schemeServer }) => {
