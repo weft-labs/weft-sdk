@@ -43,6 +43,10 @@ const ASSET = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
 const fakeScheme: SchemeNetworkServer = {
   scheme: "exact",
+  defaultAssetTransferMethod: "authorization",
+  paymentFlows: {
+    authorization: { supported: ["authorization"], default: "authorization" },
+  },
   async parsePrice() {
     return { amount: "10000", asset: ASSET };
   },
@@ -153,7 +157,11 @@ async function driveExpress(
     header: (name: string) => headers[name.toLowerCase()],
   };
 
-  const captured: CapturedResponse = { status: 0, headers: {}, body: undefined };
+  const captured: CapturedResponse = {
+    status: 0,
+    headers: {},
+    body: undefined,
+  };
   const res = {
     statusCode: 0,
     status(code: number) {
@@ -227,7 +235,9 @@ function buyerClient(): x402Client {
       };
     },
   };
-  return new x402Client().register(NETWORK, fakeClientScheme);
+  return x402Client
+    .fromConfig({ schemes: [], spendControls: false })
+    .register(NETWORK, fakeClientScheme);
 }
 
 const DECLARED = {
@@ -533,9 +543,9 @@ describe("a real @x402/core buyer echoes the extension", () => {
       const body = wire?.body as {
         paymentPayload: { extensions: Record<string, unknown> };
       };
-      expect(body.paymentPayload.extensions[WEFT_PRODUCT_EXTENSION_KEY]).toEqual(
-        EXPECTED_EXTENSION,
-      );
+      expect(
+        body.paymentPayload.extensions[WEFT_PRODUCT_EXTENSION_KEY],
+      ).toEqual(EXPECTED_EXTENSION);
     }
   });
 
@@ -601,8 +611,8 @@ describe("a real @x402/core buyer echoes the extension", () => {
       tampered.headers["PAYMENT-REQUIRED"],
     );
     expect(rechallenge.error).toBe("extension_echo_mismatch");
-    expect(
-      recorded.some((request) => request.url.endsWith("/verify")),
-    ).toBe(false);
+    expect(recorded.some((request) => request.url.endsWith("/verify"))).toBe(
+      false,
+    );
   });
 });

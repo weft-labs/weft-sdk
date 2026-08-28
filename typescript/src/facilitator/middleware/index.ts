@@ -38,6 +38,8 @@ export {
   type WeftAdapterName,
 } from "./handshake";
 
+export type { ResumeVerifiedPayment, VerifiedPaymentResume } from "./replay";
+
 export type {
   RoutesConfig,
   RouteConfig,

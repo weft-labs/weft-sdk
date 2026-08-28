@@ -41,6 +41,10 @@ const ASSET = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
 const fakeScheme: SchemeNetworkServer = {
   scheme: "exact",
+  defaultAssetTransferMethod: "authorization",
+  paymentFlows: {
+    authorization: { supported: ["authorization"], default: "authorization" },
+  },
   async parsePrice() {
     return { amount: "10000", asset: ASSET };
   },
@@ -673,7 +677,9 @@ describe("apiKey authenticates settlement and attributes verification", () => {
         };
       },
     };
-    return new x402Client().register(NETWORK, fakeClientScheme);
+    return x402Client
+      .fromConfig({ schemes: [], spendControls: false })
+      .register(NETWORK, fakeClientScheme);
   }
 
   /**

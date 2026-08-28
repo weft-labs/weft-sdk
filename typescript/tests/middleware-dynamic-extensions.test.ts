@@ -46,6 +46,10 @@ const KEY = "acme.request";
 
 const fakeScheme: SchemeNetworkServer = {
   scheme: "exact",
+  defaultAssetTransferMethod: "authorization",
+  paymentFlows: {
+    authorization: { supported: ["authorization"], default: "authorization" },
+  },
   async parsePrice() {
     return { amount: "10000", asset: ASSET };
   },
@@ -245,7 +249,9 @@ function buyerClient(): x402Client {
       };
     },
   };
-  return new x402Client().register(NETWORK, fakeClientScheme);
+  return x402Client
+    .fromConfig({ schemes: [], spendControls: false })
+    .register(NETWORK, fakeClientScheme);
 }
 
 /**
@@ -677,10 +683,12 @@ describe("the named weft.request key carries its own contract", () => {
   }
 
   it("wraps what the callback returns as info, beside the schema", async () => {
-    const challenge = await namedChallenge(async (context: HTTPRequestContext) => {
-      const body = (await context.adapter.getBody()) as { model: string };
-      return { model: body.model };
-    });
+    const challenge = await namedChallenge(
+      async (context: HTTPRequestContext) => {
+        const body = (await context.adapter.getBody()) as { model: string };
+        return { model: body.model };
+      },
+    );
 
     expect(challenge.extensions?.[WEFT_REQUEST_EXTENSION_KEY]).toEqual({
       info: { model: "flux" },
@@ -707,9 +715,8 @@ describe("the named weft.request key carries its own contract", () => {
     const challenge = await namedChallenge(() => ({ model: "flux" }));
 
     expect(
-      (
-        challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY] as { info: unknown }
-      ).info,
+      (challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY] as { info: unknown })
+        .info,
     ).toEqual({ kind: "api", product_id: "prod_9f2c" });
   });
 
