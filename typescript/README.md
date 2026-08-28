@@ -404,13 +404,16 @@ Two rules:
   unauthenticated buyer input, like every echoed extension. Attribution keys on
   the API key that settled the payment, never on this.
 
+Return plain JSON data. The value travels as JSON and is advertised exactly as
+JSON round-trips it, so a `NaN` arrives as `null` and a function-valued field
+does not arrive at all — the challenge and the buyer's echo always agree.
+
 Anything the callback cannot deliver costs the blob and never the payment: a
-callback that throws, returns a non-object, returns something that is not JSON,
-or returns more than 16 KiB — the facilitator's relay cap for the whole
-extensions object — has its key dropped from the challenge, with one `[weft]`
-line saying which and why. The rest of the declaration, `weft.product`
-included, ships as normal. Return `undefined` to skip a request deliberately;
-that one is silent.
+callback that throws, returns a non-object, returns something JSON cannot carry,
+or pushes the challenge's whole extensions object past the facilitator's 16 KiB
+relay cap has its key dropped from the challenge, with one `[weft]` line saying
+which and why. The rest of the declaration, `weft.product` included, ships as
+normal. Return `undefined` to skip a request deliberately; that one is silent.
 
 #### What the SDK trims, and why
 

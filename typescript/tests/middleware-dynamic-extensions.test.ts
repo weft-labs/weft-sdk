@@ -506,7 +506,7 @@ describe("a callback that cannot ship costs the blob, never the payment", () => 
     expect(warnings.join("\n")).toContain("a string");
   });
 
-  it("drops a value that is not JSON", async () => {
+  it("drops a value JSON cannot carry", async () => {
     const challenge = await challengeFor(() => {
       const circular: Record<string, unknown> = {};
       circular.self = circular;
@@ -514,7 +514,16 @@ describe("a callback that cannot ship costs the blob, never the payment", () => 
     });
 
     expect(challenge.extensions?.[KEY]).toBeUndefined();
-    expect(warnings.join("\n")).toContain("not JSON");
+    expect(warnings.join("\n")).toContain("JSON cannot carry");
+  });
+
+  it("drops a toJSON that resolves to something other than an object", async () => {
+    const challenge = await challengeFor(() => ({
+      toJSON: () => "not an object after all",
+    }));
+
+    expect(challenge.extensions?.[KEY]).toBeUndefined();
+    expect(warnings.join("\n")).toContain("a string");
   });
 
   it("drops a blob over the facilitator relay cap, keeping weft.product", async () => {
@@ -522,6 +531,26 @@ describe("a callback that cannot ship costs the blob, never the payment", () => 
       info: { blob: "x".repeat(MAX_EXTENSION_BYTES) },
     }));
 
+    expect(challenge.extensions?.[KEY]).toBeUndefined();
+    expect(challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY]).toBeDefined();
+    expect(warnings.join("\n")).toContain("relay cap");
+  });
+
+  /**
+   * The cap the facilitator enforces is on the serialized extensions *object*,
+   * not on one value, and it omits every extension when the object is over.
+   * A blob that fits on its own but not beside `weft.product` and its own key
+   * name must therefore still be dropped — otherwise the seller loses the
+   * product declaration to save a display blob.
+   */
+  it("measures the whole extensions object, not the value alone", async () => {
+    const alone = MAX_EXTENSION_BYTES - 64;
+    const challenge = await challengeFor(() => ({
+      info: { blob: "x".repeat(alone) },
+    }));
+
+    const value = JSON.stringify({ info: { blob: "x".repeat(alone) } });
+    expect(value.length).toBeLessThan(MAX_EXTENSION_BYTES);
     expect(challenge.extensions?.[KEY]).toBeUndefined();
     expect(challenge.extensions?.[WEFT_PRODUCT_EXTENSION_KEY]).toBeDefined();
     expect(warnings.join("\n")).toContain("relay cap");
@@ -540,6 +569,76 @@ describe("a callback that cannot ship costs the blob, never the payment", () => 
     expect(
       warnings.filter((line) => line.includes("upstream pricing down")),
     ).toHaveLength(1);
+  });
+
+  /**
+   * De-duplication has to key on the problem, not on the message: a failure
+   * carrying a request id would otherwise log every request and grow the
+   * sink's memory forever — a leak in a payment path, dressed as
+   * de-duplication.
+   */
+  it("warns once even when the failure message changes every request", async () => {
+    let attempt = 0;
+    const middleware = weftPaymentMiddleware(
+      routesWith(() => {
+        throw new Error(`upstream pricing down (request ${attempt++})`);
+      }),
+      baseConfig,
+    );
+    await driveExpress(middleware);
+    await driveExpress(middleware);
+    await driveExpress(middleware);
+
+    expect(
+      warnings.filter((line) => line.includes("upstream pricing down")),
+    ).toHaveLength(1);
+  });
+});
+
+/**
+ * The hook advertises the value JSON round-trips to, never the object the
+ * callback handed it, because upstream checks the buyer's echo against what
+ * was advertised — and the buyer only ever saw the JSON.
+ *
+ * The two halves of that check behave differently, which is why both cases
+ * are pinned here. A *value* that JSON rewrites is absorbed: upstream's
+ * `deepEqual` normalizes through `JSON.stringify` itself, so an advertised
+ * `NaN` still matches an echoed `null`. A *field* JSON omits is not: the
+ * subset check reads the missing key as a mismatch and rejects the payment.
+ * So a callback that returns a function-valued field is the case that costs
+ * the sale — exactly what the failure posture promises never happens.
+ */
+describe("the advertised value is what the wire carries", () => {
+  it("normalizes a value the way JSON does", async () => {
+    const middleware = weftPaymentMiddleware(
+      routesWith(() => ({ info: { model: "flux", ratio: NaN } })),
+      baseConfig,
+    );
+    const challenge = decodeChallenge(await driveExpress(middleware));
+
+    expect(challenge.extensions?.[KEY]).toEqual({
+      info: { model: "flux", ratio: null },
+    });
+  });
+
+  it("settles a payment whose blob carried a field JSON omits", async () => {
+    const middleware = weftPaymentMiddleware(
+      routesWith(() => ({ info: { model: "flux", render: () => "nope" } })),
+      baseConfig,
+    );
+    const challenge = decodeChallenge(await driveExpress(middleware));
+    expect(challenge.extensions?.[KEY]).toEqual({ info: { model: "flux" } });
+
+    const payload = await buyerClient().createPaymentPayload(challenge);
+    const paid = await driveExpress(middleware, {
+      headers: { "payment-signature": encodePaymentSignatureHeader(payload) },
+      handler: true,
+    });
+
+    expect(paid.status).toBe(200);
+    expect(recorded.some((request) => request.url.endsWith("/settle"))).toBe(
+      true,
+    );
   });
 });
 

@@ -276,11 +276,18 @@ function isSingleRoute(routes: WeftRoutesConfig): routes is WeftRouteConfig {
   return "accepts" in routes;
 }
 
-/** Reports identity the seller declared but that will not ship as written. */
-export type Warn = (message: string) => void;
+/**
+ * Reports identity the seller declared but that will not ship as written.
+ *
+ * `dedupeKey` names the *problem*, and defaults to the message. A caller whose
+ * message carries per-occurrence detail — an exception message, a byte count —
+ * must pass one, or every occurrence is both a fresh log line and a permanent
+ * entry in the sink's memory.
+ */
+export type Warn = (message: string, dedupeKey?: string) => void;
 
 /**
- * Build a warning sink that emits each distinct message once.
+ * Build a warning sink that emits each distinct problem once.
  *
  * Product-level identity is applied to every route, so an over-long tag would
  * otherwise produce one identical line per route at boot. Identity warnings are
@@ -289,16 +296,22 @@ export type Warn = (message: string) => void;
  * {@link WeftDynamicExtension} — leans on the same de-duplication to stay one
  * line per distinct problem instead of one per request.
  *
+ * That per-request use is why the key is separable from the message. A sink
+ * that remembered whole messages would, for a callback whose failure carries a
+ * request id, log every request and grow a set that is never collected — a
+ * memory leak in a payment path, dressed as de-duplication.
+ *
  * @returns A warn function that suppresses repeats
  */
 export function createWarn(): Warn {
   const seen = new Set<string>();
 
-  return (message: string) => {
-    if (seen.has(message)) {
+  return (message: string, dedupeKey?: string) => {
+    const key = dedupeKey ?? message;
+    if (seen.has(key)) {
       return;
     }
-    seen.add(message);
+    seen.add(key);
     console.warn(`[weft] ${message}`);
   };
 }

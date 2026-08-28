@@ -41,23 +41,27 @@ import type { WeftRouteConfig, WeftRoutesConfig } from "./product";
  * unauthenticated buyer input, exactly like every other echoed extension.
  * Attribution stays keyed on the authenticated API key that settled the
  * payment, never on anything in here.
+ *
+ * The value travels as JSON and is advertised as JSON round-trips it, so a
+ * `NaN` arrives as `null` and a function-valued field does not arrive at all.
+ * Return plain JSON data and the question never comes up.
  */
 export type WeftDynamicExtension = (
   context: HTTPRequestContext,
 ) => unknown | Promise<unknown>;
 
 /**
- * Largest resolved value, in bytes, that the SDK will put on a challenge.
+ * Largest serialized extensions object, in bytes, the SDK will put on a
+ * challenge.
  *
- * Mirrors the facilitator's own `MAX_EXTENSIONS_BYTES` relay cap. The
- * facilitator applies it to the *whole* extensions object and omits the whole
- * object when it is over — which would take `weft.product` down with an
- * oversized per-request blob. So an oversized value is dropped here, on its
- * own key, where the rest of the declaration survives.
+ * Mirrors the facilitator's own `MAX_EXTENSIONS_BYTES` relay cap, and is
+ * measured the same way: on the whole object, key names included. The
+ * facilitator omits *every* extension when the object is over — `weft.product`
+ * with it — so a resolved value that would take the object past the cap is
+ * dropped here, on its own key, where the rest of the declaration survives.
  *
- * This is a per-key guard against a whole-map cap: several fat keys can still
- * add up past it. Keep these blobs small — they describe a request, they are
- * not a place to store one.
+ * Keep these blobs small. They describe a request; they are not a place to
+ * store one.
  */
 export const MAX_EXTENSION_BYTES = 16 * 1024;
 
@@ -96,20 +100,58 @@ function dropKey(context: PaymentRequiredContext, key: string): undefined {
 }
 
 /**
- * Byte length of a value as JSON, or undefined when it cannot be serialized.
+ * Serialize a value to JSON, or undefined when JSON cannot carry it.
  *
- * @param value - The resolved extension value
- * @returns The serialized size in bytes, or undefined
+ * @param value - The value to serialize
+ * @returns The JSON text, or undefined for a circular, BigInt or unserializable value
  */
-function jsonBytes(value: unknown): number | undefined {
+function toJson(value: unknown): string | undefined {
   try {
-    const json = JSON.stringify(value);
-    return json === undefined
-      ? undefined
-      : new TextEncoder().encode(json).length;
+    return JSON.stringify(value);
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Byte length of a string as UTF-8 — what the facilitator's cap counts.
+ *
+ * @param text - The serialized JSON
+ * @returns The length in bytes
+ */
+function byteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
+/**
+ * Size of the whole extensions object once this key holds this value.
+ *
+ * The facilitator's cap is on the *serialized map*, not on one value: a blob
+ * that fits on its own can still push the object past the cap once its key
+ * name and `weft.product` are counted, and the facilitator then omits every
+ * extension rather than the offender. So the projection is what gets measured.
+ *
+ * Still an approximation in one direction: keys resolved later in the same
+ * challenge are unresolved callbacks here, which serialize to nothing. Each
+ * one measures against everything already accepted, so the estimate only
+ * improves as the map fills.
+ *
+ * @param context - Payment-required enrichment context from `@x402/core`
+ * @param key - The extension key about to be written
+ * @param value - The wire value that key would hold
+ * @returns The projected size in bytes, or undefined when the map will not serialize
+ */
+function projectedBytes(
+  context: PaymentRequiredContext,
+  key: string,
+  value: unknown,
+): number | undefined {
+  const projected = {
+    ...context.paymentRequiredResponse.extensions,
+    [key]: value,
+  };
+  const json = toJson(projected);
+  return json === undefined ? undefined : byteLength(json);
 }
 
 /**
@@ -140,6 +182,7 @@ function dynamicExtension(key: string, warn: Warn): ResourceServerExtension {
         warn(
           `extensions[${key}] is a callback but no HTTP request context ` +
             `reached it; dropping the key from the challenge`,
+          `${key}:no-request`,
         );
         return dropKey(context, key);
       }
@@ -152,6 +195,7 @@ function dynamicExtension(key: string, warn: Warn): ResourceServerExtension {
           `extensions[${key}] callback failed; dropping the key from the ` +
             `challenge: ` +
             (error instanceof Error ? error.message : String(error)),
+          `${key}:threw`,
         );
         return dropKey(context, key);
       }
@@ -163,33 +207,50 @@ function dynamicExtension(key: string, warn: Warn): ResourceServerExtension {
         return dropKey(context, key);
       }
 
-      if (typeof resolved !== "object" || Array.isArray(resolved)) {
+      const json = toJson(resolved);
+      if (json === undefined) {
         warn(
-          `extensions[${key}] callback returned ${typeof resolved === "object" ? "an array" : `a ${typeof resolved}`}; ` +
+          `extensions[${key}] callback returned a value JSON cannot carry (a ` +
+            `function, a circular reference, a BigInt or similar); dropping ` +
+            `the key from the challenge`,
+          `${key}:unserializable`,
+        );
+        return dropKey(context, key);
+      }
+
+      // Advertise the round trip, never the original. `JSON.stringify`
+      // normalizes — NaN and Infinity become null, functions and symbols
+      // vanish — and the paid retry's echo check compares what this hook
+      // advertised against the buyer's JSON-decoded copy. Advertising the
+      // un-normalized original makes those two disagree and costs the seller
+      // the payment, which is the one thing this path must never do.
+      const wire: unknown = JSON.parse(json);
+
+      // Checked after the round trip, so a `toJSON` that returns something
+      // else is caught alongside a callback that returned it directly.
+      if (typeof wire !== "object" || wire === null || Array.isArray(wire)) {
+        warn(
+          `extensions[${key}] callback returned ${Array.isArray(wire) ? "an array" : `a ${typeof wire}`}; ` +
             `the x402 extensions channel carries objects, so the key is ` +
             `dropped from the challenge`,
+          `${key}:not-an-object`,
         );
         return dropKey(context, key);
       }
 
-      const bytes = jsonBytes(resolved);
-      if (bytes === undefined) {
-        warn(
-          `extensions[${key}] callback returned a value that is not JSON ` +
-            `(circular, BigInt or similar); dropping the key from the challenge`,
-        );
-        return dropKey(context, key);
-      }
+      const bytes = projectedBytes(context, key, wire) ?? byteLength(json);
       if (bytes > MAX_EXTENSION_BYTES) {
         warn(
-          `extensions[${key}] resolved to ${bytes} bytes, over the ` +
-            `${MAX_EXTENSION_BYTES}-byte facilitator relay cap; dropping the ` +
-            `key so the rest of the declaration still reaches settlement`,
+          `extensions[${key}] takes the challenge's extensions to ${bytes} ` +
+            `bytes, over the ${MAX_EXTENSION_BYTES}-byte facilitator relay ` +
+            `cap; dropping the key so the rest of the declaration still ` +
+            `reaches settlement`,
+          `${key}:over-cap`,
         );
         return dropKey(context, key);
       }
 
-      return resolved;
+      return wire;
     },
   };
 }
