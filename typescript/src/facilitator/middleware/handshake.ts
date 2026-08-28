@@ -1,15 +1,28 @@
 import { version as SDK_VERSION } from "../../../package.json";
-import { sanitizeProductIdentity, WeftProductIdentity } from "./product";
+import {
+  createWarn,
+  resolveDimensions,
+  sanitizeProductIdentity,
+  WeftProductDeclaration,
+} from "./product";
 
 /**
  * Header that carries the seller's declared product identity on the
  * construction-time `/supported` call.
  *
- * The value is base64url-encoded JSON of `{name, type, tags, icon_url}` —
- * exactly the identity the 402 challenge will carry, so a dashboard fed from
- * the handshake and one fed from settlements agree. Fields nobody declared
- * are absent from the JSON, and the header itself is absent when no identity
- * was declared at all.
+ * The value is base64url-encoded JSON of
+ * `{name, type, tags, icon_url, dimensions}`. The first four are exactly the
+ * identity the 402 challenge will carry, so a dashboard fed from the
+ * handshake and one fed from settlements agree.
+ *
+ * `dimensions` is the exception, and travels here *only*. It never touches
+ * the challenge, because its whole job is to be the one statement about a
+ * payment's metadata that a buyer never had a chance to author: this call is
+ * authenticated by the seller's API key, so a field named here is a field the
+ * seller vouched for. That is what lets revenue be summed by it.
+ *
+ * Fields nobody declared are absent from the JSON, and the header itself is
+ * absent when nothing was declared at all.
  */
 export const WEFT_DECLARED_HEADER = "X-Weft-Declared";
 
@@ -38,21 +51,29 @@ function base64UrlEncode(value: string): string {
 }
 
 /**
- * Build the `X-Weft-Declared` value for a product identity, if any survives.
+ * Build the `X-Weft-Declared` value for a product declaration, if any
+ * survives.
  *
- * @param identity - Product-level identity from the middleware config
+ * The identity half goes through `sanitizeProductIdentity`, which is silent
+ * because `applyProductIdentity` has already warned about the same values.
+ * `dimensions` has no such second path — this is the only place it is read —
+ * so it is resolved with a warning sink of its own, at boot, once.
+ *
+ * @param declaration - Product-level declaration from the middleware config
  * @returns The base64url payload, or undefined when nothing was declared
  */
 function declaredIdentityValue(
-  identity: WeftProductIdentity,
+  declaration: WeftProductDeclaration,
 ): string | undefined {
-  const declared = sanitizeProductIdentity(identity);
+  const declared = sanitizeProductIdentity(declaration);
+  const dimensions = resolveDimensions(declaration.dimensions, createWarn());
 
   const payload = {
     ...(declared.name !== undefined && { name: declared.name }),
     ...(declared.type !== undefined && { type: declared.type }),
     ...(declared.tags !== undefined && { tags: declared.tags }),
     ...(declared.iconUrl !== undefined && { icon_url: declared.iconUrl }),
+    ...(dimensions !== undefined && { dimensions }),
   };
 
   if (Object.keys(payload).length === 0) {
@@ -156,13 +177,13 @@ export interface WeftFacilitatorAuthHeaders {
  *
  * @param adapter - Which middleware adapter is calling home
  * @param apiKey - The seller's Weft API key, when configured
- * @param identity - Product-level identity from the middleware config
+ * @param declaration - Product-level declaration from the middleware config
  * @returns Per-path auth headers for the facilitator calls
  */
 export function buildFacilitatorAuthHeaders(
   adapter: WeftAdapterName,
   apiKey: unknown,
-  identity: WeftProductIdentity,
+  declaration: WeftProductDeclaration,
 ): WeftFacilitatorAuthHeaders {
   const key = resolveApiKey(apiKey);
 
@@ -173,7 +194,7 @@ export function buildFacilitatorAuthHeaders(
     supported["Authorization"] = `Bearer ${key}`;
   }
 
-  const declared = declaredIdentityValue(identity);
+  const declared = declaredIdentityValue(declaration);
   if (declared !== undefined) {
     supported[WEFT_DECLARED_HEADER] = declared;
   }

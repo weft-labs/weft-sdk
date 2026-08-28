@@ -53,6 +53,29 @@ export const WEFT_TYPE_TAG_PREFIX = "weft:type:";
  */
 const MAX_TAGS = 5;
 const MAX_TAG_CHARS = 32;
+/**
+ * Bounds on declared analytics dimensions.
+ *
+ * These are Weft's own, not the x402 protocol's: dimensions never touch the
+ * 402 challenge. They travel only on the authenticated boot handshake, where
+ * the facilitator caps the whole `X-Weft-Declared` header at 8 KiB.
+ *
+ * Eight is a deliberate ceiling on ambition rather than on bytes. A dimension
+ * is a low-cardinality slice a seller wants revenue broken down by; a seller
+ * declaring more than a handful is dumping their parameter list, which is the
+ * failure mode the whole rule exists to prevent.
+ */
+const MAX_DIMENSIONS = 8;
+const MAX_DIMENSION_CHARS = 64;
+/**
+ * Shape a declared dimension name must have: a plausible JSON field name.
+ *
+ * A dimension names a key inside `weft.request`'s `info`, and downstream it
+ * becomes an allowlist entry that a SQL aggregate reads. Constraining it to
+ * the characters real field names use keeps a hostile or accidental value
+ * from ever reaching that position.
+ */
+const DIMENSION_NAME = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const MAX_SERVICE_NAME_CHARS = 32;
 const MAX_ICON_URL_CHARS = 2048;
 const PRINTABLE_ASCII = /^[\x20-\x7e]+$/;
@@ -180,6 +203,24 @@ export interface WeftProductDeclaration extends WeftProductIdentity {
    * enforced beyond being a non-empty string.
    */
   manifestHash?: string;
+
+  /**
+   * Field names inside `weft.request` that revenue may be broken down by,
+   * e.g. `["model", "tier"]`.
+   *
+   * Travels only on the authenticated boot handshake — never on the 402
+   * challenge, never in `weft.product`. That is the point of it: the values
+   * on a payment are buyer-echoed, so an aggregate summing an *undeclared*
+   * key would be summing buyer-controlled input. A field declared here is
+   * one the seller vouched for under their own API key, which is what makes
+   * "revenue for model=gpt-5.6 this month" an answer rather than a guess.
+   *
+   * Declare dimensions, not payloads. Low cardinality, enumerable: `model`,
+   * `tier`, `size`, `region`. Never prompt text, a user id or a document
+   * body — those blow up the index, leak content, and are useless as a
+   * breakdown anyway.
+   */
+  dimensions?: string[];
 }
 
 /**
@@ -617,6 +658,57 @@ function resolveIconUrl(
   }
 
   return declared;
+}
+
+/**
+ * Resolve the analytics dimensions a seller declared.
+ *
+ * Same posture as every other declared value here — clamp, drop, warn once,
+ * never throw in a boot path — with bounds that are Weft's rather than the
+ * protocol's, because these travel on the handshake alone.
+ *
+ * @param value - The declared `dimensions` value, from config or env
+ * @param warn - Sink for anything that will not ship
+ * @returns The dimension names that will travel, or undefined when none do
+ */
+export function resolveDimensions(
+  value: unknown,
+  warn: Warn,
+): string[] | undefined {
+  const declared = asTagList(value, "dimensions", warn);
+  if (declared === undefined) {
+    return undefined;
+  }
+
+  const malformed: string[] = [];
+  const named = declared.filter((name) => {
+    if (name.length <= MAX_DIMENSION_CHARS && DIMENSION_NAME.test(name)) {
+      return true;
+    }
+    malformed.push(name);
+    return false;
+  });
+
+  if (malformed.length > 0) {
+    warn(
+      `dropping ${malformed.length} dimension(s) that do not name a field ` +
+        `(max ${MAX_DIMENSION_CHARS} characters, starting with a letter or ` +
+        `underscore): ${malformed.join(", ")}`,
+    );
+  }
+
+  const deduped = [...new Set(named)];
+
+  if (deduped.length > MAX_DIMENSIONS) {
+    warn(
+      `dropping ${deduped.length - MAX_DIMENSIONS} dimension(s): at most ` +
+        `${MAX_DIMENSIONS} travel. Dropped: ` +
+        `${deduped.slice(MAX_DIMENSIONS).join(", ")}`,
+    );
+  }
+
+  const bounded = deduped.slice(0, MAX_DIMENSIONS);
+  return bounded.length > 0 ? bounded : undefined;
 }
 
 /**
