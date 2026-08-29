@@ -442,6 +442,36 @@ relay cap has its key dropped from the challenge, with one `[weft]` line saying
 which and why. The rest of the declaration, `weft.product` included, ships as
 normal. Return `undefined` to skip a request deliberately; that one is silent.
 
+#### Declaring what revenue can be sliced by
+
+`dimensions` names the fields inside `weft.request` that revenue may be
+broken down by:
+
+```js
+weftPaymentMiddleware(routes, {
+  apiKey,
+  name: "Acme Image API",
+  dimensions: ["model", "tier"],
+});
+```
+
+Declare that, and "how much did this endpoint earn this month with
+`model = gpt-5.6`?" becomes a question the dashboard can answer.
+
+It travels on the boot handshake and nowhere else — never on the 402
+challenge. That is the whole point. The values on a payment are echoed back
+by the buyer, so an aggregate over a field you never declared would be
+summing input the buyer controlled. This call is authenticated with your API
+key, so a field named here is one you vouched for.
+
+**Declare dimensions, not payloads.** Low cardinality, enumerable: `model`,
+`tier`, `size`, `region`. Never prompt text, a user id, or a document body —
+those cannot be indexed, are useless as a breakdown, and put your users'
+content somewhere it does not belong.
+
+At most eight travel, each at most 64 characters and shaped like a field name.
+Anything else is dropped with a `[weft]` line, and the handshake still goes.
+
 #### What the SDK trims, and why
 
 The x402 protocol's `ResourceInfo` is narrow, and a buyer that validates the

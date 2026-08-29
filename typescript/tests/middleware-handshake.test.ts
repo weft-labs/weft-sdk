@@ -13,6 +13,7 @@ import {
   WEFT_API_KEY_HEADER,
   WEFT_DECLARED_HEADER,
 } from "../src/facilitator/middleware/handshake";
+import { applyProductIdentity } from "../src/facilitator/middleware/product";
 import { createFacilitatorClient } from "../src/facilitator/client";
 import { x402Client } from "@x402/core/client";
 import { encodePaymentSignatureHeader } from "@x402/core/http";
@@ -884,5 +885,92 @@ describe("apiKey authenticates settlement and attributes verification", () => {
     );
 
     expect((await client.createAuthHeaders("verify")).headers).toEqual({});
+  });
+});
+
+/**
+ * Declared dimensions: the seller's statement about which fields in
+ * `weft.request` revenue may be summed by.
+ *
+ * They travel on this handshake and nowhere else. The payment blob is
+ * buyer-echoed, so an aggregate over an undeclared key would be summing
+ * buyer-controlled input; a name here is one the seller vouched for under
+ * their own API key. Same boot-path posture as everything else in this file:
+ * clamp, drop, warn once, never throw.
+ */
+describe("declared dimensions ride the handshake", () => {
+  /**
+   * Decode the `X-Weft-Declared` payload the SDK would send.
+   *
+   * @param dimensions - The declared `dimensions` value, however malformed
+   * @returns The decoded payload, or undefined when no header would be sent
+   */
+  function declaredPayload(dimensions: unknown): Record<string, unknown> | undefined {
+    const headers = buildFacilitatorAuthHeaders("express", "wk_live_abc", {
+      name: "Acme Image API",
+      dimensions,
+    } as never);
+    const encoded = headers.supported[WEFT_DECLARED_HEADER];
+    if (encoded === undefined) {
+      return undefined;
+    }
+    const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(padded + "=".repeat((4 - (padded.length % 4)) % 4)));
+  }
+
+  it("carries the declared names", () => {
+    expect(declaredPayload(["model", "tier"])?.dimensions).toEqual([
+      "model",
+      "tier",
+    ]);
+  });
+
+  it("never puts them on the 402 challenge", () => {
+    const routes = applyProductIdentity(
+      {
+        "POST /v1/generate": {
+          accepts: {
+            scheme: "exact",
+            network: "eip155:84532",
+            payTo: "0x0000000000000000000000000000000000000001",
+            price: "$0.01",
+          },
+        },
+      } as never,
+      { productId: "prod_9f2c", dimensions: ["model"] } as never,
+    ) as Record<string, { extensions?: Record<string, unknown> }>;
+
+    // The challenge is buyer-visible and buyer-echoable; a dimension list
+    // there would be exactly the unauthenticated statement this field exists
+    // to avoid being.
+    expect(
+      JSON.stringify(routes["POST /v1/generate"].extensions),
+    ).not.toContain("model");
+  });
+
+  it("drops names that could not be a field, keeping the rest", () => {
+    expect(declaredPayload(["model", "a b", "1st", ""])?.dimensions).toEqual([
+      "model",
+    ]);
+  });
+
+  it("dedupes and caps the list", () => {
+    const many = Array.from({ length: 12 }, (_, i) => `d${i}`);
+    const payload = declaredPayload([...many, "d0"]);
+
+    expect(payload?.dimensions).toHaveLength(8);
+    expect(payload?.dimensions).toEqual(many.slice(0, 8));
+  });
+
+  it("costs the field and never the handshake when it is junk", () => {
+    const payload = declaredPayload("model");
+
+    expect(payload?.dimensions).toBeUndefined();
+    expect(payload?.name).toBe("Acme Image API");
+  });
+
+  it("sends no header at all when nothing was declared", () => {
+    const headers = buildFacilitatorAuthHeaders("express", "wk_live_abc", {});
+    expect(headers.supported[WEFT_DECLARED_HEADER]).toBeUndefined();
   });
 });
