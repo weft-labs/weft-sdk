@@ -96,6 +96,37 @@ describe("WeftClient", () => {
     ).toThrow("maxCostUsd is required");
   });
 
+  it("accepts an OAuth access token as bearer authentication", async () => {
+    const fetchApi = vi.fn(async () =>
+      jsonResponse({
+        data: { principal_type: "user", id: 1, email: "agent@example.com" },
+      }),
+    );
+    const client = new WeftClient({
+      accessToken: "oauth_test",
+      fetchApi,
+    });
+
+    await client.me();
+
+    expect(
+      new Headers(fetchApi.mock.calls[0]?.[1]?.headers).get("authorization"),
+    ).toBe("Bearer oauth_test");
+  });
+
+  it("requires exactly one credential", () => {
+    expect(() => new WeftClient({} as never)).toThrow(
+      "apiKey or accessToken is required",
+    );
+    expect(
+      () =>
+        new WeftClient({
+          apiKey: "wk_test",
+          accessToken: "oauth_test",
+        } as never),
+    ).toThrow("apiKey and accessToken are mutually exclusive");
+  });
+
   it("removes long trailing-slash runs from caller-provided base URLs", async () => {
     const fetchApi = vi.fn(async () =>
       jsonResponse({
