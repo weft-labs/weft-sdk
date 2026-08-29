@@ -2,6 +2,8 @@ import {
   HTTPRequestContext,
   PaywallConfig,
   PaywallProvider,
+  SETTLEMENT_OVERRIDES_HEADER,
+  withPrivateCacheControl,
   x402HTTPResourceServer,
   x402ResourceServer,
   HTTPAdapter,
@@ -15,6 +17,13 @@ import {
   WeftRoutesConfig,
 } from "./product";
 import { registerDynamicExtensions } from "./extensions";
+import { resumePaymentResult, type ResumeVerifiedPayment } from "./replay";
+import {
+  isFacilitatorUnavailable,
+  isFacilitatorUnavailableResponse,
+  isJsonResponse,
+  serializeResponseBody,
+} from "./settlement";
 
 interface HonoRequest {
   method: string;
@@ -29,7 +38,12 @@ interface HonoRequest {
 interface HonoContext {
   req: HonoRequest;
   res: Response | undefined;
-  header(name: string, value: string): void;
+  error?: Error;
+  header(
+    name: string,
+    value: string | undefined,
+    options?: { append?: boolean },
+  ): void;
   html(body: string, status?: number): Response;
   json(body: unknown, status?: number): Response;
 }
@@ -78,6 +92,8 @@ export interface WeftHonoMiddlewareConfig extends WeftProductDeclaration {
   paywallConfig?: PaywallConfig;
   paywall?: PaywallProvider;
   syncFacilitatorOnStart?: boolean;
+  /** Restore durably bound verified inputs for settlement replay. */
+  resumeVerifiedPayment?: ResumeVerifiedPayment;
 }
 
 class HonoAdapter implements HTTPAdapter {
@@ -146,6 +162,86 @@ function toHeaderRecord(
     record[key] = value;
   });
   return record;
+}
+
+/**
+ * Rebuild a Fetch response with additional headers. Responses returned by
+ * `fetch()` and `Response.redirect()` have immutable header guards.
+ *
+ * @param response - The route handler response
+ * @param additions - Headers to add to the outgoing response
+ * @returns The original response when there are no additions, otherwise a rebuilt response
+ */
+function withResponseHeaders(
+  response: Response,
+  additions: Record<string, string> | undefined,
+): Response {
+  if (
+    (!additions || Object.keys(additions).length === 0) &&
+    !response.headers.has(SETTLEMENT_OVERRIDES_HEADER)
+  )
+    return response;
+  const headers = new Headers(response.headers);
+  Object.entries(additions ?? {}).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+  headers.delete(SETTLEMENT_OVERRIDES_HEADER);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+function withSuccessfulSettlementHeaders(
+  response: Response,
+  additions: Record<string, string>,
+): Response {
+  const headers = new Headers(response.headers);
+  Object.entries(additions).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+  headers.delete(SETTLEMENT_OVERRIDES_HEADER);
+  headers.set(
+    "cache-control",
+    withPrivateCacheControl(headers.get("cache-control")),
+  );
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+function failureResponse(
+  body: unknown,
+  status: number,
+  headers: Record<string, string | string[]>,
+): Response {
+  const responseHeaders = new Headers();
+  for (const [name, value] of Object.entries(headers)) {
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values) responseHeaders.append(name, item);
+  }
+  return new Response(serializeResponseBody({ body, headers }), {
+    status,
+    headers: responseHeaders,
+  });
+}
+
+function facilitatorUnavailableResponse(): Response {
+  return failureResponse({ error: "facilitator_unavailable" }, 503, {
+    "retry-after": "1",
+    "cache-control": withPrivateCacheControl(null),
+    "content-type": "application/json; charset=UTF-8",
+  });
+}
+
+function replaceContextResponse(c: HonoContext, response: Response): void {
+  for (const name of [...(c.res?.headers.keys() ?? [])]) {
+    c.header(name, undefined);
+  }
+  c.res = response;
 }
 
 /**
@@ -254,10 +350,12 @@ export function weftPaymentMiddlewareHono(
       void syncFacilitator();
     }
 
-    const result = await httpServer.processHTTPRequest(
-      context,
-      config?.paywallConfig,
-    );
+    const resumedPayment = context.paymentHeader
+      ? await config?.resumeVerifiedPayment?.(context)
+      : undefined;
+    const result = resumedPayment
+      ? resumePaymentResult(resourceServer, resumedPayment, context)
+      : await httpServer.processHTTPRequest(context, config?.paywallConfig);
 
     switch (result.type) {
       case "no-payment-required":
@@ -265,67 +363,154 @@ export function weftPaymentMiddlewareHono(
 
       case "payment-error": {
         const { response } = result;
+        if (isFacilitatorUnavailableResponse(response)) {
+          return facilitatorUnavailableResponse();
+        }
+        if (!response.isHtml && !isJsonResponse(response)) {
+          return failureResponse(
+            response.body,
+            response.status,
+            response.headers,
+          );
+        }
         Object.entries(response.headers).forEach(([key, value]) => {
           c.header(key, value as string);
         });
         if (response.isHtml) {
           return c.html(response.body as string, response.status as 402);
-        } else {
-          return c.json(response.body || {}, response.status as 402);
         }
+        return c.json(response.body || {}, response.status as 402);
       }
 
       case "payment-verified": {
-        const { paymentPayload, paymentRequirements } = result;
+        const {
+          paymentPayload,
+          paymentRequirements,
+          declaredExtensions,
+          cancellationDispatcher,
+          beforeHandlerSettlement,
+        } = result;
 
-        await next();
+        const propagateHandlerError = async (
+          error: unknown,
+        ): Promise<never> => {
+          replaceContextResponse(c, new Response());
+          const cancelSettlement = await cancellationDispatcher.cancel({
+            reason: "handler_threw",
+            error,
+          });
+          const headers = httpServer.createFailurePathSettlementHeaders(
+            cancelSettlement,
+            beforeHandlerSettlement,
+            paymentPayload,
+          );
+          Object.entries(headers ?? {}).forEach(([key, value]) => {
+            c.header(key, value);
+          });
+          throw error;
+        };
+
+        const originalHeader = c.header;
+        const handlerHeaders = new Set<string>();
+        const errorHeaders = new Set<string>();
+        c.header = (name, value, options) => {
+          (c.error ? errorHeaders : handlerHeaders).add(name.toLowerCase());
+          originalHeader.call(c, name, value, options);
+        };
+        try {
+          await next();
+        } catch (error) {
+          c.header = originalHeader;
+          await propagateHandlerError(error);
+        }
+        c.header = originalHeader;
+        if (c.error) {
+          const res = c.res ?? new Response();
+          const responseHeaders = new Headers(res.headers);
+          for (const name of handlerHeaders) {
+            if (!errorHeaders.has(name)) responseHeaders.delete(name);
+          }
+          const cancelSettlement = await cancellationDispatcher.cancel({
+            reason: "handler_threw",
+            error: c.error,
+          });
+          const headers = httpServer.createFailurePathSettlementHeaders(
+            cancelSettlement,
+            beforeHandlerSettlement,
+            paymentPayload,
+            responseHeaders.get("cache-control"),
+          );
+          const sanitizedResponse = new Response(res.body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: responseHeaders,
+          });
+          replaceContextResponse(
+            c,
+            withResponseHeaders(sanitizedResponse, headers),
+          );
+          return;
+        }
 
         let res = c.res;
 
         if (res && res.status >= 400) {
+          const cancelSettlement = await cancellationDispatcher.cancel({
+            reason: "handler_failed",
+            responseStatus: res.status,
+          });
+          const headers = httpServer.createFailurePathSettlementHeaders(
+            cancelSettlement,
+            beforeHandlerSettlement,
+            paymentPayload,
+            res.headers.get("cache-control"),
+          );
+          replaceContextResponse(c, withResponseHeaders(res, headers));
           return;
         }
 
-        c.res = undefined;
-
+        let settleResult;
         try {
-          const settleResult = await httpServer.processSettlement(
+          settleResult = await httpServer.processSettlement(
             paymentPayload,
             paymentRequirements,
-            undefined,
+            declaredExtensions,
             // The route handler signals a settlement override (a metered amount
             // below the signed maximum) through a response header.
             // `processSettlement` only reads that off `transportContext`, so
             // omitting this settles the full authorised amount and makes
             // `upto` behave exactly like `exact`.
-            { request: context, responseHeaders: toHeaderRecord(res?.headers) },
-          );
-
-          if (!settleResult.success) {
-            res = c.json(
-              {
-                error: "Settlement failed",
-                details: settleResult.errorReason,
-              },
-              402,
-            );
-          } else if (res) {
-            Object.entries(settleResult.headers).forEach(([key, value]) => {
-              res!.headers.set(key, value as string);
-            });
-          }
-        } catch (error) {
-          console.error(error);
-          res = c.json(
             {
-              error: "Settlement failed",
-              details: error instanceof Error ? error.message : "Unknown error",
+              request: context,
+              responseBody: res
+                ? Buffer.from(await res.clone().arrayBuffer())
+                : undefined,
+              responseHeaders: toHeaderRecord(res?.headers),
             },
-            402,
+            undefined,
+            beforeHandlerSettlement,
           );
+        } catch (error) {
+          replaceContextResponse(c, new Response());
+          throw error;
         }
 
-        c.res = res;
+        if (!settleResult.success) {
+          if (isFacilitatorUnavailable(settleResult.errorReason)) {
+            replaceContextResponse(c, facilitatorUnavailableResponse());
+            return;
+          }
+          const { response } = settleResult;
+          replaceContextResponse(
+            c,
+            failureResponse(response.body, response.status, response.headers),
+          );
+          return;
+        } else if (res) {
+          res = withSuccessfulSettlementHeaders(res, settleResult.headers);
+        }
+
+        if (res) replaceContextResponse(c, res);
         return;
       }
     }

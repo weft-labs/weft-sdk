@@ -1,4 +1,12 @@
 import { HTTPFacilitatorClient, FacilitatorConfig } from "@x402/core/server";
+import type {
+  PaymentPayload,
+  PaymentRequirements,
+  SettleResponse,
+} from "@x402/core/types";
+
+export const FACILITATOR_UNAVAILABLE_ERROR =
+  "weft:facilitator-settle-unavailable";
 
 export const X402_FACILITATOR_URL = "https://x402.weft.network";
 export const X402_FACILITATOR_URL_ENV = "X402_FACILITATOR_URL";
@@ -6,6 +14,46 @@ export const X402_FACILITATOR_URL_ENV = "X402_FACILITATOR_URL";
 export interface WeftFacilitatorConfig {
   url?: string;
   createAuthHeaders?: FacilitatorConfig["createAuthHeaders"];
+}
+
+class FacilitatorUnavailableError extends Error {
+  readonly statusCode = 503;
+
+  constructor() {
+    super(FACILITATOR_UNAVAILABLE_ERROR);
+    this.name = "FacilitatorUnavailableError";
+  }
+}
+
+function isUnavailableSettleError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const candidate = error as Error & Record<string, unknown>;
+  return (
+    candidate.name === "SettleError" &&
+    candidate.statusCode === 503 &&
+    "errorReason" in candidate &&
+    "errorMessage" in candidate &&
+    "payer" in candidate &&
+    "transaction" in candidate &&
+    "network" in candidate &&
+    !(candidate.errorReason === "settlement_pending" && candidate.transaction)
+  );
+}
+
+class WeftHTTPFacilitatorClient extends HTTPFacilitatorClient {
+  override async settle(
+    paymentPayload: PaymentPayload,
+    paymentRequirements: PaymentRequirements,
+  ): Promise<SettleResponse> {
+    try {
+      return await super.settle(paymentPayload, paymentRequirements);
+    } catch (error) {
+      if (isUnavailableSettleError(error)) {
+        throw new FacilitatorUnavailableError();
+      }
+      throw error;
+    }
+  }
 }
 
 export function validateUrl(url: string): void {
@@ -136,7 +184,7 @@ export function createFacilitatorClient(
         }
       : sellerCreateAuthHeaders;
 
-  return new HTTPFacilitatorClient({
+  return new WeftHTTPFacilitatorClient({
     url,
     createAuthHeaders,
   });
