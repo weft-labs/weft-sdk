@@ -428,6 +428,8 @@ async function driveExpressRequest(
     chunks?: unknown[];
     cacheControl?: string;
     routeHeaders?: Record<string, string | string[]>;
+    handlerThrows?: Error;
+    paymentResponseBeforeError?: unknown[];
   } = {},
 ): Promise<{
   status: number;
@@ -506,6 +508,15 @@ async function driveExpressRequest(
   await middleware(req, res, (error?: unknown) => {
     if (error) {
       options.errors?.push(error);
+      if (options.handlerThrows) {
+        options.paymentResponseBeforeError?.push(
+          res.getHeaders()["payment-response"],
+        );
+        res.statusCode = 503;
+        res.setHeader("Cache-Control", "public, max-age=60");
+        res.setHeader("X-Error-Code", "route_failed");
+        res.end(JSON.stringify({ error: "handler_failed" }));
+      }
       return;
     }
     if (options.handlerRuns) options.handlerRuns.count += 1;
@@ -526,6 +537,7 @@ async function driveExpressRequest(
     for (const [name, value] of Object.entries(options.routeHeaders ?? {})) {
       res.setHeader(name, value);
     }
+    if (options.handlerThrows) throw options.handlerThrows;
     for (const chunk of options.chunks?.slice(0, -1) ?? []) res.write(chunk);
     const finalChunk = options.chunks?.at(-1);
     res.end(finalChunk);
@@ -717,6 +729,41 @@ describe("before-handler settlement", () => {
       { reason: "handler_failed", responseStatus: 500 },
     ]);
     expect(response.headers["payment-response"]).toBeTruthy();
+  });
+
+  it("finalizes a synchronous Express throw after error middleware responds", async () => {
+    stubFacilitator();
+    const cancellations = captureCancellations();
+    const paymentResponseBeforeError: unknown[] = [];
+    const routeError = new Error("route failed");
+
+    const response = await driveExpressRequest(true, {
+      upfront: true,
+      handlerThrows: routeError,
+      paymentResponseBeforeError,
+      routeHeaders: {
+        "Set-Cookie": "success=1",
+        Location: "/success",
+      },
+    });
+
+    expect(paymentResponseBeforeError).toEqual([undefined]);
+    expect(cancellations).toHaveLength(1);
+    expect(cancellations).toMatchObject([
+      { reason: "handler_threw", error: routeError },
+    ]);
+    expect(response.status).toBe(503);
+    expect(response.headers["cache-control"]).toBe("private");
+    expect(response.headers["payment-response"]).toBeTruthy();
+    expect(response.headers["x-error-code"]).toBe("route_failed");
+    expect(response.headers["set-cookie"]).toBeUndefined();
+    expect(response.headers.location).toBeUndefined();
+    expect(
+      response.headers[SETTLEMENT_OVERRIDES_HEADER.toLowerCase()],
+    ).toBeUndefined();
+    expect(response.emittedChunks).toEqual([
+      JSON.stringify({ error: "handler_failed" }),
+    ]);
   });
 });
 
@@ -1543,8 +1590,10 @@ describe("real Node response writeHead replay", () => {
 describe("real Express router error handling", () => {
   async function requestFailure(mode: "throw" | "direct" | "prestatus") {
     stubFacilitator();
+    const cancellations = captureCancellations();
     const app = express();
     const router = express.Router();
+    let paymentResponseBeforeError: unknown;
     app.use((_request, response, next) => {
       response.setHeader("X-Baseline-Keep", "yes");
       response.setHeader("X-Remove-On-Error", "baseline");
@@ -1600,7 +1649,11 @@ describe("real Express router error handling", () => {
     });
     app.use(router);
     app.use((_error, _request, response, _next) => {
+      paymentResponseBeforeError = response.getHeader("payment-response");
       response.status(503);
+      response.setHeader("Cache-Control", "public, max-age=60");
+      response.setHeader("X-Error-Code", "route_failed");
+      response.setHeader("X-Error-Detail", "quote generation failed");
       response.setHeader("WWW-Authenticate", [
         'Bearer realm="api"',
         'Basic realm="api"',
@@ -1608,7 +1661,10 @@ describe("real Express router error handling", () => {
       response.setHeader("Retry-After", "30");
       response.setHeader("Access-Control-Allow-Origin", "https://client.test");
       response.removeHeader("X-Remove-On-Error");
-      response.json({ error: "handler_failed" });
+      response.json({
+        error: "handler_failed",
+        detail: "quote generation failed",
+      });
     });
     const server = app.listen(0, "127.0.0.1");
     await once(server, "listening");
@@ -1634,7 +1690,12 @@ describe("real Express router error handling", () => {
       const chunks: Buffer[] = [];
       response.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
       await once(response, "end");
-      return { response, body: Buffer.concat(chunks).toString("utf8") };
+      return {
+        response,
+        body: Buffer.concat(chunks).toString("utf8"),
+        cancellations,
+        paymentResponseBeforeError,
+      };
     } finally {
       server.close();
       await once(server, "close");
@@ -1642,13 +1703,18 @@ describe("real Express router error handling", () => {
   }
 
   it.each([
-    ["throw", 503, { error: "handler_failed" }],
+    [
+      "throw",
+      503,
+      { error: "handler_failed", detail: "quote generation failed" },
+    ],
     ["direct", 422, { error: "invalid" }],
     ["prestatus", 401, { error: "unauthorized" }],
   ] as const)(
     "preserves observable failure headers for a %s response",
     async (mode, expectedStatus, expectedBody) => {
-      const { response, body } = await requestFailure(mode);
+      const { response, body, cancellations, paymentResponseBeforeError } =
+        await requestFailure(mode);
 
       expect(response.statusCode).toBe(expectedStatus);
       expect(JSON.parse(body)).toEqual(expectedBody);
@@ -1676,6 +1742,13 @@ describe("real Express router error handling", () => {
           "quote validation failed",
         );
       }
+      if (mode === "throw") {
+        expect(paymentResponseBeforeError).toBeUndefined();
+        expect(response.headers["x-error-code"]).toBe("route_failed");
+        expect(response.headers["x-error-detail"]).toBe(
+          "quote generation failed",
+        );
+      }
       expect(response.headers["x-baseline-keep"]).toBe("yes");
       expect(response.headers["x-remove-on-error"]).toBeUndefined();
       expect(response.headers["payment-response"]).toBeTruthy();
@@ -1685,6 +1758,7 @@ describe("real Express router error handling", () => {
         response.headers[SETTLEMENT_OVERRIDES_HEADER.toLowerCase()],
       ).toBeUndefined();
       expect(response.headers["x-ambiguous-prestatus"]).toBe("yes");
+      expect(cancellations).toHaveLength(1);
     },
   );
 });

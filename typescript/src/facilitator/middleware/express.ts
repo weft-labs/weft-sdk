@@ -543,32 +543,11 @@ export function weftPaymentMiddleware(
           return originalFlushHeaders();
         };
 
-        try {
-          next();
-        } catch (error) {
-          bufferedCalls = [];
-          settled = true;
-          restoreHeaders(res, headersBeforeHandler);
-          const cancelSettlement = await cancellationDispatcher.cancel({
-            reason: "handler_threw",
-            error,
-          });
-          const headers = httpServer.createFailurePathSettlementHeaders(
-            cancelSettlement,
-            beforeHandlerSettlement,
-            paymentPayload,
-          );
-          Object.entries(headers ?? {}).forEach(([key, value]) => {
-            res.setHeader(key, value);
-          });
-          restoreResponseMethods();
-          next(error);
-          return;
-        }
-
-        await endPromise;
-
-        if (res.statusCode >= 400) {
+        const finalizeFailure = async (
+          cancellation:
+            | { reason: "handler_threw"; error: unknown }
+            | { reason: "handler_failed"; responseStatus: number },
+        ) => {
           // Express exposes only the final header bag, not whether a pre-status
           // header belongs to a direct error response or a later throw. Preserve
           // by default and remove only headers that can leak payment or success.
@@ -584,10 +563,8 @@ export function weftPaymentMiddleware(
               Array.isArray(value) ? [...value] : value,
             );
           }
-          const cancelSettlement = await cancellationDispatcher.cancel({
-            reason: "handler_failed",
-            responseStatus: res.statusCode,
-          });
+          const cancelSettlement =
+            await cancellationDispatcher.cancel(cancellation);
           settled = true;
           restoreHeaders(res, headersBeforeHandler);
           for (const [name, value] of Object.entries(res.getHeaders())) {
@@ -621,6 +598,32 @@ export function weftPaymentMiddleware(
 
           for (const call of bufferedCalls) replayBufferedCall(call);
           bufferedCalls = [];
+        };
+
+        try {
+          next();
+        } catch (error) {
+          bufferedCalls = [];
+          restoreHeaders(res, headersBeforeHandler);
+          failureHeaders.clear();
+          try {
+            next(error);
+          } catch (errorMiddlewareError) {
+            restoreResponseMethods();
+            throw errorMiddlewareError;
+          }
+          await endPromise;
+          await finalizeFailure({ reason: "handler_threw", error });
+          return;
+        }
+
+        await endPromise;
+
+        if (res.statusCode >= 400) {
+          await finalizeFailure({
+            reason: "handler_failed",
+            responseStatus: res.statusCode,
+          });
           return;
         }
 
