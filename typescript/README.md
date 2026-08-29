@@ -22,6 +22,19 @@ npm install @weft-labs/sdk @x402/core
 Node.js 18 or newer is required. The client uses
 `https://weft.network` unless `baseUrl` is explicitly supplied.
 
+## OAuth access tokens
+
+User-facing applications can pass an OAuth bearer token instead of an API key:
+
+```js
+const weft = new WeftClient({ accessToken });
+```
+
+Provide exactly one of `apiKey` or `accessToken`. The SDK sends either value as
+bearer authentication. Your application owns OAuth registration, PKCE,
+redirects, refresh, and secure session storage; never expose the token to
+browser JavaScript.
+
 ## First authenticated search
 
 ```js

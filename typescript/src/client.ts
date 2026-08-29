@@ -23,6 +23,12 @@ export interface WeftClientOptions {
   fetchApi?: FetchAPI;
 }
 
+export interface WeftOAuthClientOptions {
+  accessToken: string;
+  baseUrl?: string;
+  fetchApi?: FetchAPI;
+}
+
 export type PaidFetchRequest = FetchRequest & { maxCostUsd: string };
 
 export interface FetchOptions {
@@ -55,14 +61,26 @@ export class WeftClient {
   private readonly fetches: FetchApi;
   private readonly purchaseHistory: PurchasesApi;
 
-  constructor(options: WeftClientOptions) {
-    const apiKey = options.apiKey.trim();
-    if (!apiKey) {
-      throw new Error("apiKey is required");
+  constructor(options: WeftClientOptions | WeftOAuthClientOptions) {
+    const apiKey = "apiKey" in options ? options.apiKey : undefined;
+    const accessToken =
+      "accessToken" in options ? options.accessToken : undefined;
+    if (apiKey !== undefined && accessToken !== undefined) {
+      throw new Error("apiKey and accessToken are mutually exclusive");
+    }
+    const credential = (apiKey ?? accessToken)?.trim();
+    if (!credential) {
+      throw new Error(
+        apiKey !== undefined
+          ? "apiKey is required"
+          : accessToken !== undefined
+            ? "accessToken is required"
+            : "apiKey or accessToken is required",
+      );
     }
 
     const configuration = new Configuration({
-      accessToken: apiKey,
+      accessToken: credential,
       basePath: withoutTrailingSlashes(
         options.baseUrl ?? "https://weft.network",
       ),
