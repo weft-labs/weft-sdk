@@ -28,6 +28,7 @@ const PAYER = "0x0000000000000000000000000000000000000002";
 const NETWORK = "eip155:84532";
 const SETTLEMENT_TX =
   "0xfeedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedface";
+let settleUnavailable = false;
 
 /**
  * Run a command to completion and capture its output.
@@ -101,6 +102,18 @@ const facilitator = createServer(async (request, response) => {
     if (request.headers["x-api-key"] !== SELLER_API_KEY) {
       response.statusCode = 401;
       response.end(JSON.stringify({ error: "missing seller API key" }));
+      return;
+    }
+    if (settleUnavailable) {
+      response.statusCode = 503;
+      response.end(
+        JSON.stringify({
+          success: false,
+          errorReason: "temporarily_unavailable",
+          transaction: "",
+          network: NETWORK,
+        }),
+      );
       return;
     }
     response.end(
@@ -388,9 +401,77 @@ console.log(
     );
   }
 
+  // Exercise the installed Node artifact in separate processes. Vitest's
+  // bundler can collapse Core entry points and hide constructor mismatches.
+  settleUnavailable = true;
+  const unavailableExpress = await fetch(`${base}/v1/quote`, {
+    headers: { "payment-signature": paymentHeader },
+  });
+  if (
+    unavailableExpress.status !== 503 ||
+    unavailableExpress.headers.get("retry-after") !== "1" ||
+    unavailableExpress.headers.has("payment-response")
+  ) {
+    throw new Error("Packed Express middleware did not preserve retryable 503");
+  }
+
+  const unavailableHonoResult = await run(process.execPath, [honoDriver], {
+    cwd: temporaryDirectory,
+    env,
+  });
+  const unavailableHono = JSON.parse(
+    unavailableHonoResult.stdout.trim().split("\n").pop(),
+  );
+  if (unavailableHono.paidStatus !== 503) {
+    throw new Error("Packed Hono middleware did not preserve retryable 503");
+  }
+
+  const clientDriver = join(temporaryDirectory, "drive-client.mjs");
+  await writeFile(
+    clientDriver,
+    `import { createFacilitatorClient } from "@weft-labs/sdk/facilitator";
+try {
+  await createFacilitatorClient({
+    url: process.env.X402_FACILITATOR_URL,
+    createAuthHeaders: async () => ({
+      settle: { "X-API-Key": process.env.WEFT_SELLER_API_KEY },
+    }),
+  }).settle(
+    { x402Version: 2 },
+    { network: ${JSON.stringify(NETWORK)} },
+  );
+  throw new Error("settlement unexpectedly succeeded");
+} catch (error) {
+  console.log(JSON.stringify({
+    name: error.name,
+    message: error.message,
+    statusCode: error.statusCode,
+  }));
+}
+`,
+    "utf8",
+  );
+  const clientResult = await run(process.execPath, [clientDriver], {
+    cwd: temporaryDirectory,
+    env,
+  });
+  const boundaryError = JSON.parse(
+    clientResult.stdout.trim().split("\n").pop(),
+  );
+  if (
+    boundaryError.name !== "FacilitatorUnavailableError" ||
+    boundaryError.message !== "weft:facilitator-settle-unavailable" ||
+    boundaryError.statusCode !== 503
+  ) {
+    throw new Error(
+      `Packed client lost the structured 503 marker: ${JSON.stringify(boundaryError)}`,
+    );
+  }
+
   console.log(
     "Packed seller examples passed: Express and Hono both challenged an " +
-      "unpaid caller, admitted a paid retry, and settled with the seller key.",
+      "unpaid caller, admitted a paid retry, settled with the seller key, " +
+      "and preserved structured facilitator 503s.",
   );
 } finally {
   expressProcess?.kill("SIGKILL");

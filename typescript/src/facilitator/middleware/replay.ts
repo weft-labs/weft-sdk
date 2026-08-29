@@ -2,6 +2,7 @@ import type {
   CompletedSettlement,
   HTTPRequestContext,
   PaymentCancellationDispatcher,
+  x402ResourceServer,
 } from "@x402/core/server";
 import type { PaymentPayload, PaymentRequirements } from "@x402/core/types";
 
@@ -29,3 +30,26 @@ export type ResumeVerifiedPayment = (
   | VerifiedPaymentResume
   | undefined
   | Promise<VerifiedPaymentResume | undefined>;
+
+export function resumePaymentResult(
+  resourceServer: x402ResourceServer,
+  resumed: VerifiedPaymentResume,
+  context: HTTPRequestContext,
+) {
+  return {
+    type: "payment-verified" as const,
+    paymentPayload: resumed.paymentPayload,
+    paymentRequirements: resumed.paymentRequirements,
+    declaredExtensions: resumed.declaredExtensions,
+    beforeHandlerSettlement: resumed.beforeHandlerSettlement,
+    cancellationDispatcher:
+      resumed.cancellationDispatcher ??
+      resourceServer.createPaymentCancellationDispatcher(
+        resumed.paymentPayload,
+        resumed.paymentRequirements,
+        resumed.declaredExtensions,
+        { request: context },
+        resumed.beforeHandlerSettlement ? ["before-handler"] : [],
+      ),
+  };
+}

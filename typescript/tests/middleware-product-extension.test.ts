@@ -185,6 +185,9 @@ async function driveExpress(
     write: (() => true) as (...args: unknown[]) => boolean,
     end: (() => res) as (...args: unknown[]) => typeof res,
     getHeaders: () => captured.headers,
+    removeHeader(name: string) {
+      delete captured.headers[name];
+    },
     flushHeaders: () => undefined,
   };
 

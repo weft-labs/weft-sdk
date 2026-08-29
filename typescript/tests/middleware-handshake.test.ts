@@ -721,6 +721,9 @@ describe("apiKey authenticates settlement and attributes verification", () => {
       write: (() => true) as (...args: unknown[]) => boolean,
       end: (() => res) as (...args: unknown[]) => typeof res,
       getHeaders: () => captured.headers,
+      removeHeader(name: string) {
+        delete captured.headers[name];
+      },
       flushHeaders: () => undefined,
     };
     await middleware(unpaidReq, res, vi.fn());

@@ -17,8 +17,13 @@ import {
   WeftRoutesConfig,
 } from "./product";
 import { registerDynamicExtensions } from "./extensions";
-import type { ResumeVerifiedPayment } from "./replay";
-import { isFacilitatorUnavailable } from "./settlement";
+import { resumePaymentResult, type ResumeVerifiedPayment } from "./replay";
+import {
+  isFacilitatorUnavailable,
+  isFacilitatorUnavailableResponse,
+  isJsonResponse,
+  serializeResponseBody,
+} from "./settlement";
 
 interface HonoRequest {
   method: string;
@@ -33,7 +38,12 @@ interface HonoRequest {
 interface HonoContext {
   req: HonoRequest;
   res: Response | undefined;
-  header(name: string, value: string): void;
+  error?: Error;
+  header(
+    name: string,
+    value: string | undefined,
+    options?: { append?: boolean },
+  ): void;
   html(body: string, status?: number): Response;
   json(body: unknown, status?: number): Response;
 }
@@ -166,11 +176,16 @@ function withResponseHeaders(
   response: Response,
   additions: Record<string, string> | undefined,
 ): Response {
-  if (!additions || Object.keys(additions).length === 0) return response;
+  if (
+    (!additions || Object.keys(additions).length === 0) &&
+    !response.headers.has(SETTLEMENT_OVERRIDES_HEADER)
+  )
+    return response;
   const headers = new Headers(response.headers);
-  Object.entries(additions).forEach(([key, value]) => {
+  Object.entries(additions ?? {}).forEach(([key, value]) => {
     headers.set(key, value);
   });
+  headers.delete(SETTLEMENT_OVERRIDES_HEADER);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -196,6 +211,37 @@ function withSuccessfulSettlementHeaders(
     statusText: response.statusText,
     headers,
   });
+}
+
+function failureResponse(
+  body: unknown,
+  status: number,
+  headers: Record<string, string | string[]>,
+): Response {
+  const responseHeaders = new Headers();
+  for (const [name, value] of Object.entries(headers)) {
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values) responseHeaders.append(name, item);
+  }
+  return new Response(serializeResponseBody({ body, headers }), {
+    status,
+    headers: responseHeaders,
+  });
+}
+
+function facilitatorUnavailableResponse(): Response {
+  return failureResponse({ error: "facilitator_unavailable" }, 503, {
+    "retry-after": "1",
+    "cache-control": withPrivateCacheControl(null),
+    "content-type": "application/json; charset=UTF-8",
+  });
+}
+
+function replaceContextResponse(c: HonoContext, response: Response): void {
+  for (const name of [...(c.res?.headers.keys() ?? [])]) {
+    c.header(name, undefined);
+  }
+  c.res = response;
 }
 
 /**
@@ -308,16 +354,7 @@ export function weftPaymentMiddlewareHono(
       ? await config?.resumeVerifiedPayment?.(context)
       : undefined;
     const result = resumedPayment
-      ? {
-          type: "payment-verified" as const,
-          paymentPayload: resumedPayment.paymentPayload,
-          paymentRequirements: resumedPayment.paymentRequirements,
-          declaredExtensions: resumedPayment.declaredExtensions,
-          beforeHandlerSettlement: resumedPayment.beforeHandlerSettlement,
-          cancellationDispatcher: resumedPayment.cancellationDispatcher ?? {
-            cancel: async () => undefined,
-          },
-        }
+      ? resumePaymentResult(resourceServer, resumedPayment, context)
       : await httpServer.processHTTPRequest(context, config?.paywallConfig);
 
     switch (result.type) {
@@ -326,14 +363,23 @@ export function weftPaymentMiddlewareHono(
 
       case "payment-error": {
         const { response } = result;
+        if (isFacilitatorUnavailableResponse(response)) {
+          return facilitatorUnavailableResponse();
+        }
+        if (!response.isHtml && !isJsonResponse(response)) {
+          return failureResponse(
+            response.body,
+            response.status,
+            response.headers,
+          );
+        }
         Object.entries(response.headers).forEach(([key, value]) => {
           c.header(key, value as string);
         });
         if (response.isHtml) {
           return c.html(response.body as string, response.status as 402);
-        } else {
-          return c.json(response.body || {}, response.status as 402);
         }
+        return c.json(response.body || {}, response.status as 402);
       }
 
       case "payment-verified": {
@@ -345,9 +391,10 @@ export function weftPaymentMiddlewareHono(
           beforeHandlerSettlement,
         } = result;
 
-        try {
-          await next();
-        } catch (error) {
+        const propagateHandlerError = async (
+          error: unknown,
+        ): Promise<never> => {
+          replaceContextResponse(c, new Response());
           const cancelSettlement = await cancellationDispatcher.cancel({
             reason: "handler_threw",
             error,
@@ -361,6 +408,48 @@ export function weftPaymentMiddlewareHono(
             c.header(key, value);
           });
           throw error;
+        };
+
+        const originalHeader = c.header;
+        const handlerHeaders = new Set<string>();
+        const errorHeaders = new Set<string>();
+        c.header = (name, value, options) => {
+          (c.error ? errorHeaders : handlerHeaders).add(name.toLowerCase());
+          originalHeader.call(c, name, value, options);
+        };
+        try {
+          await next();
+        } catch (error) {
+          c.header = originalHeader;
+          await propagateHandlerError(error);
+        }
+        c.header = originalHeader;
+        if (c.error) {
+          const res = c.res ?? new Response();
+          const responseHeaders = new Headers(res.headers);
+          for (const name of handlerHeaders) {
+            if (!errorHeaders.has(name)) responseHeaders.delete(name);
+          }
+          const cancelSettlement = await cancellationDispatcher.cancel({
+            reason: "handler_threw",
+            error: c.error,
+          });
+          const headers = httpServer.createFailurePathSettlementHeaders(
+            cancelSettlement,
+            beforeHandlerSettlement,
+            paymentPayload,
+            responseHeaders.get("cache-control"),
+          );
+          const sanitizedResponse = new Response(res.body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: responseHeaders,
+          });
+          replaceContextResponse(
+            c,
+            withResponseHeaders(sanitizedResponse, headers),
+          );
+          return;
         }
 
         let res = c.res;
@@ -376,53 +465,52 @@ export function weftPaymentMiddlewareHono(
             paymentPayload,
             res.headers.get("cache-control"),
           );
-          res = withResponseHeaders(res, headers);
-          c.res = res;
+          replaceContextResponse(c, withResponseHeaders(res, headers));
           return;
         }
 
-        c.res = undefined;
-
-        const settleResult = await httpServer.processSettlement(
-          paymentPayload,
-          paymentRequirements,
-          declaredExtensions,
-          // The route handler signals a settlement override (a metered amount
-          // below the signed maximum) through a response header.
-          // `processSettlement` only reads that off `transportContext`, so
-          // omitting this settles the full authorised amount and makes
-          // `upto` behave exactly like `exact`.
-          {
-            request: context,
-            responseBody: res
-              ? Buffer.from(await res.clone().arrayBuffer())
-              : undefined,
-            responseHeaders: toHeaderRecord(res?.headers),
-          },
-          undefined,
-          beforeHandlerSettlement,
-        );
+        let settleResult;
+        try {
+          settleResult = await httpServer.processSettlement(
+            paymentPayload,
+            paymentRequirements,
+            declaredExtensions,
+            // The route handler signals a settlement override (a metered amount
+            // below the signed maximum) through a response header.
+            // `processSettlement` only reads that off `transportContext`, so
+            // omitting this settles the full authorised amount and makes
+            // `upto` behave exactly like `exact`.
+            {
+              request: context,
+              responseBody: res
+                ? Buffer.from(await res.clone().arrayBuffer())
+                : undefined,
+              responseHeaders: toHeaderRecord(res?.headers),
+            },
+            undefined,
+            beforeHandlerSettlement,
+          );
+        } catch (error) {
+          replaceContextResponse(c, new Response());
+          throw error;
+        }
 
         if (!settleResult.success) {
           if (isFacilitatorUnavailable(settleResult.errorReason)) {
-            c.header("retry-after", "1");
-            c.header("cache-control", withPrivateCacheControl(null));
-            res = c.json({ error: "facilitator_unavailable" }, 503);
-            c.res = res;
+            replaceContextResponse(c, facilitatorUnavailableResponse());
             return;
           }
           const { response } = settleResult;
-          Object.entries(response.headers).forEach(([key, value]) => {
-            c.header(key, value as string);
-          });
-          res = response.isHtml
-            ? c.html(response.body as string, response.status)
-            : c.json(response.body ?? {}, response.status);
+          replaceContextResponse(
+            c,
+            failureResponse(response.body, response.status, response.headers),
+          );
+          return;
         } else if (res) {
           res = withSuccessfulSettlementHeaders(res, settleResult.headers);
         }
 
-        c.res = res;
+        if (res) replaceContextResponse(c, res);
         return;
       }
     }

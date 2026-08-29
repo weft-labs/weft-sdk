@@ -18,8 +18,12 @@ import {
   WeftRoutesConfig,
 } from "./product";
 import { registerDynamicExtensions } from "./extensions";
-import type { ResumeVerifiedPayment } from "./replay";
-import { isFacilitatorUnavailable } from "./settlement";
+import { resumePaymentResult, type ResumeVerifiedPayment } from "./replay";
+import {
+  isFacilitatorUnavailable,
+  isFacilitatorUnavailableResponse,
+  isJsonResponse,
+} from "./settlement";
 
 interface ExpressRequest {
   method: string;
@@ -33,7 +37,10 @@ interface ExpressRequest {
 
 interface ExpressResponse {
   status(code: number): ExpressResponse;
-  setHeader(name: string, value: string): ExpressResponse;
+  setHeader(
+    name: string,
+    value: string | number | readonly string[],
+  ): ExpressResponse;
   /**
    * Headers the route handler has set. Read at settlement time so a
    * `Settlement-Overrides` header reaches the facilitator.
@@ -56,6 +63,27 @@ type BufferedCall =
   | ["write", unknown[]]
   | ["end", unknown[]]
   | ["flushHeaders", []];
+
+const UNSAFE_FAILURE_HEADERS = new Set([
+  SETTLEMENT_OVERRIDES_HEADER.toLowerCase(),
+  "location",
+  "set-cookie",
+]);
+
+function isUnsafeFailureHeader(
+  name: string,
+  value: string | number | readonly string[] | undefined,
+): boolean {
+  const normalized = name.toLowerCase();
+  return (
+    UNSAFE_FAILURE_HEADERS.has(normalized) ||
+    (normalized === "cache-control" &&
+      value !== undefined &&
+      /\bpublic\b/i.test(
+        Array.isArray(value) ? value.join(",") : String(value),
+      ))
+  );
+}
 
 /**
  * Floor between background facilitator re-sync attempts.
@@ -187,6 +215,59 @@ function responseBodyFromBufferedCalls(
   return Buffer.concat(chunks);
 }
 
+function restoreHeaders(
+  res: ExpressResponse,
+  headers: OutgoingHttpHeaders,
+): void {
+  for (const name of Object.keys(res.getHeaders())) res.removeHeader(name);
+  for (const [name, value] of Object.entries(headers)) {
+    if (value !== undefined) res.setHeader(name, value);
+  }
+}
+
+async function sendCoreResponse(
+  res: ExpressResponse,
+  response: {
+    status: number;
+    headers: Record<string, string | string[]>;
+    body?: unknown;
+  },
+): Promise<void> {
+  res.status(response.status);
+  Object.entries(response.headers).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+  if (isJsonResponse(response)) {
+    res.json(response.body ?? {});
+  } else if (response.body instanceof Blob) {
+    res.send(Buffer.from(await response.body.arrayBuffer()));
+  } else if (response.body instanceof ArrayBuffer) {
+    res.send(Buffer.from(response.body));
+  } else if (ArrayBuffer.isView(response.body)) {
+    res.send(
+      Buffer.from(
+        response.body.buffer,
+        response.body.byteOffset,
+        response.body.byteLength,
+      ),
+    );
+  } else {
+    res.send(
+      typeof response.body === "string"
+        ? response.body
+        : String(response.body ?? ""),
+    );
+  }
+}
+
+function sendFacilitatorUnavailable(res: ExpressResponse): void {
+  res.removeHeader("payment-response");
+  res.removeHeader(SETTLEMENT_OVERRIDES_HEADER);
+  res.setHeader("retry-after", "1");
+  res.setHeader("cache-control", withPrivateCacheControl(null));
+  res.status(503).json({ error: "facilitator_unavailable" });
+}
+
 /**
  * Create an Express middleware that requires x402 payment for the given routes.
  *
@@ -302,16 +383,7 @@ export function weftPaymentMiddleware(
         ? await config?.resumeVerifiedPayment?.(context)
         : undefined;
       result = resumedPayment
-        ? {
-            type: "payment-verified" as const,
-            paymentPayload: resumedPayment.paymentPayload,
-            paymentRequirements: resumedPayment.paymentRequirements,
-            declaredExtensions: resumedPayment.declaredExtensions,
-            beforeHandlerSettlement: resumedPayment.beforeHandlerSettlement,
-            cancellationDispatcher: resumedPayment.cancellationDispatcher ?? {
-              cancel: async () => undefined,
-            },
-          }
+        ? resumePaymentResult(resourceServer, resumedPayment, context)
         : await httpServer.processHTTPRequest(context, config?.paywallConfig);
     } catch (error) {
       // Express 4 does not catch a rejection from an async middleware; under
@@ -327,18 +399,11 @@ export function weftPaymentMiddleware(
 
       case "payment-error": {
         const { response } = result;
-        res.status(response.status);
-        Object.entries(response.headers).forEach(([key, value]) => {
-          const headerValue = Array.isArray(value)
-            ? value.join(",")
-            : String(value);
-          res.setHeader(key, headerValue);
-        });
-        if (response.isHtml) {
-          res.send(response.body);
-        } else {
-          res.json(response.body || {});
+        if (isFacilitatorUnavailableResponse(response)) {
+          sendFacilitatorUnavailable(res);
+          return;
         }
+        await sendCoreResponse(res, response);
         return;
       }
 
@@ -355,9 +420,28 @@ export function weftPaymentMiddleware(
         const originalWrite = res.write.bind(res);
         const originalEnd = res.end.bind(res);
         const originalFlushHeaders = res.flushHeaders.bind(res);
+        const originalSetHeader = res.setHeader.bind(res);
+        const originalRemoveHeader = res.removeHeader.bind(res);
+        const headersBeforeHandler = { ...res.getHeaders() };
 
         let bufferedCalls: BufferedCall[] = [];
         let settled = false;
+        const failureHeaders = new Map<
+          string,
+          {
+            name: string;
+            value?: string | number | readonly string[];
+          }
+        >();
+
+        const restoreResponseMethods = () => {
+          res.setHeader = originalSetHeader;
+          res.removeHeader = originalRemoveHeader;
+          res.writeHead = originalWriteHead;
+          res.write = originalWrite;
+          res.end = originalEnd;
+          res.flushHeaders = originalFlushHeaders;
+        };
 
         const replayBufferedCall = ([method, args]: BufferedCall) => {
           if (method === "writeHead") {
@@ -387,18 +471,26 @@ export function weftPaymentMiddleware(
                 ? maybeHeaders
                 : statusMessageOrHeaders;
             if (Array.isArray(headers)) {
+              const grouped = new Map<
+                string,
+                { name: string; values: string[] }
+              >();
               for (let index = 0; index < headers.length; index += 2) {
-                res.setHeader(
-                  String(headers[index]),
-                  String(headers[index + 1]),
-                );
+                const name = String(headers[index]);
+                const key = name.toLowerCase();
+                const entry = grouped.get(key) ?? { name, values: [] };
+                entry.values.push(String(headers[index + 1]));
+                grouped.set(key, entry);
+              }
+              for (const { name, values } of grouped.values()) {
+                res.setHeader(name, values.length === 1 ? values[0] : values);
               }
             } else if (headers && typeof headers === "object") {
               for (const [key, value] of Object.entries(headers)) {
                 if (value === undefined) continue;
                 res.setHeader(
                   key,
-                  Array.isArray(value) ? value.join(",") : String(value),
+                  Array.isArray(value) ? value : String(value),
                 );
               }
             }
@@ -407,6 +499,24 @@ export function weftPaymentMiddleware(
           }
           return originalWriteHead(...args);
         } as typeof res.writeHead;
+
+        res.setHeader = function (name, value) {
+          const result = originalSetHeader(name, value);
+          if (!settled && res.statusCode >= 400) {
+            failureHeaders.set(name.toLowerCase(), {
+              name,
+              value: Array.isArray(value) ? [...value] : value,
+            });
+          }
+          return result;
+        } as typeof res.setHeader;
+
+        res.removeHeader = function (name) {
+          originalRemoveHeader(name);
+          if (!settled && res.statusCode >= 400) {
+            failureHeaders.set(name.toLowerCase(), { name });
+          }
+        };
 
         res.write = function (...args: unknown[]) {
           if (!settled) {
@@ -437,6 +547,8 @@ export function weftPaymentMiddleware(
           next();
         } catch (error) {
           bufferedCalls = [];
+          settled = true;
+          restoreHeaders(res, headersBeforeHandler);
           const cancelSettlement = await cancellationDispatcher.cancel({
             reason: "handler_threw",
             error,
@@ -449,11 +561,7 @@ export function weftPaymentMiddleware(
           Object.entries(headers ?? {}).forEach(([key, value]) => {
             res.setHeader(key, value);
           });
-          settled = true;
-          res.writeHead = originalWriteHead;
-          res.write = originalWrite;
-          res.end = originalEnd;
-          res.flushHeaders = originalFlushHeaders;
+          restoreResponseMethods();
           next(error);
           return;
         }
@@ -461,10 +569,38 @@ export function weftPaymentMiddleware(
         await endPromise;
 
         if (res.statusCode >= 400) {
+          // Express exposes only the final header bag, not whether a pre-status
+          // header belongs to a direct error response or a later throw. Preserve
+          // by default and remove only headers that can leak payment or success.
+          const preservedFailureHeaders = new Map<
+            string,
+            string | number | readonly string[]
+          >();
+          for (const [name, value] of Object.entries(res.getHeaders())) {
+            if (value === undefined || isUnsafeFailureHeader(name, value))
+              continue;
+            preservedFailureHeaders.set(
+              name,
+              Array.isArray(value) ? [...value] : value,
+            );
+          }
           const cancelSettlement = await cancellationDispatcher.cancel({
             reason: "handler_failed",
             responseStatus: res.statusCode,
           });
+          settled = true;
+          restoreHeaders(res, headersBeforeHandler);
+          for (const [name, value] of Object.entries(res.getHeaders())) {
+            if (isUnsafeFailureHeader(name, value)) res.removeHeader(name);
+          }
+          for (const [name, value] of preservedFailureHeaders) {
+            res.setHeader(name, value);
+          }
+          for (const { name, value } of failureHeaders.values()) {
+            if (value === undefined || isUnsafeFailureHeader(name, value))
+              res.removeHeader(name);
+            else res.setHeader(name, value);
+          }
           const existingCacheControl = Object.entries(res.getHeaders()).find(
             ([key]) => key.toLowerCase() === "cache-control",
           )?.[1];
@@ -481,11 +617,7 @@ export function weftPaymentMiddleware(
           Object.entries(headers ?? {}).forEach(([key, value]) => {
             res.setHeader(key, value);
           });
-          settled = true;
-          res.writeHead = originalWriteHead;
-          res.write = originalWrite;
-          res.end = originalEnd;
-          res.flushHeaders = originalFlushHeaders;
+          restoreResponseMethods();
 
           for (const call of bufferedCalls) replayBufferedCall(call);
           bufferedCalls = [];
@@ -513,27 +645,13 @@ export function weftPaymentMiddleware(
 
           if (!settleResult.success) {
             bufferedCalls = [];
+            restoreHeaders(res, headersBeforeHandler);
             if (isFacilitatorUnavailable(settleResult.errorReason)) {
-              res.removeHeader("payment-response");
-              res.removeHeader(SETTLEMENT_OVERRIDES_HEADER);
-              res.setHeader("retry-after", "1");
-              res.setHeader("cache-control", withPrivateCacheControl(null));
-              res.status(503).json({ error: "facilitator_unavailable" });
+              sendFacilitatorUnavailable(res);
               return;
             }
             const { response } = settleResult;
-            Object.entries(response.headers).forEach(([key, value]) => {
-              const headerValue = Array.isArray(value)
-                ? value.join(",")
-                : String(value);
-              res.setHeader(key, headerValue);
-            });
-            res.status(response.status);
-            if (response.isHtml) {
-              res.send(response.body);
-            } else {
-              res.json(response.body ?? {});
-            }
+            await sendCoreResponse(res, response);
             return;
           }
 
@@ -557,19 +675,14 @@ export function weftPaymentMiddleware(
           res.removeHeader(SETTLEMENT_OVERRIDES_HEADER);
         } catch (error) {
           bufferedCalls = [];
+          restoreHeaders(res, headersBeforeHandler);
           settled = true;
-          res.writeHead = originalWriteHead;
-          res.write = originalWrite;
-          res.end = originalEnd;
-          res.flushHeaders = originalFlushHeaders;
+          restoreResponseMethods();
           next(error);
           return;
         } finally {
           settled = true;
-          res.writeHead = originalWriteHead;
-          res.write = originalWrite;
-          res.end = originalEnd;
-          res.flushHeaders = originalFlushHeaders;
+          restoreResponseMethods();
 
           for (const call of bufferedCalls) replayBufferedCall(call);
           bufferedCalls = [];
