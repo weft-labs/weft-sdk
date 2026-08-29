@@ -4,7 +4,7 @@ All URIs are relative to *https://weft.network*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**Fetch**](FetchAPI.md#Fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402 proxy)
+[**Fetch**](FetchAPI.md#Fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402/MPP proxy)
 
 
 
@@ -12,7 +12,7 @@ Method | HTTP request | Description
 
 > FetchResponse Fetch(ctx).FetchRequest(fetchRequest).IdempotencyKey(idempotencyKey).Execute()
 
-Pay-and-fetch any URL (x402 proxy)
+Pay-and-fetch any URL (x402/MPP proxy)
 
 
 

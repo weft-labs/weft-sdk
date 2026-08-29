@@ -7,14 +7,15 @@ Name | Type | Description | Notes
 **Provider** | **string** | Crossmint is the only buyer-wallet provider. |
 **Address** | **string** | Base smart-wallet address. Null only when Crossmint is unavailable. |
 **BalanceUsdc** | **string** | Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
-**TotalUsd** | **string** | Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.  |
+**BalanceTempoUsd** | **string** | Live aggregate Tempo dollar-token balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
+**TotalUsd** | **string** | Single aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable, because the surface never claims zero for a component it could not read.  |
 **Network** | **string** | Selected Crossmint environment (&#x60;base_sepolia&#x60; or &#x60;base_mainnet&#x60;).  |
 
 ## Methods
 
 ### NewWallet
 
-`func NewWallet(provider string, address string, balanceUsdc string, totalUsd string, network string, ) *Wallet`
+`func NewWallet(provider string, address string, balanceUsdc string, balanceTempoUsd string, totalUsd string, network string, ) *Wallet`
 
 NewWallet instantiates a new Wallet object
 This constructor will assign default values to properties that have it defined,
@@ -87,6 +88,26 @@ and a boolean to check if the value has been set.
 `func (o *Wallet) SetBalanceUsdc(v string)`
 
 SetBalanceUsdc sets BalanceUsdc field to given value.
+
+
+### GetBalanceTempoUsd
+
+`func (o *Wallet) GetBalanceTempoUsd() string`
+
+GetBalanceTempoUsd returns the BalanceTempoUsd field if non-nil, zero value otherwise.
+
+### GetBalanceTempoUsdOk
+
+`func (o *Wallet) GetBalanceTempoUsdOk() (*string, bool)`
+
+GetBalanceTempoUsdOk returns a tuple with the BalanceTempoUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetBalanceTempoUsd
+
+`func (o *Wallet) SetBalanceTempoUsd(v string)`
+
+SetBalanceTempoUsd sets BalanceTempoUsd field to given value.
 
 
 ### GetTotalUsd

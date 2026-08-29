@@ -12,54 +12,45 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+
+import * as runtime from '../runtime';
+
 /**
  *
- * @export
- * @interface ResendConfirmationRequest
  */
-export interface ResendConfirmationRequest {
+export class DocumentationApi extends runtime.BaseAPI {
+
     /**
-     *
-     * @type {string}
-     * @memberof ResendConfirmationRequest
+     * Fetch this OpenAPI document
      */
-    email: string;
-}
+    async getOpenApiDocumentRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        const queryParameters: any = {};
 
-/**
- * Check if a given object implements the ResendConfirmationRequest interface.
- */
-export function instanceOfResendConfirmationRequest(value: object): value is ResendConfirmationRequest {
-    if (!('email' in value) || value['email'] === undefined) return false;
-    return true;
-}
+        const headerParameters: runtime.HTTPHeaders = {};
 
-export function ResendConfirmationRequestFromJSON(json: any): ResendConfirmationRequest {
-    return ResendConfirmationRequestFromJSONTyped(json, false);
-}
 
-export function ResendConfirmationRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ResendConfirmationRequest {
-    if (json == null) {
-        return json;
-    }
-    return {
+        let urlPath = `/docs/openapi.yaml`;
 
-        'email': json['email'],
-    };
-}
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
 
-export function ResendConfirmationRequestToJSON(json: any): ResendConfirmationRequest {
-    return ResendConfirmationRequestToJSONTyped(json, false);
-}
-
-export function ResendConfirmationRequestToJSONTyped(value?: ResendConfirmationRequest | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
-    return {
+    /**
+     * Fetch this OpenAPI document
+     */
+    async getOpenApiDocument(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.getOpenApiDocumentRaw(initOverrides);
+        return await response.value();
+    }
 
-        'email': value['email'],
-    };
 }

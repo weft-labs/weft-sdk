@@ -1,10 +1,10 @@
-# DefaultApi
+# DocumentationApi
 
 All URIs are relative to *https://weft.network*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getOpenApiDocument**](DefaultApi.md#getopenapidocument) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document |
+| [**getOpenApiDocument**](DocumentationApi.md#getopenapidocument) | **GET** /docs/openapi.yaml | Fetch this OpenAPI document |
 
 
 
@@ -19,13 +19,13 @@ Fetch this OpenAPI document
 ```ts
 import {
   Configuration,
-  DefaultApi,
+  DocumentationApi,
 } from '@weft-labs/sdk';
 import type { GetOpenApiDocumentRequest } from '@weft-labs/sdk';
 
 async function example() {
   console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const api = new DefaultApi();
+  const api = new DocumentationApi();
 
   try {
     const data = await api.getOpenApiDocument();
