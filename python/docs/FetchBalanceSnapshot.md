@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **promo_usd** | **str** |  |
 **wallet_usdc** | **str** | Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero.  |
-**total_usd** | **str** | Aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the Base USDC provider is unreachable.  |
+**total_usd** | **str** | Aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable.  |
 **spent_today_usd** | **str** |  |
 
 ## Example

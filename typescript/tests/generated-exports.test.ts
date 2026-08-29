@@ -12,7 +12,7 @@ describe("SDK exports", () => {
     expect(sdk.BalanceApi).toBeDefined();
     expect(sdk.SearchApi).toBeDefined();
     expect(sdk.FetchApi).toBeDefined();
-    expect(sdk.DefaultApi).toBeDefined();
+    expect(sdk.DocumentationApi).toBeDefined();
   });
 
   it("exports Configuration class", async () => {

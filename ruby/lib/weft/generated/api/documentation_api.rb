@@ -10,49 +10,68 @@ Generator version: 7.19.0
 
 =end
 
+require 'cgi'
+
 module Weft
-  class ApiError < StandardError
-    attr_reader :code, :response_headers, :response_body
+  class DocumentationApi
+    attr_accessor :api_client
 
-    # Usage examples:
-    #   ApiError.new
-    #   ApiError.new("message")
-    #   ApiError.new(:code => 500, :response_headers => {}, :response_body => "")
-    #   ApiError.new(:code => 404, :message => "Not Found")
-    def initialize(arg = nil)
-      if arg.is_a? Hash
-        if arg.key?(:message) || arg.key?('message')
-          super(arg[:message] || arg['message'])
-        else
-          super arg
-        end
-
-        arg.each do |k, v|
-          instance_variable_set "@#{k}", v
-        end
-      else
-        super arg
-        @message = arg
-      end
+    def initialize(api_client = ApiClient.default)
+      @api_client = api_client
+    end
+    # Fetch this OpenAPI document
+    # @param [Hash] opts the optional parameters
+    # @return [String]
+    def get_open_api_document(opts = {})
+      data, _status_code, _headers = get_open_api_document_with_http_info(opts)
+      data
     end
 
-    # Override to_s to display a friendly error message
-    def to_s
-      message
-    end
-
-    def message
-      if @message.nil?
-        msg = "Error message: the server returns an error"
-      else
-        msg = @message
+    # Fetch this OpenAPI document
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(String, Integer, Hash)>] String data, response status code and response headers
+    def get_open_api_document_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DocumentationApi.get_open_api_document ...'
       end
+      # resource path
+      local_var_path = '/docs/openapi.yaml'
 
-      msg += "\nHTTP status code: #{code}" if code
-      msg += "\nResponse headers: #{response_headers}" if response_headers
-      msg += "\nResponse body: #{response_body}" if response_body
+      # query parameters
+      query_params = opts[:query_params] || {}
 
-      msg
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/yaml']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'String'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || []
+
+      new_options = opts.merge(
+        :operation => :"DocumentationApi.get_open_api_document",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DocumentationApi#get_open_api_document\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
     end
   end
 end

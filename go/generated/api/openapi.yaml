@@ -18,6 +18,14 @@ info:
     in this document are seller administration surfaces and require an
     `ax_live_*` resource key. These credential types are not interchangeable.
 
+    This document is a deliberate subset of the `/api/v1` surface, not an
+    inventory of it. The seller-side management endpoints — `/api/v1/agents`,
+    `/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with
+    an `ax_live_*` key but are intentionally left undocumented: they are
+    dashboard-facing and not part of the published client contract. Nothing
+    outside this document is a supported contract, and the response-validation
+    gate in `config/environments/test.rb` enforces only what is declared here.
+
     Before claim, a `wbt_*` bearer is temporary and permits only search plus its
     own status/cancel operations for 30 minutes. Human approval binds it to the
     User and promotes the same secret to durable identity, search, balance,
@@ -31,7 +39,7 @@ info:
     envelopes carrying additional context — see `SearchErrorResponse` and
     `FetchErrorResponse`.
   title: Weft API
-  version: 0.22.0
+  version: 0.23.0
 servers:
 - description: Production
   url: https://weft.network
@@ -57,11 +65,11 @@ tags:
     endpoints.
   name: Search
 - description: |
-    The universal x402 fetch proxy. POST any URL the agent wants to
+    The universal x402/MPP fetch proxy. POST any URL the agent wants to
     reach, with a `max_cost_usd` ceiling; Weft handles the `402 Payment
-    Required` challenge, signs the EIP-3009 payment from the buyer's
-    wallet, replays the request, and streams the upstream artifact
-    back base64-encoded. Errors always carry the buyer's current
+    Required` challenge, authorizes payment from the buyer's wallet on
+    the selected rail, replays the request, and streams the upstream
+    artifact back base64-encoded. Errors always carry the buyer's current
     policy + balance + dashboard URL so the caller can surface "what
     changed?" without a second round-trip.
   name: Fetch
@@ -74,6 +82,8 @@ tags:
     self-register so its human controller can later claim it from the
     dashboard.
   name: Resources
+- description: "This document, served for tooling that reads the spec directly."
+  name: Documentation
 paths:
   /docs/openapi.yaml:
     get:
@@ -86,6 +96,8 @@ paths:
                 type: string
           description: OpenAPI 3.1 document (YAML)
       summary: Fetch this OpenAPI document
+      tags:
+      - Documentation
   /api/v1/account_bootstraps:
     post:
       description: |
@@ -725,19 +737,19 @@ paths:
   /api/v1/fetch:
     post:
       description: |
-        Universal x402 fetch proxy. The caller provides a target `url`,
+        Universal x402/MPP fetch proxy. The caller provides a target `url`,
         a hard `max_cost_usd` ceiling, and optional `method` / `body` /
         `headers`. Weft:
 
           1. Issues the request.
-          2. On `402 Payment Required`, parses the merchant's challenge.
+          2. On `402 Payment Required`, selects a supported x402 or MPP challenge.
           3. Compares the asking price to `max_cost_usd` and the
              buyer's policy (`max_tx_usd`, daily/weekly limits).
-          4. Signs an EIP-3009 transfer from the buyer's wallet.
-          5. Replays the request with the `X-Payment` header.
+          4. Authorizes payment from the buyer's wallet on the selected rail.
+          5. Replays the request with the protocol-specific payment credential.
           6. Streams the upstream artifact back, base64-encoded under
-             `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
-             `tx_hash`, and the merchant's reputation snapshot. `paid_usd`
+              `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
+              `tx_hash`, `protocol`, and the merchant's reputation snapshot. `paid_usd`
              is "0.00" until the charge is CONFIRMED settled — a signed-but-
              unsettled hold (the common case for x402, which settles
              asynchronously) reports its amount in `held_usd` instead, never
@@ -786,8 +798,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FetchResponse"
-          description: Fetch succeeded (or upstream was free); artifact streamed back
-            base64-encoded.
+          description: Paid fetch succeeded; artifact streamed back base64-encoded.
         "401":
           content:
             application/json:
@@ -834,7 +845,16 @@ paths:
             Or `WALLET_SETUP_INCOMPLETE` — the buyer's wallet has not been
             created yet, so there is nothing to pay from. `details.wallet_url`
             carries the page where the authenticated user finishes setup. No
-            retry succeeds until they do. Both use `FetchErrorResponse`.
+            retry succeeds until they do.
+
+            Or `ACCOUNT_CLOSING` — account closure has started, so the wallet
+            cannot reserve a new payment.
+
+            Or `DELIVERY_REPLAY_UNAVAILABLE` — the merchant already returned a
+            successful response for this settled MPP payment, but Weft could
+            not persist its bytes for replay. The merchant is not called again;
+            `details.tx_hash` identifies the settled payment. All four use
+            `FetchErrorResponse`.
         "413":
           content:
             application/json:
@@ -848,7 +868,9 @@ paths:
                 $ref: "#/components/schemas/FetchErrorResponse"
           description: |
             Invalid request fields, method, cost, body, headers, idempotency
-            key, or URL.
+            key, or URL. `UNSUPPORTED_ASSET` means the merchant requested an
+            asset this wallet cannot settle. `UNSUPPORTED_PAYMENT_METHOD`
+            means the MPP challenge requested a method Weft cannot execute.
         "424":
           content:
             application/json:
@@ -860,6 +882,11 @@ paths:
             5xx) because Weft behaved correctly and the caller should act on
             `details.reason` (e.g. pick another merchant); it also keeps the
             error envelope intact through CDNs that replace 5xx bodies.
+
+            `PAID_DELIVERY_FAILED` — the MPP payment settled, but the merchant
+            did not deliver a successful response. `details.tx_hash` identifies
+            the settled payment; `details.merchant_status` is present when the
+            merchant returned an HTTP response.
         "502":
           content:
             application/json:
@@ -894,7 +921,7 @@ paths:
             payment instead of charging twice.
       security:
       - bearerAuth: []
-      summary: Pay-and-fetch any URL (x402 proxy)
+      summary: Pay-and-fetch any URL (x402/MPP proxy)
       tags:
       - Fetch
   /api/v1/payments:
@@ -2331,6 +2358,7 @@ components:
         wallet:
           address: address
           provider: crossmint
+          balance_tempo_usd: "2.03"
           total_usd: "12.34"
           balance_usdc: "12.34"
           network: network
@@ -2394,6 +2422,7 @@ components:
       example:
         address: address
         provider: crossmint
+        balance_tempo_usd: "2.03"
         total_usd: "12.34"
         balance_usdc: "12.34"
         network: network
@@ -2413,9 +2442,15 @@ components:
           example: "12.34"
           type: string
           nullable: true
+        balance_tempo_usd:
+          description: |
+            Live aggregate Tempo dollar-token balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
+          example: "2.03"
+          type: string
+          nullable: true
         total_usd:
           description: |
-            Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
+            Single aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable, because the surface never claims zero for a component it could not read.
           example: "12.34"
           type: string
           nullable: true
@@ -2426,6 +2461,7 @@ components:
           nullable: true
       required:
       - address
+      - balance_tempo_usd
       - balance_usdc
       - network
       - provider
@@ -4208,8 +4244,8 @@ components:
       description: |
         Successful fetch envelope. `body_base64` is the upstream artifact
         bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
-        `tx_hash`, and `merchant` are populated only when the upstream
-        charged for the response.
+        `tx_hash`, `protocol`, and `merchant` describe the payment and
+        settlement state.
 
         `paid_usd` is "0.00" (never the nominal charge amount) until the
         charge is CONFIRMED settled on-chain — a signed-but-unsettled hold
@@ -4228,6 +4264,7 @@ components:
       example:
         headers:
           key: headers
+        protocol: x402
         held_usd: "0.002"
         payment_status: pending
         paid_usd: "0.002"
@@ -4250,12 +4287,11 @@ components:
           type: string
         paid_usd:
           description: |
-            USD amount actually settled on-chain. "0.00" for free upstreams
-            AND for any charge that hasn't (yet, or ever) settled — a signed
-            hold is not yet spend. See `held_usd` for the nominal amount in
-            that case. Exact to the micro-dollar, minimum two decimals; parse
-            as a decimal rather than string-comparing against a bare zero
-            literal.
+            USD amount actually settled on-chain. "0.00" for any charge that
+            hasn't (yet, or ever) settled — a signed hold is not yet spend.
+            See `held_usd` for the nominal amount in that case. Exact to the
+            micro-dollar, minimum two decimals; parse as a decimal rather than
+            string-comparing against a bare zero literal.
           example: "0.002"
           type: string
           nullable: true
@@ -4263,9 +4299,9 @@ components:
           description: |
             The nominal charge amount when `paid_usd` is "0.00" — a hold
             awaiting settlement, or a charge that failed/expired without ever
-            settling. `null` once `paid_usd` reflects the real settlement (or
-            for a free upstream, where nothing was ever charged). Same format
-            as `paid_usd`: exact to the micro-dollar, minimum two decimals.
+            settling. `null` once `paid_usd` reflects the real settlement.
+            Same format as `paid_usd`: exact to the micro-dollar, minimum two
+            decimals.
           example: "0.002"
           type: string
           nullable: true
@@ -4288,9 +4324,16 @@ components:
           example: pending
           type: string
         tx_hash:
-          description: Settlement transaction hash. Null for free upstreams.
+          description: Settlement transaction hash. Null until a settlement hash has
+            been reported.
           type: string
           nullable: true
+        protocol:
+          description: Payment protocol selected for this fetch.
+          enum:
+          - x402
+          - mpp
+          type: string
         artifact_id:
           description: Internal artifact identifier if the response was persisted;
             `null` otherwise.
@@ -4299,7 +4342,7 @@ components:
         merchant:
           allOf:
           - $ref: "#/components/schemas/Merchant"
-          description: Merchant reputation snapshot. Null for free upstreams.
+          description: Merchant reputation snapshot.
           nullable: true
       required:
       - artifact_id
@@ -4309,6 +4352,7 @@ components:
       - merchant
       - paid_usd
       - payment_status
+      - protocol
       - status
       - tx_hash
     Merchant:
@@ -4371,14 +4415,19 @@ components:
           - INVALID_HEADERS
           - INVALID_IDEMPOTENCY_KEY
           - IDEMPOTENCY_CONFLICT
+          - ACCOUNT_CLOSING
           - EXCEEDED_MAX_COST
           - INSUFFICIENT_BALANCE
           - PAYMENT_AUTHORIZATION_REQUIRED
           - WALLET_SETUP_INCOMPLETE
           - MERCHANT_RETURNED_NON_402
+          - PAID_DELIVERY_FAILED
+          - DELIVERY_REPLAY_UNAVAILABLE
           - ARTIFACT_TOO_LARGE
           - DENYLISTED_RECIPIENT
           - WALLET_ENVIRONMENT_MISMATCH
+          - UNSUPPORTED_ASSET
+          - UNSUPPORTED_PAYMENT_METHOD
           - SETTLEMENT_FAILED
           - SETTLEMENT_PENDING
           - POLICY_VIOLATION_MAX_TX
@@ -4426,7 +4475,7 @@ components:
           nullable: true
         total_usd:
           description: |
-            Aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the Base USDC provider is unreachable.
+            Aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable.
           example: "12.34"
           type: string
           nullable: true
