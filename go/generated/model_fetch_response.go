@@ -1,7 +1,7 @@
 /*
 Weft API
 
-The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
+The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  This document is a deliberate subset of the `/api/v1` surface, not an inventory of it. The seller-side management endpoints — `/api/v1/agents`, `/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with an `ax_live_*` key but are intentionally left undocumented: they are dashboard-facing and not part of the published client contract. Nothing outside this document is a supported contract, and the response-validation gate in `config/environments/test.rb` enforces only what is declared here.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
 
 API version: 0.22.0
 */
@@ -19,7 +19,7 @@ import (
 // checks if the FetchResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &FetchResponse{}
 
-// FetchResponse Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `merchant` are populated only when the upstream charged for the response.  `paid_usd` is \"0.00\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.  **Money string format.** Every USD amount on this surface is exact to the micro-dollar and never narrower than two decimals: a whole-cent amount renders \"0.50\", a sub-cent amount keeps its real precision (\"0.000892\"), and zero renders \"0.00\". Amounts are never rounded — an agent reconciling its own spend reads the truth, not a display value. Parse these as decimals; do NOT compare them as strings against a bare zero literal.
+// FetchResponse Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, `protocol`, and `merchant` describe the payment and settlement state.  `paid_usd` is \"0.00\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.  **Money string format.** Every USD amount on this surface is exact to the micro-dollar and never narrower than two decimals: a whole-cent amount renders \"0.50\", a sub-cent amount keeps its real precision (\"0.000892\"), and zero renders \"0.00\". Amounts are never rounded — an agent reconciling its own spend reads the truth, not a display value. Parse these as decimals; do NOT compare them as strings against a bare zero literal.
 type FetchResponse struct {
 	// HTTP status returned by the upstream after the paid replay.
 	Status int32 `json:"status"`
@@ -27,17 +27,19 @@ type FetchResponse struct {
 	Headers map[string]string `json:"headers"`
 	// Base64-encoded response body. Empty string for empty bodies.
 	BodyBase64 string `json:"body_base64"`
-	// USD amount actually settled on-chain. \"0.00\" for free upstreams AND for any charge that hasn't (yet, or ever) settled — a signed hold is not yet spend. See `held_usd` for the nominal amount in that case. Exact to the micro-dollar, minimum two decimals; parse as a decimal rather than string-comparing against a bare zero literal.
+	// USD amount actually settled on-chain. \"0.00\" for any charge that hasn't (yet, or ever) settled — a signed hold is not yet spend. See `held_usd` for the nominal amount in that case. Exact to the micro-dollar, minimum two decimals; parse as a decimal rather than string-comparing against a bare zero literal.
 	PaidUsd string `json:"paid_usd"`
-	// The nominal charge amount when `paid_usd` is \"0.00\" — a hold awaiting settlement, or a charge that failed/expired without ever settling. `null` once `paid_usd` reflects the real settlement (or for a free upstream, where nothing was ever charged). Same format as `paid_usd`: exact to the micro-dollar, minimum two decimals.
+	// The nominal charge amount when `paid_usd` is \"0.00\" — a hold awaiting settlement, or a charge that failed/expired without ever settling. `null` once `paid_usd` reflects the real settlement. Same format as `paid_usd`: exact to the micro-dollar, minimum two decimals.
 	HeldUsd string `json:"held_usd"`
 	// Agent-facing settlement status. `pending` = signed, no refusal signal yet (settlement may still land, e.g. x402's async facilitator webhook). `declined-pending` = the merchant refused but the authorization isn't provably dead yet. `declined` / `expired` / `reverted` are terminal — the money never moved (or, for `reverted`, moved and then reversed on-chain) and never will for this charge.
 	PaymentStatus string `json:"payment_status"`
-	// Settlement transaction hash. Null for free upstreams.
+	// Settlement transaction hash. Null until a settlement hash has been reported.
 	TxHash string `json:"tx_hash"`
+	// Payment protocol selected for this fetch.
+	Protocol string `json:"protocol"`
 	// Internal artifact identifier if the response was persisted; `null` otherwise.
 	ArtifactId int32 `json:"artifact_id"`
-	// Merchant reputation snapshot. Null for free upstreams.
+	// Merchant reputation snapshot.
 	Merchant Merchant `json:"merchant"`
 }
 
@@ -47,7 +49,7 @@ type _FetchResponse FetchResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, artifactId int32, merchant Merchant) *FetchResponse {
+func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, protocol string, artifactId int32, merchant Merchant) *FetchResponse {
 	this := FetchResponse{}
 	this.Status = status
 	this.Headers = headers
@@ -56,6 +58,7 @@ func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string
 	this.HeldUsd = heldUsd
 	this.PaymentStatus = paymentStatus
 	this.TxHash = txHash
+	this.Protocol = protocol
 	this.ArtifactId = artifactId
 	this.Merchant = merchant
 	return &this
@@ -237,6 +240,30 @@ func (o *FetchResponse) SetTxHash(v string) {
 	o.TxHash = v
 }
 
+// GetProtocol returns the Protocol field value
+func (o *FetchResponse) GetProtocol() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Protocol
+}
+
+// GetProtocolOk returns a tuple with the Protocol field value
+// and a boolean to check if the value has been set.
+func (o *FetchResponse) GetProtocolOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Protocol, true
+}
+
+// SetProtocol sets field value
+func (o *FetchResponse) SetProtocol(v string) {
+	o.Protocol = v
+}
+
 // GetArtifactId returns the ArtifactId field value
 func (o *FetchResponse) GetArtifactId() int32 {
 	if o == nil {
@@ -302,6 +329,7 @@ func (o FetchResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["held_usd"] = o.HeldUsd
 	toSerialize["payment_status"] = o.PaymentStatus
 	toSerialize["tx_hash"] = o.TxHash
+	toSerialize["protocol"] = o.Protocol
 	toSerialize["artifact_id"] = o.ArtifactId
 	toSerialize["merchant"] = o.Merchant
 	return toSerialize, nil
@@ -319,6 +347,7 @@ func (o *FetchResponse) UnmarshalJSON(data []byte) (err error) {
 		"held_usd",
 		"payment_status",
 		"tx_hash",
+		"protocol",
 		"artifact_id",
 		"merchant",
 	}

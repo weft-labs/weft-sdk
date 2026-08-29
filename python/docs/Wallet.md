@@ -8,7 +8,8 @@ Name | Type | Description | Notes
 **provider** | **str** | Crossmint is the only buyer-wallet provider. |
 **address** | **str** | Base smart-wallet address. Null only when Crossmint is unavailable. |
 **balance_usdc** | **str** | Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
-**total_usd** | **str** | Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.  |
+**balance_tempo_usd** | **str** | Live aggregate Tempo dollar-token balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.  |
+**total_usd** | **str** | Single aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable, because the surface never claims zero for a component it could not read.  |
 **network** | **str** | Selected Crossmint environment (&#x60;base_sepolia&#x60; or &#x60;base_mainnet&#x60;).  |
 
 ## Example

@@ -17,6 +17,14 @@ its fixed allowlist. The organization-scoped API key and payment operations
 in this document are seller administration surfaces and require an
 `ax_live_*` resource key. These credential types are not interchangeable.
 
+This document is a deliberate subset of the `/api/v1` surface, not an
+inventory of it. The seller-side management endpoints — `/api/v1/agents`,
+`/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with
+an `ax_live_*` key but are intentionally left undocumented: they are
+dashboard-facing and not part of the published client contract. Nothing
+outside this document is a supported contract, and the response-validation
+gate in `config/environments/test.rb` enforces only what is declared here.
+
 Before claim, a `wbt_*` bearer is temporary and permits only search plus its
 own status/cancel operations for 30 minutes. Human approval binds it to the
 User and promotes the same secret to durable identity, search, balance,
@@ -121,8 +129,8 @@ Class | Method | HTTP request | Description
 *AuthAPI* | [**SignUp**](docs/AuthAPI.md#signup) | **Post** /api/v1/auth/sign_up | Create an account
 *AuthAPI* | [**UpdatePassword**](docs/AuthAPI.md#updatepassword) | **Post** /api/v1/auth/password/update | Update password with reset token
 *BalanceAPI* | [**GetBalance**](docs/BalanceAPI.md#getbalance) | **Get** /api/v1/balance | Get wallet, spending policy, and current-window spend
-*DefaultAPI* | [**GetOpenApiDocument**](docs/DefaultAPI.md#getopenapidocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
-*FetchAPI* | [**Fetch**](docs/FetchAPI.md#fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402 proxy)
+*DocumentationAPI* | [**GetOpenApiDocument**](docs/DocumentationAPI.md#getopenapidocument) | **Get** /docs/openapi.yaml | Fetch this OpenAPI document
+*FetchAPI* | [**Fetch**](docs/FetchAPI.md#fetch) | **Post** /api/v1/fetch | Pay-and-fetch any URL (x402/MPP proxy)
 *PaymentsAPI* | [**GetPayment**](docs/PaymentsAPI.md#getpayment) | **Get** /api/v1/payments/{id} | Get payment details
 *PaymentsAPI* | [**ListPayments**](docs/PaymentsAPI.md#listpayments) | **Get** /api/v1/payments | List payments
 *PurchasesAPI* | [**GetPurchase**](docs/PurchasesAPI.md#getpurchase) | **Get** /api/v1/purchases/{id} | Get a buyer purchase

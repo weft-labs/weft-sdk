@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * Weft API
- * The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
+ * The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  This document is a deliberate subset of the `/api/v1` surface, not an inventory of it. The seller-side management endpoints — `/api/v1/agents`, `/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with an `ax_live_*` key but are intentionally left undocumented: they are dashboard-facing and not part of the published client contract. Nothing outside this document is a supported contract, and the response-validation gate in `config/environments/test.rb` enforces only what is declared here.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
  *
  * The version of the OpenAPI document: 0.22.0
  *
@@ -24,8 +24,8 @@ import {
 /**
  * Successful fetch envelope. `body_base64` is the upstream artifact
  * bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
- * `tx_hash`, and `merchant` are populated only when the upstream
- * charged for the response.
+ * `tx_hash`, `protocol`, and `merchant` describe the payment and
+ * settlement state.
  *
  * `paid_usd` is "0.00" (never the nominal charge amount) until the
  * charge is CONFIRMED settled on-chain — a signed-but-unsettled hold
@@ -65,12 +65,11 @@ export interface FetchResponse {
      */
     bodyBase64: string;
     /**
-     * USD amount actually settled on-chain. "0.00" for free upstreams
-     * AND for any charge that hasn't (yet, or ever) settled — a signed
-     * hold is not yet spend. See `held_usd` for the nominal amount in
-     * that case. Exact to the micro-dollar, minimum two decimals; parse
-     * as a decimal rather than string-comparing against a bare zero
-     * literal.
+     * USD amount actually settled on-chain. "0.00" for any charge that
+     * hasn't (yet, or ever) settled — a signed hold is not yet spend.
+     * See `held_usd` for the nominal amount in that case. Exact to the
+     * micro-dollar, minimum two decimals; parse as a decimal rather than
+     * string-comparing against a bare zero literal.
      *
      * @type {string}
      * @memberof FetchResponse
@@ -79,9 +78,9 @@ export interface FetchResponse {
     /**
      * The nominal charge amount when `paid_usd` is "0.00" — a hold
      * awaiting settlement, or a charge that failed/expired without ever
-     * settling. `null` once `paid_usd` reflects the real settlement (or
-     * for a free upstream, where nothing was ever charged). Same format
-     * as `paid_usd`: exact to the micro-dollar, minimum two decimals.
+     * settling. `null` once `paid_usd` reflects the real settlement.
+     * Same format as `paid_usd`: exact to the micro-dollar, minimum two
+     * decimals.
      *
      * @type {string}
      * @memberof FetchResponse
@@ -101,11 +100,17 @@ export interface FetchResponse {
      */
     paymentStatus: FetchResponsePaymentStatusEnum;
     /**
-     * Settlement transaction hash. Null for free upstreams.
+     * Settlement transaction hash. Null until a settlement hash has been reported.
      * @type {string}
      * @memberof FetchResponse
      */
     txHash: string;
+    /**
+     * Payment protocol selected for this fetch.
+     * @type {string}
+     * @memberof FetchResponse
+     */
+    protocol: FetchResponseProtocolEnum;
     /**
      * Internal artifact identifier if the response was persisted; `null` otherwise.
      * @type {number}
@@ -113,7 +118,7 @@ export interface FetchResponse {
      */
     artifactId: number;
     /**
-     * Merchant reputation snapshot. Null for free upstreams.
+     * Merchant reputation snapshot.
      * @type {Merchant}
      * @memberof FetchResponse
      */
@@ -134,6 +139,15 @@ export const FetchResponsePaymentStatusEnum = {
 } as const;
 export type FetchResponsePaymentStatusEnum = typeof FetchResponsePaymentStatusEnum[keyof typeof FetchResponsePaymentStatusEnum];
 
+/**
+ * @export
+ */
+export const FetchResponseProtocolEnum = {
+    X402: 'x402',
+    Mpp: 'mpp'
+} as const;
+export type FetchResponseProtocolEnum = typeof FetchResponseProtocolEnum[keyof typeof FetchResponseProtocolEnum];
+
 
 /**
  * Check if a given object implements the FetchResponse interface.
@@ -146,6 +160,7 @@ export function instanceOfFetchResponse(value: object): value is FetchResponse {
     if (!('heldUsd' in value) || value['heldUsd'] === undefined) return false;
     if (!('paymentStatus' in value) || value['paymentStatus'] === undefined) return false;
     if (!('txHash' in value) || value['txHash'] === undefined) return false;
+    if (!('protocol' in value) || value['protocol'] === undefined) return false;
     if (!('artifactId' in value) || value['artifactId'] === undefined) return false;
     if (!('merchant' in value) || value['merchant'] === undefined) return false;
     return true;
@@ -168,6 +183,7 @@ export function FetchResponseFromJSONTyped(json: any, ignoreDiscriminator: boole
         'heldUsd': json['held_usd'],
         'paymentStatus': json['payment_status'],
         'txHash': json['tx_hash'],
+        'protocol': json['protocol'],
         'artifactId': json['artifact_id'],
         'merchant': MerchantFromJSON(json['merchant']),
     };
@@ -191,6 +207,7 @@ export function FetchResponseToJSONTyped(value?: FetchResponse | null, ignoreDis
         'held_usd': value['heldUsd'],
         'payment_status': value['paymentStatus'],
         'tx_hash': value['txHash'],
+        'protocol': value['protocol'],
         'artifact_id': value['artifactId'],
         'merchant': MerchantToJSON(value['merchant']),
     };

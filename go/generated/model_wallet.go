@@ -1,7 +1,7 @@
 /*
 Weft API
 
-The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
+The Weft API powers the `weft` CLI, the hosted MCP server (`weft.network/mcp`), and third-party applications that discover and pay for resources on Weft. The buyer runtime covers six concerns:    1. Account creation and recovery (`/api/v1/auth/_*`)   2. Credential identity (`/api/v1/me`)   3. Wallet visibility (`/api/v1/balance`)   4. Discovery (`/api/v1/search`)   5. Paid execution (`/api/v1/fetch`)   6. Purchase history (`/api/v1/purchases`)  Buyer runtime calls require a dashboard-created `wk_*` account key, an OAuth access token with the relevant scope, or a claimed `wbt_*` bearer on its fixed allowlist. The organization-scoped API key and payment operations in this document are seller administration surfaces and require an `ax_live_*` resource key. These credential types are not interchangeable.  This document is a deliberate subset of the `/api/v1` surface, not an inventory of it. The seller-side management endpoints — `/api/v1/agents`, `/api/v1/webhook_endpoints`, and `/api/v1/analytics` — are reachable with an `ax_live_*` key but are intentionally left undocumented: they are dashboard-facing and not part of the published client contract. Nothing outside this document is a supported contract, and the response-validation gate in `config/environments/test.rb` enforces only what is declared here.  Before claim, a `wbt_*` bearer is temporary and permits only search plus its own status/cancel operations for 30 minutes. Human approval binds it to the User and promotes the same secret to durable identity, search, balance, fetch, purchase-history, status, and revocation capabilities. It remains valid until revoked. Seller, organization, API-key administration, dashboard-session, transfer, withdrawal, and MCP surfaces always refuse it.  Bootstrap lifecycle successes follow the API-standard `{ \"data\": ... }` envelope. All errors share the envelope defined by `ErrorResponse`, except the buyer-runtime endpoints (`/search`, `/fetch`) which use bespoke envelopes carrying additional context — see `SearchErrorResponse` and `FetchErrorResponse`.
 
 API version: 0.22.0
 */
@@ -27,7 +27,9 @@ type Wallet struct {
 	Address string `json:"address"`
 	// Live Base USDC balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
 	BalanceUsdc string `json:"balance_usdc"`
-	// Single aggregated USD balance (Base USDC), exact to the micro-dollar. Null when the provider is unreachable, because the surface never claims zero for a component it could not read.
+	// Live aggregate Tempo dollar-token balance, exact to the micro-dollar (up to 6 decimals, minimum 2). Null when Crossmint is unreachable; consumers must not interpret null as zero.
+	BalanceTempoUsd string `json:"balance_tempo_usd"`
+	// Single aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable, because the surface never claims zero for a component it could not read.
 	TotalUsd string `json:"total_usd"`
 	// Selected Crossmint environment (`base_sepolia` or `base_mainnet`).
 	Network string `json:"network"`
@@ -39,11 +41,12 @@ type _Wallet Wallet
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWallet(provider string, address string, balanceUsdc string, totalUsd string, network string) *Wallet {
+func NewWallet(provider string, address string, balanceUsdc string, balanceTempoUsd string, totalUsd string, network string) *Wallet {
 	this := Wallet{}
 	this.Provider = provider
 	this.Address = address
 	this.BalanceUsdc = balanceUsdc
+	this.BalanceTempoUsd = balanceTempoUsd
 	this.TotalUsd = totalUsd
 	this.Network = network
 	return &this
@@ -129,6 +132,30 @@ func (o *Wallet) SetBalanceUsdc(v string) {
 	o.BalanceUsdc = v
 }
 
+// GetBalanceTempoUsd returns the BalanceTempoUsd field value
+func (o *Wallet) GetBalanceTempoUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.BalanceTempoUsd
+}
+
+// GetBalanceTempoUsdOk returns a tuple with the BalanceTempoUsd field value
+// and a boolean to check if the value has been set.
+func (o *Wallet) GetBalanceTempoUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.BalanceTempoUsd, true
+}
+
+// SetBalanceTempoUsd sets field value
+func (o *Wallet) SetBalanceTempoUsd(v string) {
+	o.BalanceTempoUsd = v
+}
+
 // GetTotalUsd returns the TotalUsd field value
 func (o *Wallet) GetTotalUsd() string {
 	if o == nil {
@@ -190,6 +217,7 @@ func (o Wallet) ToMap() (map[string]interface{}, error) {
 	toSerialize["provider"] = o.Provider
 	toSerialize["address"] = o.Address
 	toSerialize["balance_usdc"] = o.BalanceUsdc
+	toSerialize["balance_tempo_usd"] = o.BalanceTempoUsd
 	toSerialize["total_usd"] = o.TotalUsd
 	toSerialize["network"] = o.Network
 	return toSerialize, nil
@@ -203,6 +231,7 @@ func (o *Wallet) UnmarshalJSON(data []byte) (err error) {
 		"provider",
 		"address",
 		"balance_usdc",
+		"balance_tempo_usd",
 		"total_usd",
 		"network",
 	}

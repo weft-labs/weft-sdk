@@ -9,6 +9,7 @@ Name | Type
 `provider` | string
 `address` | string
 `balanceUsdc` | string
+`balanceTempoUsd` | string
 `totalUsd` | string
 `network` | string
 
@@ -22,6 +23,7 @@ const example = {
   "provider": null,
   "address": null,
   "balanceUsdc": 12.34,
+  "balanceTempoUsd": 2.03,
   "totalUsd": 12.34,
   "network": null,
 } satisfies Wallet
