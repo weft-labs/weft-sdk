@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import {
   AccountApi,
   Configuration,
-  DefaultApi,
+  DocumentationApi,
   WeftClient,
 } from "../typescript/dist/index.mjs";
 
@@ -25,7 +25,7 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const api = new DefaultApi(new Configuration({ basePath }));
+const api = new DocumentationApi(new Configuration({ basePath }));
 const openapi = await api.getOpenApiDocument();
 const actualOpenapiSha256 = createHash("sha256").update(openapi).digest("hex");
 
