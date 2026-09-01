@@ -4,7 +4,15 @@ import type {
   PaymentCancellationDispatcher,
   x402ResourceServer,
 } from "@x402/core/server";
+import { decodePaymentSignatureHeader } from "@x402/core/http";
+import { validatePaymentPayload } from "@x402/core/schemas";
 import type { PaymentPayload, PaymentRequirements } from "@x402/core/types";
+
+/** A structurally valid, but not cryptographically verified, v2 payment. */
+export interface PaymentResumeCandidate {
+  paymentPayload: PaymentPayload;
+  paymentRequirements: PaymentRequirements;
+}
 
 /** Verified payment inputs restored from durable application storage. */
 export interface VerifiedPaymentResume {
@@ -26,10 +34,35 @@ export interface VerifiedPaymentResume {
  */
 export type ResumeVerifiedPayment = (
   context: HTTPRequestContext,
+  candidate: PaymentResumeCandidate,
 ) =>
   | VerifiedPaymentResume
   | undefined
   | Promise<VerifiedPaymentResume | undefined>;
+
+/**
+ * Decode the generic v2 envelope before it crosses the application replay
+ * trust boundary. Scheme validation and signature verification stay with Core
+ * and the registered scheme implementation.
+ */
+export function paymentResumeCandidate(
+  context: HTTPRequestContext,
+): PaymentResumeCandidate | undefined {
+  if (!context.paymentHeader) return undefined;
+
+  try {
+    const paymentPayload = decodePaymentSignatureHeader(context.paymentHeader);
+    validatePaymentPayload(paymentPayload);
+    if (paymentPayload.x402Version !== 2) return undefined;
+
+    return {
+      paymentPayload,
+      paymentRequirements: paymentPayload.accepted,
+    };
+  } catch {
+    return undefined;
+  }
+}
 
 export function resumePaymentResult(
   resourceServer: x402ResourceServer,
