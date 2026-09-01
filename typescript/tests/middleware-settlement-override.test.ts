@@ -27,6 +27,7 @@ import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { weftPaymentMiddleware } from "../src/facilitator/middleware/express";
 import { weftPaymentMiddlewareHono } from "../src/facilitator/middleware/hono";
+import type { PaymentResumeCandidate } from "../src/facilitator/middleware/replay";
 
 /**
  * A route handler can settle less than the buyer authorised by writing a
@@ -279,8 +280,10 @@ interface ReplayResult {
   cancellationDispatcher?: PaymentCancellationDispatcher;
 }
 
-type ResumeVerifiedPayment = () =>
-  ReplayResult | undefined | Promise<ReplayResult | undefined>;
+type ResumeVerifiedPayment = (
+  context: unknown,
+  candidate: PaymentResumeCandidate,
+) => ReplayResult | undefined | Promise<ReplayResult | undefined>;
 
 function config(
   upfront = false,
@@ -350,6 +353,7 @@ async function drivePaidRequest(
     handlerRuns?: { count: number };
     body?: string;
     cacheControl?: string;
+    paymentHeader?: string;
   } = {},
 ): Promise<Response | undefined> {
   const middleware = weftPaymentMiddlewareHono(
@@ -364,7 +368,7 @@ async function drivePaidRequest(
       url: "https://api.acme.test/quote",
       header: (name: string) =>
         name.toLowerCase() === "payment-signature"
-          ? paymentHeader(options.upfront)
+          ? (options.paymentHeader ?? paymentHeader(options.upfront))
           : undefined,
       query: (() => ({})) as never,
       json: async () => undefined,
@@ -430,6 +434,7 @@ async function driveExpressRequest(
     routeHeaders?: Record<string, string | string[]>;
     handlerThrows?: Error;
     paymentResponseBeforeError?: unknown[];
+    paymentHeader?: string;
   } = {},
 ): Promise<{
   status: number;
@@ -450,7 +455,8 @@ async function driveExpressRequest(
     protocol: "https",
     headers: {
       host: "api.acme.test",
-      "payment-signature": paymentHeader(options.upfront),
+      "payment-signature":
+        options.paymentHeader ?? paymentHeader(options.upfront),
     },
     query: {},
     header(name: string) {
@@ -963,6 +969,59 @@ describe("verified payment replay", () => {
       declaredExtensions: { [EXTENSION_KEY]: EXTENSION_DECLARATION },
     };
   }
+
+  it.each(["Hono", "Express"])(
+    "passes a parsed v2 payment candidate to the %s resume callback",
+    async (adapter) => {
+      stubFacilitator(true, false);
+      const candidates: PaymentResumeCandidate[] = [];
+      const resumeVerifiedPayment: ResumeVerifiedPayment = (
+        _context,
+        candidate,
+      ) => {
+        candidates.push(candidate);
+        return storedReplay();
+      };
+
+      if (adapter === "Hono") {
+        await drivePaidRequest(false, { resumeVerifiedPayment });
+      } else {
+        await driveExpressRequest(false, { resumeVerifiedPayment });
+      }
+
+      expect(candidates).toEqual([
+        {
+          paymentPayload: paymentPayload(),
+          paymentRequirements: requirements,
+        },
+      ]);
+    },
+  );
+
+  it.each(["Hono", "Express"])(
+    "does not offer a malformed payment to the %s resume callback",
+    async (adapter) => {
+      stubFacilitator();
+      const resumeVerifiedPayment = vi.fn(() => storedReplay());
+      const malformed = safeBase64Encode(
+        JSON.stringify({ x402Version: 2, payload: {} }),
+      );
+
+      if (adapter === "Hono") {
+        await drivePaidRequest(false, {
+          resumeVerifiedPayment,
+          paymentHeader: malformed,
+        });
+      } else {
+        await driveExpressRequest(false, {
+          resumeVerifiedPayment,
+          paymentHeader: malformed,
+        });
+      }
+
+      expect(resumeVerifiedPayment).not.toHaveBeenCalled();
+    },
+  );
 
   it("retries Hono settlement without verifying a consumed nonce", async () => {
     stubFacilitator(true, false);

@@ -18,7 +18,11 @@ import {
   WeftRoutesConfig,
 } from "./product";
 import { registerDynamicExtensions } from "./extensions";
-import { resumePaymentResult, type ResumeVerifiedPayment } from "./replay";
+import {
+  paymentResumeCandidate,
+  resumePaymentResult,
+  type ResumeVerifiedPayment,
+} from "./replay";
 import {
   isFacilitatorUnavailable,
   isFacilitatorUnavailableResponse,
@@ -379,8 +383,9 @@ export function weftPaymentMiddleware(
 
     let result;
     try {
-      const resumedPayment = context.paymentHeader
-        ? await config?.resumeVerifiedPayment?.(context)
+      const resumeCandidate = paymentResumeCandidate(context);
+      const resumedPayment = resumeCandidate
+        ? await config?.resumeVerifiedPayment?.(context, resumeCandidate)
         : undefined;
       result = resumedPayment
         ? resumePaymentResult(resourceServer, resumedPayment, context)
