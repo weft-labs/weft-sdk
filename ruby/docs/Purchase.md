@@ -6,7 +6,7 @@
 | ---- | ---- | ----------- | ----- |
 | **id** | **Integer** |  |  |
 | **status** | **String** |  |  |
-| **amount_usd** | **String** | Exact decimal USD amount with up to six fractional digits. |  |
+| **amount_usd** | **String** | Exact decimal USD amount with up to six fractional digits. Settled rows report the amount that moved; pending and failed rows report their authorization amount. |  |
 | **recipient_address** | **String** |  |  |
 | **network** | **String** |  |  |
 | **protocol** | **String** |  |  |

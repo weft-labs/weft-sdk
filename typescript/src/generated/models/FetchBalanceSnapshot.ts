@@ -43,11 +43,17 @@ export interface FetchBalanceSnapshot {
      */
     totalUsd: string;
     /**
-     *
+     * Settled USD spend in the current calendar day (UTC).
      * @type {string}
      * @memberof FetchBalanceSnapshot
      */
     spentTodayUsd: string;
+    /**
+     * USD counted against today's policy limit, including pending authorizations and settled spend.
+     * @type {string}
+     * @memberof FetchBalanceSnapshot
+     */
+    policyUsedTodayUsd: string;
 }
 
 /**
@@ -58,6 +64,7 @@ export function instanceOfFetchBalanceSnapshot(value: object): value is FetchBal
     if (!('walletUsdc' in value) || value['walletUsdc'] === undefined) return false;
     if (!('totalUsd' in value) || value['totalUsd'] === undefined) return false;
     if (!('spentTodayUsd' in value) || value['spentTodayUsd'] === undefined) return false;
+    if (!('policyUsedTodayUsd' in value) || value['policyUsedTodayUsd'] === undefined) return false;
     return true;
 }
 
@@ -75,6 +82,7 @@ export function FetchBalanceSnapshotFromJSONTyped(json: any, ignoreDiscriminator
         'walletUsdc': json['wallet_usdc'],
         'totalUsd': json['total_usd'],
         'spentTodayUsd': json['spent_today_usd'],
+        'policyUsedTodayUsd': json['policy_used_today_usd'],
     };
 }
 
@@ -93,5 +101,6 @@ export function FetchBalanceSnapshotToJSONTyped(value?: FetchBalanceSnapshot | n
         'wallet_usdc': value['walletUsdc'],
         'total_usd': value['totalUsd'],
         'spent_today_usd': value['spentTodayUsd'],
+        'policy_used_today_usd': value['policyUsedTodayUsd'],
     };
 }

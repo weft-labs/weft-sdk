@@ -11,6 +11,8 @@ Name | Type
 `wallet` | [Wallet](Wallet.md)
 `spentTodayUsd` | string
 `spentWeekUsd` | string
+`policyUsedTodayUsd` | string
+`policyUsedWeekUsd` | string
 `policy` | [SpendingPolicy](SpendingPolicy.md)
 
 ## Example
@@ -24,6 +26,8 @@ const example = {
   "wallet": null,
   "spentTodayUsd": 0.0005,
   "spentWeekUsd": 3.10,
+  "policyUsedTodayUsd": 0.30,
+  "policyUsedWeekUsd": 3.30,
   "policy": null,
 } satisfies BalanceResponse
 

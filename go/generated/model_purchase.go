@@ -24,7 +24,7 @@ var _ MappedNullable = &Purchase{}
 type Purchase struct {
 	Id int32 `json:"id"`
 	Status string `json:"status"`
-	// Exact decimal USD amount with up to six fractional digits.
+	// Exact decimal USD amount with up to six fractional digits. Settled rows report the amount that moved; pending and failed rows report their authorization amount.
 	AmountUsd string `json:"amount_usd"`
 	RecipientAddress string `json:"recipient_address"`
 	Network string `json:"network"`

@@ -19,7 +19,7 @@ module Weft
 
     attr_accessor :status
 
-    # Exact decimal USD amount with up to six fractional digits.
+    # Exact decimal USD amount with up to six fractional digits. Settled rows report the amount that moved; pending and failed rows report their authorization amount.
     attr_accessor :amount_usd
 
     attr_accessor :recipient_address

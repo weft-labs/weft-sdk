@@ -7,13 +7,14 @@ Name | Type | Description | Notes
 **PromoUsd** | **string** |  |
 **WalletUsdc** | **string** | Live Base USDC balance read server-side through Crossmint. Null when Crossmint is unavailable; never treat null as zero.  |
 **TotalUsd** | **string** | Aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable.  |
-**SpentTodayUsd** | **string** |  |
+**SpentTodayUsd** | **string** | Settled USD spend in the current calendar day (UTC). |
+**PolicyUsedTodayUsd** | **string** | USD counted against today&#39;s policy limit, including pending authorizations and settled spend. |
 
 ## Methods
 
 ### NewFetchBalanceSnapshot
 
-`func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, totalUsd string, spentTodayUsd string, ) *FetchBalanceSnapshot`
+`func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, totalUsd string, spentTodayUsd string, policyUsedTodayUsd string, ) *FetchBalanceSnapshot`
 
 NewFetchBalanceSnapshot instantiates a new FetchBalanceSnapshot object
 This constructor will assign default values to properties that have it defined,
@@ -106,6 +107,26 @@ and a boolean to check if the value has been set.
 `func (o *FetchBalanceSnapshot) SetSpentTodayUsd(v string)`
 
 SetSpentTodayUsd sets SpentTodayUsd field to given value.
+
+
+### GetPolicyUsedTodayUsd
+
+`func (o *FetchBalanceSnapshot) GetPolicyUsedTodayUsd() string`
+
+GetPolicyUsedTodayUsd returns the PolicyUsedTodayUsd field if non-nil, zero value otherwise.
+
+### GetPolicyUsedTodayUsdOk
+
+`func (o *FetchBalanceSnapshot) GetPolicyUsedTodayUsdOk() (*string, bool)`
+
+GetPolicyUsedTodayUsdOk returns a tuple with the PolicyUsedTodayUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPolicyUsedTodayUsd
+
+`func (o *FetchBalanceSnapshot) SetPolicyUsedTodayUsd(v string)`
+
+SetPolicyUsedTodayUsd sets PolicyUsedTodayUsd field to given value.
 
 
 

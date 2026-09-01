@@ -33,8 +33,10 @@ class BalanceResponse(BaseModel):
     wallet: Wallet
     spent_today_usd: StrictStr = Field(description="USD spent in the current calendar day (UTC). Exact to the micro-dollar so sub-cent micro-payments survive (\"0.0005\", \"0.42\"), never narrower than two decimals; a zero total renders as \"0.00\".")
     spent_week_usd: StrictStr = Field(description="USD spent in the current calendar week (UTC, Monday start). Exact to the micro-dollar (\"0.0005\", \"3.10\"), never narrower than two decimals; a zero total renders as \"0.00\".")
+    policy_used_today_usd: StrictStr = Field(description="USD currently counted against the daily spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".")
+    policy_used_week_usd: StrictStr = Field(description="USD currently counted against the weekly spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".")
     policy: SpendingPolicy
-    __properties: ClassVar[List[str]] = ["promo", "wallet", "spent_today_usd", "spent_week_usd", "policy"]
+    __properties: ClassVar[List[str]] = ["promo", "wallet", "spent_today_usd", "spent_week_usd", "policy_used_today_usd", "policy_used_week_usd", "policy"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -100,6 +102,8 @@ class BalanceResponse(BaseModel):
             "wallet": Wallet.from_dict(obj["wallet"]) if obj.get("wallet") is not None else None,
             "spent_today_usd": obj.get("spent_today_usd"),
             "spent_week_usd": obj.get("spent_week_usd"),
+            "policy_used_today_usd": obj.get("policy_used_today_usd"),
+            "policy_used_week_usd": obj.get("policy_used_week_usd"),
             "policy": SpendingPolicy.from_dict(obj["policy"]) if obj.get("policy") is not None else None
         })
         return _obj

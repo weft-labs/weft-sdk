@@ -2198,6 +2198,8 @@ components:
           type: string
         amount_usd:
           description: Exact decimal USD amount with up to six fractional digits.
+            Settled rows report the amount that moved; pending and failed rows report
+            their authorization amount.
           type: string
         recipient_address:
           type: string
@@ -2355,6 +2357,7 @@ components:
           expires_at: 2000-01-23T04:56:07.000+00:00
           scope: weft-search
           balance_usd: "0.00"
+        policy_used_today_usd: "0.30"
         wallet:
           address: address
           provider: crossmint
@@ -2364,6 +2367,7 @@ components:
           network: network
         spent_today_usd: "0.0005"
         spent_week_usd: "3.10"
+        policy_used_week_usd: "3.30"
         policy:
           weekly_limit_usd: "50.00"
           daily_limit_usd: "10.00"
@@ -2385,10 +2389,24 @@ components:
             \ two decimals; a zero total renders as \"0.00\"."
           example: "3.10"
           type: string
+        policy_used_today_usd:
+          description: "USD currently counted against the daily spending limit: pending\
+            \ authorizations at their maximum plus settled payments at the amount\
+            \ that moved. Exact to the micro-dollar; zero renders as \"0.00\"."
+          example: "0.30"
+          type: string
+        policy_used_week_usd:
+          description: "USD currently counted against the weekly spending limit: pending\
+            \ authorizations at their maximum plus settled payments at the amount\
+            \ that moved. Exact to the micro-dollar; zero renders as \"0.00\"."
+          example: "3.30"
+          type: string
         policy:
           $ref: "#/components/schemas/SpendingPolicy"
       required:
       - policy
+      - policy_used_today_usd
+      - policy_used_week_usd
       - promo
       - spent_today_usd
       - spent_week_usd
@@ -4390,6 +4408,7 @@ components:
         `PolicyViolation::REASONS`).
       example:
         balance:
+          policy_used_today_usd: "0.72"
           promo_usd: "0.00"
           spent_today_usd: "0.42"
           total_usd: "12.34"
@@ -4459,6 +4478,7 @@ components:
         rich than `BalanceResponse` — just the fields a CLI needs to explain
         why a fetch failed.
       example:
+        policy_used_today_usd: "0.72"
         promo_usd: "0.00"
         spent_today_usd: "0.42"
         total_usd: "12.34"
@@ -4480,9 +4500,16 @@ components:
           type: string
           nullable: true
         spent_today_usd:
+          description: Settled USD spend in the current calendar day (UTC).
           example: "0.42"
           type: string
+        policy_used_today_usd:
+          description: "USD counted against today's policy limit, including pending\
+            \ authorizations and settled spend."
+          example: "0.72"
+          type: string
       required:
+      - policy_used_today_usd
       - promo_usd
       - spent_today_usd
       - total_usd

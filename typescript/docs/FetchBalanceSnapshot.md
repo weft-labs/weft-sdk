@@ -11,6 +11,7 @@ Name | Type
 `walletUsdc` | string
 `totalUsd` | string
 `spentTodayUsd` | string
+`policyUsedTodayUsd` | string
 
 ## Example
 
@@ -23,6 +24,7 @@ const example = {
   "walletUsdc": 12.34,
   "totalUsd": 12.34,
   "spentTodayUsd": 0.42,
+  "policyUsedTodayUsd": 0.72,
 } satisfies FetchBalanceSnapshot
 
 console.log(example)
