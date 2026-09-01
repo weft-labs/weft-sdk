@@ -94,6 +94,7 @@ export const FetchErrorResponseErrorEnum = {
     PaymentAuthorizationRequired: 'PAYMENT_AUTHORIZATION_REQUIRED',
     WalletSetupIncomplete: 'WALLET_SETUP_INCOMPLETE',
     MerchantReturnedNon402: 'MERCHANT_RETURNED_NON_402',
+    MerchantTimeout: 'MERCHANT_TIMEOUT',
     PaidDeliveryFailed: 'PAID_DELIVERY_FAILED',
     DeliveryReplayUnavailable: 'DELIVERY_REPLAY_UNAVAILABLE',
     ArtifactTooLarge: 'ARTIFACT_TOO_LARGE',
