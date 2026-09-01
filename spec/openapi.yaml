@@ -660,6 +660,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InsufficientScopeResponse"
+        "406":
+          description: The requested response format is not JSON or Markdown.
         "422":
           description: |
             Invalid request — empty/missing `query`, out-of-range
@@ -860,6 +862,13 @@ paths:
                 $ref: "#/components/schemas/FetchErrorResponse"
         "504":
           description: |
+            `MERCHANT_TIMEOUT` — the upstream merchant did not complete the
+            challenge or paid request inside Weft's transport budget.
+            `details.phase` names the request. When it is `paid`,
+            `details.payment_may_have_moved` is true because the credential was
+            already sent. Retry the identical operation with the same
+            `Idempotency-Key`.
+
             `SETTLEMENT_PENDING` — the payment was submitted and the wallet
             provider had not reached a terminal state before Weft's polling
             budget ran out. NOTHING is known to have failed: the charge may
@@ -2884,6 +2893,7 @@ components:
             - PAYMENT_AUTHORIZATION_REQUIRED
             - WALLET_SETUP_INCOMPLETE
             - MERCHANT_RETURNED_NON_402
+            - MERCHANT_TIMEOUT
             - PAID_DELIVERY_FAILED
             - DELIVERY_REPLAY_UNAVAILABLE
             - ARTIFACT_TOO_LARGE
