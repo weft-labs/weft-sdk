@@ -259,11 +259,11 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("requires human wallet funding before any paid fetch", () => {
-    expect(CLI_RULES.toLowerCase()).toMatch(
-      // The wrap tolerates a line break and comment marker mid-sentence.
-      /fund (the wallet|it) before any[\s#]*paid fetch/,
-    );
+  it("names where the human adds money before any paid fetch", () => {
+    // Upstream owns the wording, so pin the CONTRACT the agent acts on — a
+    // named place to send the human — not the sentence carrying it. The
+    // previous regex matched one phrasing and broke on the first reword.
+    expect(CLI_RULES).toMatch(/https:\/\/weft\.network\/dashboard\/wallet/);
     expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
   });
 
