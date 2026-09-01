@@ -27,6 +27,10 @@ type BalanceResponse struct {
 	SpentTodayUsd string `json:"spent_today_usd"`
 	// USD spent in the current calendar week (UTC, Monday start). Exact to the micro-dollar (\"0.0005\", \"3.10\"), never narrower than two decimals; a zero total renders as \"0.00\".
 	SpentWeekUsd string `json:"spent_week_usd"`
+	// USD currently counted against the daily spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".
+	PolicyUsedTodayUsd string `json:"policy_used_today_usd"`
+	// USD currently counted against the weekly spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".
+	PolicyUsedWeekUsd string `json:"policy_used_week_usd"`
 	Policy SpendingPolicy `json:"policy"`
 }
 
@@ -36,12 +40,14 @@ type _BalanceResponse BalanceResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBalanceResponse(promo PromoBalance, wallet Wallet, spentTodayUsd string, spentWeekUsd string, policy SpendingPolicy) *BalanceResponse {
+func NewBalanceResponse(promo PromoBalance, wallet Wallet, spentTodayUsd string, spentWeekUsd string, policyUsedTodayUsd string, policyUsedWeekUsd string, policy SpendingPolicy) *BalanceResponse {
 	this := BalanceResponse{}
 	this.Promo = promo
 	this.Wallet = wallet
 	this.SpentTodayUsd = spentTodayUsd
 	this.SpentWeekUsd = spentWeekUsd
+	this.PolicyUsedTodayUsd = policyUsedTodayUsd
+	this.PolicyUsedWeekUsd = policyUsedWeekUsd
 	this.Policy = policy
 	return &this
 }
@@ -150,6 +156,54 @@ func (o *BalanceResponse) SetSpentWeekUsd(v string) {
 	o.SpentWeekUsd = v
 }
 
+// GetPolicyUsedTodayUsd returns the PolicyUsedTodayUsd field value
+func (o *BalanceResponse) GetPolicyUsedTodayUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PolicyUsedTodayUsd
+}
+
+// GetPolicyUsedTodayUsdOk returns a tuple with the PolicyUsedTodayUsd field value
+// and a boolean to check if the value has been set.
+func (o *BalanceResponse) GetPolicyUsedTodayUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PolicyUsedTodayUsd, true
+}
+
+// SetPolicyUsedTodayUsd sets field value
+func (o *BalanceResponse) SetPolicyUsedTodayUsd(v string) {
+	o.PolicyUsedTodayUsd = v
+}
+
+// GetPolicyUsedWeekUsd returns the PolicyUsedWeekUsd field value
+func (o *BalanceResponse) GetPolicyUsedWeekUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PolicyUsedWeekUsd
+}
+
+// GetPolicyUsedWeekUsdOk returns a tuple with the PolicyUsedWeekUsd field value
+// and a boolean to check if the value has been set.
+func (o *BalanceResponse) GetPolicyUsedWeekUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PolicyUsedWeekUsd, true
+}
+
+// SetPolicyUsedWeekUsd sets field value
+func (o *BalanceResponse) SetPolicyUsedWeekUsd(v string) {
+	o.PolicyUsedWeekUsd = v
+}
+
 // GetPolicy returns the Policy field value
 func (o *BalanceResponse) GetPolicy() SpendingPolicy {
 	if o == nil {
@@ -188,6 +242,8 @@ func (o BalanceResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["wallet"] = o.Wallet
 	toSerialize["spent_today_usd"] = o.SpentTodayUsd
 	toSerialize["spent_week_usd"] = o.SpentWeekUsd
+	toSerialize["policy_used_today_usd"] = o.PolicyUsedTodayUsd
+	toSerialize["policy_used_week_usd"] = o.PolicyUsedWeekUsd
 	toSerialize["policy"] = o.Policy
 	return toSerialize, nil
 }
@@ -201,6 +257,8 @@ func (o *BalanceResponse) UnmarshalJSON(data []byte) (err error) {
 		"wallet",
 		"spent_today_usd",
 		"spent_week_usd",
+		"policy_used_today_usd",
+		"policy_used_week_usd",
 		"policy",
 	}
 

@@ -1755,7 +1755,10 @@ components:
           enum: [signed, settled, locked, rejected, declined, expired, reverted]
         amount_usd:
           type: string
-          description: Exact decimal USD amount with up to six fractional digits.
+          description: >-
+            Exact decimal USD amount with up to six fractional digits. Settled
+            rows report the amount that moved; pending and failed rows report
+            their authorization amount.
         recipient_address:
           type: string
         network:
@@ -1843,7 +1846,14 @@ components:
         Buyer's wallet snapshot. Note: unlike `/me` / `/payments` / `/api_keys`,
         this endpoint does NOT use a `data:` envelope — the response object
         is the snapshot directly.
-      required: [promo, wallet, spent_today_usd, spent_week_usd, policy]
+      required:
+        - promo
+        - wallet
+        - spent_today_usd
+        - spent_week_usd
+        - policy_used_today_usd
+        - policy_used_week_usd
+        - policy
       properties:
         promo:
           $ref: "#/components/schemas/PromoBalance"
@@ -1864,6 +1874,20 @@ components:
             to the micro-dollar ("0.0005", "3.10"), never narrower than two
             decimals; a zero total renders as "0.00".
           example: "3.10"
+        policy_used_today_usd:
+          type: string
+          description: >-
+            USD currently counted against the daily spending limit: pending
+            authorizations at their maximum plus settled payments at the amount
+            that moved. Exact to the micro-dollar; zero renders as "0.00".
+          example: "0.30"
+        policy_used_week_usd:
+          type: string
+          description: >-
+            USD currently counted against the weekly spending limit: pending
+            authorizations at their maximum plus settled payments at the amount
+            that moved. Exact to the micro-dollar; zero renders as "0.00".
+          example: "3.30"
         policy:
           $ref: "#/components/schemas/SpendingPolicy"
     PromoBalance:
@@ -2886,7 +2910,7 @@ components:
           description: Deep-link to the dashboard's policy page.
     FetchBalanceSnapshot:
       type: object
-      required: [promo_usd, wallet_usdc, total_usd, spent_today_usd]
+      required: [promo_usd, wallet_usdc, total_usd, spent_today_usd, policy_used_today_usd]
       description: |
         Compact balance snapshot returned inside `FetchErrorResponse`. Less
         rich than `BalanceResponse` — just the fields a CLI needs to explain
@@ -2911,4 +2935,11 @@ components:
           example: "12.34"
         spent_today_usd:
           type: string
+          description: Settled USD spend in the current calendar day (UTC).
           example: "0.42"
+        policy_used_today_usd:
+          type: string
+          description: >-
+            USD counted against today's policy limit, including pending
+            authorizations and settled spend.
+          example: "0.72"

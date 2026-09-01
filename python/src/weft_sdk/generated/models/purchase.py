@@ -30,7 +30,7 @@ class Purchase(BaseModel):
     """ # noqa: E501
     id: StrictInt
     status: StrictStr
-    amount_usd: StrictStr = Field(description="Exact decimal USD amount with up to six fractional digits.")
+    amount_usd: StrictStr = Field(description="Exact decimal USD amount with up to six fractional digits. Settled rows report the amount that moved; pending and failed rows report their authorization amount.")
     recipient_address: StrictStr
     network: StrictStr
     protocol: Optional[StrictStr]

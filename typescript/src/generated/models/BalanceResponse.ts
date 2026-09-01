@@ -69,6 +69,18 @@ export interface BalanceResponse {
      */
     spentWeekUsd: string;
     /**
+     * USD currently counted against the daily spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as "0.00".
+     * @type {string}
+     * @memberof BalanceResponse
+     */
+    policyUsedTodayUsd: string;
+    /**
+     * USD currently counted against the weekly spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as "0.00".
+     * @type {string}
+     * @memberof BalanceResponse
+     */
+    policyUsedWeekUsd: string;
+    /**
      *
      * @type {SpendingPolicy}
      * @memberof BalanceResponse
@@ -84,6 +96,8 @@ export function instanceOfBalanceResponse(value: object): value is BalanceRespon
     if (!('wallet' in value) || value['wallet'] === undefined) return false;
     if (!('spentTodayUsd' in value) || value['spentTodayUsd'] === undefined) return false;
     if (!('spentWeekUsd' in value) || value['spentWeekUsd'] === undefined) return false;
+    if (!('policyUsedTodayUsd' in value) || value['policyUsedTodayUsd'] === undefined) return false;
+    if (!('policyUsedWeekUsd' in value) || value['policyUsedWeekUsd'] === undefined) return false;
     if (!('policy' in value) || value['policy'] === undefined) return false;
     return true;
 }
@@ -102,6 +116,8 @@ export function BalanceResponseFromJSONTyped(json: any, ignoreDiscriminator: boo
         'wallet': WalletFromJSON(json['wallet']),
         'spentTodayUsd': json['spent_today_usd'],
         'spentWeekUsd': json['spent_week_usd'],
+        'policyUsedTodayUsd': json['policy_used_today_usd'],
+        'policyUsedWeekUsd': json['policy_used_week_usd'],
         'policy': SpendingPolicyFromJSON(json['policy']),
     };
 }
@@ -121,6 +137,8 @@ export function BalanceResponseToJSONTyped(value?: BalanceResponse | null, ignor
         'wallet': WalletToJSON(value['wallet']),
         'spent_today_usd': value['spentTodayUsd'],
         'spent_week_usd': value['spentWeekUsd'],
+        'policy_used_today_usd': value['policyUsedTodayUsd'],
+        'policy_used_week_usd': value['policyUsedWeekUsd'],
         'policy': SpendingPolicyToJSON(value['policy']),
     };
 }

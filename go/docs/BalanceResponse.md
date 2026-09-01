@@ -8,13 +8,15 @@ Name | Type | Description | Notes
 **Wallet** | [**Wallet**](Wallet.md) |  |
 **SpentTodayUsd** | **string** | USD spent in the current calendar day (UTC). Exact to the micro-dollar so sub-cent micro-payments survive (\&quot;0.0005\&quot;, \&quot;0.42\&quot;), never narrower than two decimals; a zero total renders as \&quot;0.00\&quot;. |
 **SpentWeekUsd** | **string** | USD spent in the current calendar week (UTC, Monday start). Exact to the micro-dollar (\&quot;0.0005\&quot;, \&quot;3.10\&quot;), never narrower than two decimals; a zero total renders as \&quot;0.00\&quot;. |
+**PolicyUsedTodayUsd** | **string** | USD currently counted against the daily spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \&quot;0.00\&quot;. |
+**PolicyUsedWeekUsd** | **string** | USD currently counted against the weekly spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \&quot;0.00\&quot;. |
 **Policy** | [**SpendingPolicy**](SpendingPolicy.md) |  |
 
 ## Methods
 
 ### NewBalanceResponse
 
-`func NewBalanceResponse(promo PromoBalance, wallet Wallet, spentTodayUsd string, spentWeekUsd string, policy SpendingPolicy, ) *BalanceResponse`
+`func NewBalanceResponse(promo PromoBalance, wallet Wallet, spentTodayUsd string, spentWeekUsd string, policyUsedTodayUsd string, policyUsedWeekUsd string, policy SpendingPolicy, ) *BalanceResponse`
 
 NewBalanceResponse instantiates a new BalanceResponse object
 This constructor will assign default values to properties that have it defined,
@@ -107,6 +109,46 @@ and a boolean to check if the value has been set.
 `func (o *BalanceResponse) SetSpentWeekUsd(v string)`
 
 SetSpentWeekUsd sets SpentWeekUsd field to given value.
+
+
+### GetPolicyUsedTodayUsd
+
+`func (o *BalanceResponse) GetPolicyUsedTodayUsd() string`
+
+GetPolicyUsedTodayUsd returns the PolicyUsedTodayUsd field if non-nil, zero value otherwise.
+
+### GetPolicyUsedTodayUsdOk
+
+`func (o *BalanceResponse) GetPolicyUsedTodayUsdOk() (*string, bool)`
+
+GetPolicyUsedTodayUsdOk returns a tuple with the PolicyUsedTodayUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPolicyUsedTodayUsd
+
+`func (o *BalanceResponse) SetPolicyUsedTodayUsd(v string)`
+
+SetPolicyUsedTodayUsd sets PolicyUsedTodayUsd field to given value.
+
+
+### GetPolicyUsedWeekUsd
+
+`func (o *BalanceResponse) GetPolicyUsedWeekUsd() string`
+
+GetPolicyUsedWeekUsd returns the PolicyUsedWeekUsd field if non-nil, zero value otherwise.
+
+### GetPolicyUsedWeekUsdOk
+
+`func (o *BalanceResponse) GetPolicyUsedWeekUsdOk() (*string, bool)`
+
+GetPolicyUsedWeekUsdOk returns a tuple with the PolicyUsedWeekUsd field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPolicyUsedWeekUsd
+
+`func (o *BalanceResponse) SetPolicyUsedWeekUsd(v string)`
+
+SetPolicyUsedWeekUsd sets PolicyUsedWeekUsd field to given value.
 
 
 ### GetPolicy

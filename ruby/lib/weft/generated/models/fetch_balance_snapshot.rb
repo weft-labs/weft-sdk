@@ -24,7 +24,11 @@ module Weft
     # Aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable.
     attr_accessor :total_usd
 
+    # Settled USD spend in the current calendar day (UTC).
     attr_accessor :spent_today_usd
+
+    # USD counted against today's policy limit, including pending authorizations and settled spend.
+    attr_accessor :policy_used_today_usd
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
@@ -32,7 +36,8 @@ module Weft
         :'promo_usd' => :'promo_usd',
         :'wallet_usdc' => :'wallet_usdc',
         :'total_usd' => :'total_usd',
-        :'spent_today_usd' => :'spent_today_usd'
+        :'spent_today_usd' => :'spent_today_usd',
+        :'policy_used_today_usd' => :'policy_used_today_usd'
       }
     end
 
@@ -52,7 +57,8 @@ module Weft
         :'promo_usd' => :'String',
         :'wallet_usdc' => :'String',
         :'total_usd' => :'String',
-        :'spent_today_usd' => :'String'
+        :'spent_today_usd' => :'String',
+        :'policy_used_today_usd' => :'String'
       }
     end
 
@@ -101,6 +107,12 @@ module Weft
       else
         self.spent_today_usd = nil
       end
+
+      if attributes.key?(:'policy_used_today_usd')
+        self.policy_used_today_usd = attributes[:'policy_used_today_usd']
+      else
+        self.policy_used_today_usd = nil
+      end
     end
 
     # Show invalid properties with the reasons. Usually used together with valid?
@@ -124,6 +136,10 @@ module Weft
         invalid_properties.push('invalid value for "spent_today_usd", spent_today_usd cannot be nil.')
       end
 
+      if @policy_used_today_usd.nil?
+        invalid_properties.push('invalid value for "policy_used_today_usd", policy_used_today_usd cannot be nil.')
+      end
+
       invalid_properties
     end
 
@@ -135,6 +151,7 @@ module Weft
       return false if @wallet_usdc.nil?
       return false if @total_usd.nil?
       return false if @spent_today_usd.nil?
+      return false if @policy_used_today_usd.nil?
       true
     end
 
@@ -178,6 +195,16 @@ module Weft
       @spent_today_usd = spent_today_usd
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] policy_used_today_usd Value to be assigned
+    def policy_used_today_usd=(policy_used_today_usd)
+      if policy_used_today_usd.nil?
+        fail ArgumentError, 'policy_used_today_usd cannot be nil'
+      end
+
+      @policy_used_today_usd = policy_used_today_usd
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
@@ -186,7 +213,8 @@ module Weft
           promo_usd == o.promo_usd &&
           wallet_usdc == o.wallet_usdc &&
           total_usd == o.total_usd &&
-          spent_today_usd == o.spent_today_usd
+          spent_today_usd == o.spent_today_usd &&
+          policy_used_today_usd == o.policy_used_today_usd
     end
 
     # @see the `==` method
@@ -198,7 +226,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [promo_usd, wallet_usdc, total_usd, spent_today_usd].hash
+      [promo_usd, wallet_usdc, total_usd, spent_today_usd, policy_used_today_usd].hash
     end
 
     # Builds the object from hash

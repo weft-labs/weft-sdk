@@ -26,6 +26,12 @@ module Weft
     # USD spent in the current calendar week (UTC, Monday start). Exact to the micro-dollar (\"0.0005\", \"3.10\"), never narrower than two decimals; a zero total renders as \"0.00\".
     attr_accessor :spent_week_usd
 
+    # USD currently counted against the daily spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".
+    attr_accessor :policy_used_today_usd
+
+    # USD currently counted against the weekly spending limit: pending authorizations at their maximum plus settled payments at the amount that moved. Exact to the micro-dollar; zero renders as \"0.00\".
+    attr_accessor :policy_used_week_usd
+
     attr_accessor :policy
 
     # Attribute mapping from ruby-style variable name to JSON key.
@@ -35,6 +41,8 @@ module Weft
         :'wallet' => :'wallet',
         :'spent_today_usd' => :'spent_today_usd',
         :'spent_week_usd' => :'spent_week_usd',
+        :'policy_used_today_usd' => :'policy_used_today_usd',
+        :'policy_used_week_usd' => :'policy_used_week_usd',
         :'policy' => :'policy'
       }
     end
@@ -56,6 +64,8 @@ module Weft
         :'wallet' => :'Wallet',
         :'spent_today_usd' => :'String',
         :'spent_week_usd' => :'String',
+        :'policy_used_today_usd' => :'String',
+        :'policy_used_week_usd' => :'String',
         :'policy' => :'SpendingPolicy'
       }
     end
@@ -106,6 +116,18 @@ module Weft
         self.spent_week_usd = nil
       end
 
+      if attributes.key?(:'policy_used_today_usd')
+        self.policy_used_today_usd = attributes[:'policy_used_today_usd']
+      else
+        self.policy_used_today_usd = nil
+      end
+
+      if attributes.key?(:'policy_used_week_usd')
+        self.policy_used_week_usd = attributes[:'policy_used_week_usd']
+      else
+        self.policy_used_week_usd = nil
+      end
+
       if attributes.key?(:'policy')
         self.policy = attributes[:'policy']
       else
@@ -134,6 +156,14 @@ module Weft
         invalid_properties.push('invalid value for "spent_week_usd", spent_week_usd cannot be nil.')
       end
 
+      if @policy_used_today_usd.nil?
+        invalid_properties.push('invalid value for "policy_used_today_usd", policy_used_today_usd cannot be nil.')
+      end
+
+      if @policy_used_week_usd.nil?
+        invalid_properties.push('invalid value for "policy_used_week_usd", policy_used_week_usd cannot be nil.')
+      end
+
       if @policy.nil?
         invalid_properties.push('invalid value for "policy", policy cannot be nil.')
       end
@@ -149,6 +179,8 @@ module Weft
       return false if @wallet.nil?
       return false if @spent_today_usd.nil?
       return false if @spent_week_usd.nil?
+      return false if @policy_used_today_usd.nil?
+      return false if @policy_used_week_usd.nil?
       return false if @policy.nil?
       true
     end
@@ -194,6 +226,26 @@ module Weft
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] policy_used_today_usd Value to be assigned
+    def policy_used_today_usd=(policy_used_today_usd)
+      if policy_used_today_usd.nil?
+        fail ArgumentError, 'policy_used_today_usd cannot be nil'
+      end
+
+      @policy_used_today_usd = policy_used_today_usd
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] policy_used_week_usd Value to be assigned
+    def policy_used_week_usd=(policy_used_week_usd)
+      if policy_used_week_usd.nil?
+        fail ArgumentError, 'policy_used_week_usd cannot be nil'
+      end
+
+      @policy_used_week_usd = policy_used_week_usd
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] policy Value to be assigned
     def policy=(policy)
       if policy.nil?
@@ -212,6 +264,8 @@ module Weft
           wallet == o.wallet &&
           spent_today_usd == o.spent_today_usd &&
           spent_week_usd == o.spent_week_usd &&
+          policy_used_today_usd == o.policy_used_today_usd &&
+          policy_used_week_usd == o.policy_used_week_usd &&
           policy == o.policy
     end
 
@@ -224,7 +278,7 @@ module Weft
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [promo, wallet, spent_today_usd, spent_week_usd, policy].hash
+      [promo, wallet, spent_today_usd, spent_week_usd, policy_used_today_usd, policy_used_week_usd, policy].hash
     end
 
     # Builds the object from hash

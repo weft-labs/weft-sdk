@@ -26,7 +26,10 @@ type FetchBalanceSnapshot struct {
 	WalletUsdc string `json:"wallet_usdc"`
 	// Aggregated USD balance across Base USDC and Tempo dollar tokens, exact to the micro-dollar. Null when either pocket is unreachable.
 	TotalUsd string `json:"total_usd"`
+	// Settled USD spend in the current calendar day (UTC).
 	SpentTodayUsd string `json:"spent_today_usd"`
+	// USD counted against today's policy limit, including pending authorizations and settled spend.
+	PolicyUsedTodayUsd string `json:"policy_used_today_usd"`
 }
 
 type _FetchBalanceSnapshot FetchBalanceSnapshot
@@ -35,12 +38,13 @@ type _FetchBalanceSnapshot FetchBalanceSnapshot
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, totalUsd string, spentTodayUsd string) *FetchBalanceSnapshot {
+func NewFetchBalanceSnapshot(promoUsd string, walletUsdc string, totalUsd string, spentTodayUsd string, policyUsedTodayUsd string) *FetchBalanceSnapshot {
 	this := FetchBalanceSnapshot{}
 	this.PromoUsd = promoUsd
 	this.WalletUsdc = walletUsdc
 	this.TotalUsd = totalUsd
 	this.SpentTodayUsd = spentTodayUsd
+	this.PolicyUsedTodayUsd = policyUsedTodayUsd
 	return &this
 }
 
@@ -148,6 +152,30 @@ func (o *FetchBalanceSnapshot) SetSpentTodayUsd(v string) {
 	o.SpentTodayUsd = v
 }
 
+// GetPolicyUsedTodayUsd returns the PolicyUsedTodayUsd field value
+func (o *FetchBalanceSnapshot) GetPolicyUsedTodayUsd() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PolicyUsedTodayUsd
+}
+
+// GetPolicyUsedTodayUsdOk returns a tuple with the PolicyUsedTodayUsd field value
+// and a boolean to check if the value has been set.
+func (o *FetchBalanceSnapshot) GetPolicyUsedTodayUsdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PolicyUsedTodayUsd, true
+}
+
+// SetPolicyUsedTodayUsd sets field value
+func (o *FetchBalanceSnapshot) SetPolicyUsedTodayUsd(v string) {
+	o.PolicyUsedTodayUsd = v
+}
+
 func (o FetchBalanceSnapshot) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -162,6 +190,7 @@ func (o FetchBalanceSnapshot) ToMap() (map[string]interface{}, error) {
 	toSerialize["wallet_usdc"] = o.WalletUsdc
 	toSerialize["total_usd"] = o.TotalUsd
 	toSerialize["spent_today_usd"] = o.SpentTodayUsd
+	toSerialize["policy_used_today_usd"] = o.PolicyUsedTodayUsd
 	return toSerialize, nil
 }
 
@@ -174,6 +203,7 @@ func (o *FetchBalanceSnapshot) UnmarshalJSON(data []byte) (err error) {
 		"wallet_usdc",
 		"total_usd",
 		"spent_today_usd",
+		"policy_used_today_usd",
 	}
 
 	allProperties := make(map[string]interface{})
