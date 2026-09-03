@@ -4268,6 +4268,7 @@ components:
       required:
       - url
     FetchResponse:
+      additionalProperties: false
       description: |
         Successful fetch envelope. `body_base64` is the upstream artifact
         bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
