@@ -5,7 +5,10 @@ import {
   withCredentialsLock,
   writeStoredCredentials,
 } from "./credentials";
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import {
   type PaidFetchRequest,
   ResponseError,
@@ -45,6 +48,9 @@ const OAUTH_SCOPE = "balance fetch search";
 const OAUTH_CLIENT_NAME = "Weft CLI";
 const OAUTH_HOST_NAME = "Weft CLI";
 const OAUTH_REFRESH_SKEW_MS = 60_000;
+const PROCESS_OUTPUT_LIMIT = 8_192;
+const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CORE_SKILL_NAMES = new Set(["weft", "weft-setup"]);
 
 const COMMAND_HELP = {
   bootstrap: {
@@ -63,9 +69,9 @@ const COMMAND_HELP = {
     options: ["status"],
   },
   skill: {
-    description: "Install the weft Skill for detected agent hosts",
-    usage: "weft skill install",
-    options: ["install"],
+    description: "Install the core Weft Skill or one optional workflow Skill",
+    usage: "weft skill install [name --agent <agent> [--global]]",
+    options: ["install", "[name]", "--agent <agent>", "--global"],
   },
   me: {
     description: "Return the authenticated principal",
@@ -188,7 +194,22 @@ export interface CliDependencies {
   writeOut?: (value: string) => void;
   writeErr?: (value: string) => void;
   generateIdempotencyKey?: () => string;
+  runProcess?: ProcessRunner;
+  platform?: NodeJS.Platform;
+  nodeExecutable?: string;
+  npxCliPath?: string;
 }
+
+interface ProcessResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}
+
+type ProcessRunner = (
+  command: string,
+  args: string[],
+) => Promise<ProcessResult>;
 
 interface ParsedArgs {
   command: Command;
@@ -223,6 +244,88 @@ function takeValue(
     );
   }
   return [value, index + 1];
+}
+
+function appendBounded(current: string, chunk: Buffer | string): string {
+  return `${current}${chunk.toString()}`.slice(-PROCESS_OUTPUT_LIMIT);
+}
+
+function defaultRunProcess(
+  command: string,
+  args: string[],
+): Promise<ProcessResult> {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      shell: false,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdout = appendBounded(stdout, chunk);
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderr = appendBounded(stderr, chunk);
+    });
+    child.on("error", (error) => {
+      resolve({
+        exitCode: 1,
+        stdout,
+        stderr: appendBounded(stderr, error.message),
+      });
+    });
+    child.on("close", (exitCode) => {
+      resolve({ exitCode: exitCode ?? 1, stdout, stderr });
+    });
+  });
+}
+
+function resolveNpxCliPath(
+  env: Record<string, string | undefined>,
+  nodeExecutable: string,
+): string | undefined {
+  const executableDirectory = dirname(nodeExecutable);
+  const candidates = [
+    ...(env.npm_execpath
+      ? [join(dirname(env.npm_execpath), "npx-cli.js")]
+      : []),
+    join(executableDirectory, "node_modules", "npm", "bin", "npx-cli.js"),
+    join(
+      executableDirectory,
+      "..",
+      "lib",
+      "node_modules",
+      "npm",
+      "bin",
+      "npx-cli.js",
+    ),
+  ];
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
+function npxProcessInvocation(
+  processArgs: string[],
+  dependencies: CliDependencies,
+  env: Record<string, string | undefined>,
+): { executable: string; arguments: string[] } {
+  if ((dependencies.platform ?? process.platform) !== "win32") {
+    return { executable: "npx", arguments: processArgs };
+  }
+
+  const nodeExecutable = dependencies.nodeExecutable ?? process.execPath;
+  const npxCliPath =
+    dependencies.npxCliPath ?? resolveNpxCliPath(env, nodeExecutable);
+  if (!npxCliPath) {
+    throw new CliError(
+      EXIT_INTERNAL,
+      "NPX_NOT_FOUND",
+      "Could not find the npm npx program. Install npm, then run the command again.",
+    );
+  }
+  return {
+    executable: nodeExecutable,
+    arguments: [npxCliPath, ...processArgs],
+  };
 }
 
 function rejectUnsafeCredentialArgument(args: string[]): void {
@@ -278,6 +381,8 @@ function parseArgs(args: string[]): ParsedArgs {
       apiKeyStdin = true;
     } else if (arg === "--base-url") {
       [baseUrl, index] = takeValue(args, index, arg);
+    } else if (arg === "--global") {
+      options.set("global", true);
     } else if (arg.startsWith("--")) {
       const [value, nextIndex] = takeValue(args, index, arg);
       options.set(arg.slice(2), value);
@@ -568,17 +673,92 @@ export async function runCli(
     const baseUrl = baseApiUrl(parsed.baseUrl, env);
 
     if (parsed.command === "skill") {
-      ensureOnly(parsed.options, []);
       if (
-        parsed.positionals.length !== 1 ||
-        parsed.positionals[0] !== "install"
+        parsed.positionals[0] !== "install" ||
+        parsed.positionals.length > 2
       ) {
         throw new CliError(
           EXIT_USAGE,
           "INVALID_ARGUMENT",
-          "skill requires 'install'",
+          "skill requires 'install' and accepts at most one Skill name",
         );
       }
+
+      const skillName = parsed.positionals[1];
+      if (skillName) {
+        ensureOnly(parsed.options, ["agent", "global"]);
+        const agent = requiredOption(parsed.options, "agent");
+        if (!SKILL_NAME_PATTERN.test(skillName)) {
+          throw new CliError(
+            EXIT_USAGE,
+            "INVALID_ARGUMENT",
+            "Skill name must contain only lowercase letters, numbers, and single hyphens",
+          );
+        }
+        if (CORE_SKILL_NAMES.has(skillName)) {
+          throw new CliError(
+            EXIT_USAGE,
+            "INVALID_ARGUMENT",
+            `Use 'weft skill install' without a name to install the core ${skillName} Skill`,
+          );
+        }
+        if (!SKILL_NAME_PATTERN.test(agent)) {
+          throw new CliError(
+            EXIT_USAGE,
+            "INVALID_ARGUMENT",
+            "Agent name must contain only lowercase letters, numbers, and single hyphens",
+          );
+        }
+
+        const processArgs = [
+          "--yes",
+          "skills",
+          "add",
+          "weft-labs/skills",
+          "--skill",
+          skillName,
+          "--agent",
+          agent,
+          "--yes",
+          ...(parsed.options.get("global") === true ? ["--global"] : []),
+        ];
+        const invocation = npxProcessInvocation(processArgs, dependencies, env);
+        const result = await (dependencies.runProcess ?? defaultRunProcess)(
+          invocation.executable,
+          invocation.arguments,
+        );
+        if (result.exitCode !== 0) {
+          const remediation = `npx ${processArgs.join(" ")}`;
+          throw new CliError(
+            EXIT_INTERNAL,
+            "SKILL_INSTALL_FAILED",
+            `Could not install ${skillName}. Run '${remediation}' directly for more detail.`,
+            {
+              executable: invocation.executable,
+              arguments: invocation.arguments,
+              exit_code: result.exitCode,
+              stderr: result.stderr,
+            },
+          );
+        }
+        writeOut(
+          `${JSON.stringify({
+            schema_version: "1",
+            ok: true,
+            command,
+            data: {
+              status: "installed",
+              skill: skillName,
+              agent,
+              scope:
+                parsed.options.get("global") === true ? "global" : "project",
+            },
+          })}\n`,
+        );
+        return EXIT_SUCCESS;
+      }
+
+      ensureOnly(parsed.options, []);
       const installSkill = await loadSkillInstaller();
       const result = await installSkill({ force: true });
       writeOut(

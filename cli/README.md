@@ -66,6 +66,16 @@ Any ordinary command installs it too, so an agent that runs `weft search`
 before anyone reads this section still gets the Skill. Both paths are the same
 idempotent operation, and running either again is safe.
 
+Install one optional Weft workflow Skill for a specific agent host with:
+
+```bash
+weft skill install weft-flights-search --agent codex
+```
+
+Add `--global` to install it for all projects for that host. Named workflow
+installs do not need Weft authentication. They delegate to the public Skills
+CLI and keep its installation layout and host support.
+
 Earlier versions installed the Skill from an `npm` package hook. That hook was
 removed: `pnpm` and `bun` block dependency scripts by default, and `pnpm`
 replays a cached package without re-running them, so the hook could be skipped
