@@ -17,7 +17,6 @@ export * from './AuthResponseData';
 export * from './BalanceResponse';
 export * from './ConfirmRequest';
 export * from './CreateApiKeyRequest';
-export * from './CuratedMarketplaceContract';
 export * from './EnrolledResource';
 export * from './ErrorResponse';
 export * from './Fetch403Response';

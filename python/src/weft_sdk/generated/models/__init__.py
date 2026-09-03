@@ -30,7 +30,6 @@ from weft_sdk.generated.models.auth_response_data import AuthResponseData
 from weft_sdk.generated.models.balance_response import BalanceResponse
 from weft_sdk.generated.models.confirm_request import ConfirmRequest
 from weft_sdk.generated.models.create_api_key_request import CreateApiKeyRequest
-from weft_sdk.generated.models.curated_marketplace_contract import CuratedMarketplaceContract
 from weft_sdk.generated.models.enrolled_resource import EnrolledResource
 from weft_sdk.generated.models.error import Error
 from weft_sdk.generated.models.error_response import ErrorResponse

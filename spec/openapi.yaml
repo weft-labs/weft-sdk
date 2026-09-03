@@ -552,52 +552,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InsufficientScopeResponse"
-  /contracts/curated-marketplace/{digest}/{operation_id}.json:
-    get:
-      summary: Get a curated marketplace operation contract
-      description: |
-        Public, content-addressed detail document linked from compact hosted-MCP
-        search results. A matching document is cacheable for one year and
-        immutable. The digest is the SHA-256 of the canonical JSON document.
-        Every reviewed endpoint includes its request and response evidence;
-        asynchronous endpoints also include the authored submit-and-poll
-        lifecycle, identity-header reuse, terminal states, and known gaps.
-      operationId: getCuratedMarketplaceContract
-      tags: [Search]
-      security: []
-      parameters:
-        - name: digest
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[0-9a-f]{64}$"
-        - name: operation_id
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[A-Za-z0-9_-]+$"
-      responses:
-        "200":
-          description: Full immutable operation contract
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-              description: public, max-age=31536000, immutable
-            ETag:
-              schema:
-                type: string
-              description: Quoted SHA-256 document digest
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CuratedMarketplaceContract"
-        "304":
-          description: The caller already has the document identified by ETag
-        "404":
-          description: Unknown operation or digest mismatch
   /api/v1/search:
     post:
       summary: Search the Weft index
@@ -2313,38 +2267,6 @@ components:
             match.
           items:
             $ref: "#/components/schemas/SearchResult"
-    CuratedMarketplaceContract:
-      type: object
-      required: [schema_version, snapshot, provider, service, operation, request, access_methods, evidence]
-      properties:
-        schema_version:
-          type: integer
-          const: 1
-        snapshot:
-          type: object
-          additionalProperties: true
-        provider:
-          type: object
-          additionalProperties: true
-        service:
-          type: object
-          additionalProperties: true
-        operation:
-          type: object
-          additionalProperties: true
-        request:
-          type: object
-          additionalProperties: true
-        access_methods:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-        evidence:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
     SearchResult:
       type: object
       required: [provider, capability, endpoints, score]

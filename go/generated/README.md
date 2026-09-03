@@ -136,7 +136,6 @@ Class | Method | HTTP request | Description
 *PurchasesAPI* | [**GetPurchase**](docs/PurchasesAPI.md#getpurchase) | **Get** /api/v1/purchases/{id} | Get a buyer purchase
 *PurchasesAPI* | [**ListPurchases**](docs/PurchasesAPI.md#listpurchases) | **Get** /api/v1/purchases | List buyer purchases
 *ResourcesAPI* | [**EnrollResource**](docs/ResourcesAPI.md#enrollresource) | **Post** /api/v1/resources/enroll | Self-enroll a ghost resource (public, no auth)
-*SearchAPI* | [**GetCuratedMarketplaceContract**](docs/SearchAPI.md#getcuratedmarketplacecontract) | **Get** /contracts/curated-marketplace/{digest}/{operation_id}.json | Get a curated marketplace operation contract
 *SearchAPI* | [**Search**](docs/SearchAPI.md#search) | **Post** /api/v1/search | Search the Weft index
 
 
@@ -159,7 +158,6 @@ Class | Method | HTTP request | Description
  - [BalanceResponse](docs/BalanceResponse.md)
  - [ConfirmRequest](docs/ConfirmRequest.md)
  - [CreateApiKeyRequest](docs/CreateApiKeyRequest.md)
- - [CuratedMarketplaceContract](docs/CuratedMarketplaceContract.md)
  - [EnrolledResource](docs/EnrolledResource.md)
  - [Error](docs/Error.md)
  - [ErrorResponse](docs/ErrorResponse.md)
