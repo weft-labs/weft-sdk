@@ -18,14 +18,13 @@ import (
 	"net/url"
 )
 
-
 // FetchAPIService FetchAPI service
 type FetchAPIService service
 
 type ApiFetchRequest struct {
-	ctx context.Context
-	ApiService *FetchAPIService
-	fetchRequest *FetchRequest
+	ctx            context.Context
+	ApiService     *FetchAPIService
+	fetchRequest   *FetchRequest
 	idempotencyKey *string
 }
 
@@ -51,19 +50,19 @@ Universal x402/MPP fetch proxy. The caller provides a target `url`,
 a hard `max_cost_usd` ceiling, and optional `method` / `body` /
 `headers`. Weft:
 
-  1. Issues the request.
-  2. On `402 Payment Required`, selects a supported x402 or MPP challenge.
-  3. Compares the asking price to `max_cost_usd` and the
-     buyer's policy (`max_tx_usd`, daily/weekly limits).
-  4. Authorizes payment from the buyer's wallet on the selected rail.
-  5. Replays the request with the protocol-specific payment credential.
-  6. Streams the upstream artifact back, base64-encoded under
-      `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
-      `tx_hash`, `protocol`, and the merchant's reputation snapshot. `paid_usd`
-     is "0.00" until the charge is CONFIRMED settled — a signed-but-
-     unsettled hold (the common case for x402, which settles
-     asynchronously) reports its amount in `held_usd` instead, never
-     in `paid_usd`.
+ 1. Issues the request.
+ 2. On `402 Payment Required`, selects a supported x402 or MPP challenge.
+ 3. Compares the asking price to `max_cost_usd` and the
+    buyer's policy (`max_tx_usd`, daily/weekly limits).
+ 4. Authorizes payment from the buyer's wallet on the selected rail.
+ 5. Replays the request with the protocol-specific payment credential.
+ 6. Streams the upstream artifact back, base64-encoded under
+    `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
+    `tx_hash`, and `protocol`. `paid_usd`
+    is "0.00" until the charge is CONFIRMED settled — a signed-but-
+    unsettled hold (the common case for x402, which settles
+    asynchronously) reports its amount in `held_usd` instead, never
+    in `paid_usd`.
 
 Errors are structured with a stable `error` code, and each error
 response carries the buyer's `policy`, `balance`, and a
@@ -80,25 +79,25 @@ Weft-internal headers (`host`, `authorization`, `cookie`,
 `x-payment`, `connection`, `upgrade`). Up to 32 headers, 4 KB of
 combined value bytes.
 
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiFetchRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiFetchRequest
 */
 func (a *FetchAPIService) Fetch(ctx context.Context) ApiFetchRequest {
 	return ApiFetchRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return FetchResponse
+//
+//	@return FetchResponse
 func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *FetchResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *FetchResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "FetchAPIService.Fetch")
@@ -166,8 +165,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 402 {
@@ -177,8 +176,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
@@ -188,8 +187,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 409 {
@@ -199,8 +198,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 413 {
@@ -210,8 +209,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 422 {
@@ -221,8 +220,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 424 {
@@ -232,8 +231,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 502 {
@@ -243,8 +242,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 504 {
@@ -254,8 +253,8 @@ func (a *FetchAPIService) FetchExecute(r ApiFetchRequest) (*FetchResponse, *http
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+			newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}

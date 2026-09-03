@@ -24,7 +24,7 @@ a hard `max_cost_usd` ceiling, and optional `method` / `body` /
   5. Replays the request with the protocol-specific payment credential.
   6. Streams the upstream artifact back, base64-encoded under
       `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
-      `tx_hash`, `protocol`, and the merchant's reputation snapshot. `paid_usd`
+      `tx_hash`, and `protocol`. `paid_usd`
      is "0.00" until the charge is CONFIRMED settled — a signed-but-
      unsettled hold (the common case for x402, which settles
      asynchronously) reports its amount in `held_usd` instead, never
