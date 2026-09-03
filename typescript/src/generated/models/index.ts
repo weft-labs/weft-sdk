@@ -31,7 +31,6 @@ export * from './MeApiKey';
 export * from './MeApiKeyCreator';
 export * from './MeResponse';
 export * from './MeResponseData';
-export * from './Merchant';
 export * from './MessageResponse';
 export * from './MessageResponseData';
 export * from './ModelError';

@@ -13,19 +13,10 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Merchant } from './Merchant';
-import {
-    MerchantFromJSON,
-    MerchantFromJSONTyped,
-    MerchantToJSON,
-    MerchantToJSONTyped,
-} from './Merchant';
-
 /**
  * Successful fetch envelope. `body_base64` is the upstream artifact
  * bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
- * `tx_hash`, `protocol`, and `merchant` describe the payment and
- * settlement state.
+ * `tx_hash`, and `protocol` describe the payment and settlement state.
  *
  * `paid_usd` is "0.00" (never the nominal charge amount) until the
  * charge is CONFIRMED settled on-chain — a signed-but-unsettled hold
@@ -117,12 +108,6 @@ export interface FetchResponse {
      * @memberof FetchResponse
      */
     artifactId: number;
-    /**
-     * Merchant reputation snapshot.
-     * @type {Merchant}
-     * @memberof FetchResponse
-     */
-    merchant: Merchant;
 }
 
 
@@ -162,7 +147,6 @@ export function instanceOfFetchResponse(value: object): value is FetchResponse {
     if (!('txHash' in value) || value['txHash'] === undefined) return false;
     if (!('protocol' in value) || value['protocol'] === undefined) return false;
     if (!('artifactId' in value) || value['artifactId'] === undefined) return false;
-    if (!('merchant' in value) || value['merchant'] === undefined) return false;
     return true;
 }
 
@@ -185,7 +169,6 @@ export function FetchResponseFromJSONTyped(json: any, ignoreDiscriminator: boole
         'txHash': json['tx_hash'],
         'protocol': json['protocol'],
         'artifactId': json['artifact_id'],
-        'merchant': MerchantFromJSON(json['merchant']),
     };
 }
 
@@ -209,6 +192,5 @@ export function FetchResponseToJSONTyped(value?: FetchResponse | null, ignoreDis
         'tx_hash': value['txHash'],
         'protocol': value['protocol'],
         'artifact_id': value['artifactId'],
-        'merchant': MerchantToJSON(value['merchant']),
     };
 }

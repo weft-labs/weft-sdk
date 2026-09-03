@@ -70,7 +70,6 @@ __all__ = [
     "MeApiKeyCreator",
     "MeResponse",
     "MeResponseData",
-    "Merchant",
     "MessageResponse",
     "MessageResponseData",
     "Pagination",
@@ -181,7 +180,6 @@ from weft_sdk.generated.models.me_api_key import MeApiKey as MeApiKey
 from weft_sdk.generated.models.me_api_key_creator import MeApiKeyCreator as MeApiKeyCreator
 from weft_sdk.generated.models.me_response import MeResponse as MeResponse
 from weft_sdk.generated.models.me_response_data import MeResponseData as MeResponseData
-from weft_sdk.generated.models.merchant import Merchant as Merchant
 from weft_sdk.generated.models.message_response import MessageResponse as MessageResponse
 from weft_sdk.generated.models.message_response_data import MessageResponseData as MessageResponseData
 from weft_sdk.generated.models.pagination import Pagination as Pagination
