@@ -850,4 +850,153 @@ describe("weft CLI", () => {
     }
     expect(fetchApi).not.toHaveBeenCalled();
   });
+
+  it("installs one optional workflow without Weft authentication", async () => {
+    const io = capture();
+    const runProcess = vi.fn().mockResolvedValue({
+      exitCode: 0,
+      stdout: "installed",
+      stderr: "",
+    });
+
+    expect(
+      await runCli(
+        [
+          "skill",
+          "install",
+          "weft-flights-search",
+          "--agent",
+          "codex",
+          "--global",
+        ],
+        { ...io, env: {}, runProcess, platform: "darwin" },
+      ),
+    ).toBe(EXIT_SUCCESS);
+
+    expect(runProcess).toHaveBeenCalledWith("npx", [
+      "--yes",
+      "skills",
+      "add",
+      "weft-labs/skills",
+      "--skill",
+      "weft-flights-search",
+      "--agent",
+      "codex",
+      "--yes",
+      "--global",
+    ]);
+    expect(JSON.parse(io.out.join(""))).toMatchObject({
+      schema_version: "1",
+      ok: true,
+      command: "skill",
+      data: {
+        status: "installed",
+        skill: "weft-flights-search",
+        agent: "codex",
+        scope: "global",
+      },
+    });
+  });
+
+  it("uses Node to run the npx program on Windows without a shell", async () => {
+    const io = capture();
+    const runProcess = vi.fn().mockResolvedValue({
+      exitCode: 0,
+      stdout: "installed",
+      stderr: "",
+    });
+    const nodeExecutable = "C:\\Program Files\\nodejs\\node.exe";
+    const npxCliPath =
+      "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js";
+
+    expect(
+      await runCli(
+        ["skill", "install", "weft-flights-search", "--agent", "codex"],
+        {
+          ...io,
+          env: {},
+          runProcess,
+          platform: "win32",
+          nodeExecutable,
+          npxCliPath,
+        },
+      ),
+    ).toBe(EXIT_SUCCESS);
+
+    expect(runProcess).toHaveBeenCalledWith(nodeExecutable, [
+      npxCliPath,
+      "--yes",
+      "skills",
+      "add",
+      "weft-labs/skills",
+      "--skill",
+      "weft-flights-search",
+      "--agent",
+      "codex",
+      "--yes",
+    ]);
+  });
+
+  it("validates optional workflow installs before starting a process", async () => {
+    const runProcess = vi.fn();
+    for (const args of [
+      ["skill", "install", "weft-flights-search"],
+      ["skill", "install", "weft-flights-search", "--agent", "Bad Agent"],
+      ["skill", "install", "../private", "--agent", "codex"],
+      ["skill", "install", "weft", "--agent", "codex"],
+      ["skill", "install", "weft-setup", "--agent", "codex"],
+    ]) {
+      const io = capture();
+      expect(await runCli(args, { ...io, env: {}, runProcess })).toBe(
+        EXIT_USAGE,
+      );
+      expect(JSON.parse(io.err.join("")).error.message).toBeTruthy();
+    }
+    expect(runProcess).not.toHaveBeenCalled();
+  });
+
+  it("returns an actionable typed error when workflow installation fails", async () => {
+    const io = capture();
+    const runProcess = vi.fn().mockResolvedValue({
+      exitCode: 1,
+      stdout: "",
+      stderr: "No matching skill",
+    });
+
+    expect(
+      await runCli(
+        ["skill", "install", "missing-skill", "--agent", "codex", "--global"],
+        { ...io, env: {}, runProcess, platform: "darwin" },
+      ),
+    ).toBe(EXIT_INTERNAL);
+
+    const error = JSON.parse(io.err.join(""));
+    expect(error).toMatchObject({
+      schema_version: "1",
+      ok: false,
+      command: "skill",
+      error: {
+        code: "SKILL_INSTALL_FAILED",
+        message: expect.stringContaining("npx --yes skills add"),
+        details: {
+          executable: "npx",
+          arguments: [
+            "--yes",
+            "skills",
+            "add",
+            "weft-labs/skills",
+            "--skill",
+            "missing-skill",
+            "--agent",
+            "codex",
+            "--yes",
+            "--global",
+          ],
+          exit_code: 1,
+          stderr: "No matching skill",
+        },
+      },
+    });
+    expect(error.error.message).toContain("--global");
+  });
 });
