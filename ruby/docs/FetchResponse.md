@@ -13,7 +13,6 @@
 | **tx_hash** | **String** | Settlement transaction hash. Null until a settlement hash has been reported. |  |
 | **protocol** | **String** | Payment protocol selected for this fetch. |  |
 | **artifact_id** | **Integer** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. |  |
-| **merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. |  |
 
 ## Example
 
@@ -29,7 +28,6 @@ instance = Weft::FetchResponse.new(
   payment_status: pending,
   tx_hash: null,
   protocol: null,
-  artifact_id: null,
-  merchant: null
+  artifact_id: null
 )
 ```

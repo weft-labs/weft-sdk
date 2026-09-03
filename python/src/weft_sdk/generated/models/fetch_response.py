@@ -19,13 +19,12 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
 from typing import Any, ClassVar, Dict, List
-from weft_sdk.generated.models.merchant import Merchant
 from typing import Optional, Set
 from typing_extensions import Self
 
 class FetchResponse(BaseModel):
     """
-    Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, `protocol`, and `merchant` describe the payment and settlement state.  `paid_usd` is \"0.00\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.  **Money string format.** Every USD amount on this surface is exact to the micro-dollar and never narrower than two decimals: a whole-cent amount renders \"0.50\", a sub-cent amount keeps its real precision (\"0.000892\"), and zero renders \"0.00\". Amounts are never rounded — an agent reconciling its own spend reads the truth, not a display value. Parse these as decimals; do NOT compare them as strings against a bare zero literal.
+    Successful fetch envelope. `body_base64` is the upstream artifact bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`, `tx_hash`, and `protocol` describe the payment and settlement state.  `paid_usd` is \"0.00\" (never the nominal charge amount) until the charge is CONFIRMED settled on-chain — a signed-but-unsettled hold reports its amount in `held_usd` instead. This is a deliberate honesty fix: earlier versions of this endpoint returned the nominal amount in `paid_usd` unconditionally, even when the charge never settled.  **Money string format.** Every USD amount on this surface is exact to the micro-dollar and never narrower than two decimals: a whole-cent amount renders \"0.50\", a sub-cent amount keeps its real precision (\"0.000892\"), and zero renders \"0.00\". Amounts are never rounded — an agent reconciling its own spend reads the truth, not a display value. Parse these as decimals; do NOT compare them as strings against a bare zero literal.
     """ # noqa: E501
     status: StrictInt = Field(description="HTTP status returned by the upstream after the paid replay.")
     headers: Dict[str, StrictStr] = Field(description="Response headers from the upstream.")
@@ -36,8 +35,7 @@ class FetchResponse(BaseModel):
     tx_hash: StrictStr = Field(description="Settlement transaction hash. Null until a settlement hash has been reported.")
     protocol: StrictStr = Field(description="Payment protocol selected for this fetch.")
     artifact_id: StrictInt = Field(description="Internal artifact identifier if the response was persisted; `null` otherwise.")
-    merchant: Merchant = Field(description="Merchant reputation snapshot.")
-    __properties: ClassVar[List[str]] = ["status", "headers", "body_base64", "paid_usd", "held_usd", "payment_status", "tx_hash", "protocol", "artifact_id", "merchant"]
+    __properties: ClassVar[List[str]] = ["status", "headers", "body_base64", "paid_usd", "held_usd", "payment_status", "tx_hash", "protocol", "artifact_id"]
 
     @field_validator('payment_status')
     def payment_status_validate_enum(cls, value):
@@ -92,9 +90,6 @@ class FetchResponse(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of merchant
-        if self.merchant:
-            _dict['merchant'] = self.merchant.to_dict()
         return _dict
 
     @classmethod
@@ -115,7 +110,6 @@ class FetchResponse(BaseModel):
             "payment_status": obj.get("payment_status"),
             "tx_hash": obj.get("tx_hash"),
             "protocol": obj.get("protocol"),
-            "artifact_id": obj.get("artifact_id"),
-            "merchant": Merchant.from_dict(obj["merchant"]) if obj.get("merchant") is not None else None
+            "artifact_id": obj.get("artifact_id")
         })
         return _obj

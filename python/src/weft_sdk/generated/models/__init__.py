@@ -45,7 +45,6 @@ from weft_sdk.generated.models.me_api_key import MeApiKey
 from weft_sdk.generated.models.me_api_key_creator import MeApiKeyCreator
 from weft_sdk.generated.models.me_response import MeResponse
 from weft_sdk.generated.models.me_response_data import MeResponseData
-from weft_sdk.generated.models.merchant import Merchant
 from weft_sdk.generated.models.message_response import MessageResponse
 from weft_sdk.generated.models.message_response_data import MessageResponseData
 from weft_sdk.generated.models.pagination import Pagination

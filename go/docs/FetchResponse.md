@@ -13,13 +13,12 @@ Name | Type | Description | Notes
 **TxHash** | **string** | Settlement transaction hash. Null until a settlement hash has been reported. |
 **Protocol** | **string** | Payment protocol selected for this fetch. |
 **ArtifactId** | **int32** | Internal artifact identifier if the response was persisted; &#x60;null&#x60; otherwise. |
-**Merchant** | [**Merchant**](Merchant.md) | Merchant reputation snapshot. |
 
 ## Methods
 
 ### NewFetchResponse
 
-`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, protocol string, artifactId int32, merchant Merchant, ) *FetchResponse`
+`func NewFetchResponse(status int32, headers map[string]string, bodyBase64 string, paidUsd string, heldUsd string, paymentStatus string, txHash string, protocol string, artifactId int32, ) *FetchResponse`
 
 NewFetchResponse instantiates a new FetchResponse object
 This constructor will assign default values to properties that have it defined,
@@ -212,26 +211,6 @@ and a boolean to check if the value has been set.
 `func (o *FetchResponse) SetArtifactId(v int32)`
 
 SetArtifactId sets ArtifactId field to given value.
-
-
-### GetMerchant
-
-`func (o *FetchResponse) GetMerchant() Merchant`
-
-GetMerchant returns the Merchant field if non-nil, zero value otherwise.
-
-### GetMerchantOk
-
-`func (o *FetchResponse) GetMerchantOk() (*Merchant, bool)`
-
-GetMerchantOk returns a tuple with the Merchant field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMerchant
-
-`func (o *FetchResponse) SetMerchant(v Merchant)`
-
-SetMerchant sets Merchant field to given value.
 
 
 

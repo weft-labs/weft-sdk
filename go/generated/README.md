@@ -174,7 +174,6 @@ Class | Method | HTTP request | Description
  - [MeApiKeyCreator](docs/MeApiKeyCreator.md)
  - [MeResponse](docs/MeResponse.md)
  - [MeResponseData](docs/MeResponseData.md)
- - [Merchant](docs/Merchant.md)
  - [MessageResponse](docs/MessageResponse.md)
  - [MessageResponseData](docs/MessageResponseData.md)
  - [Pagination](docs/Pagination.md)

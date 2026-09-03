@@ -40,3 +40,14 @@ find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -name '*.bak' -delete
 
 "${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \
   "${OUT_DIR}/generated" "${OUT_DIR}/docs"
+
+# Old generated snapshots predate gofmt. Format only tracked, staged, or new
+# files whose generated content changed. This keeps new contract work
+# reproducible without a repository-wide formatting rewrite.
+while IFS= read -r -d '' path; do
+  gofmt -w "${ROOT_DIR}/${path}"
+done < <(
+  git -C "${ROOT_DIR}" diff --name-only --diff-filter=AM -z -- 'go/generated/*.go'
+  git -C "${ROOT_DIR}" diff --cached --name-only --diff-filter=AM -z -- 'go/generated/*.go'
+  git -C "${ROOT_DIR}" ls-files --others --exclude-standard -z -- 'go/generated/*.go'
+)

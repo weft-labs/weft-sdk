@@ -751,7 +751,7 @@ paths:
           5. Replays the request with the protocol-specific payment credential.
           6. Streams the upstream artifact back, base64-encoded under
               `body_base64`, with `paid_usd`, `held_usd`, `payment_status`,
-              `tx_hash`, `protocol`, and the merchant's reputation snapshot. `paid_usd`
+              `tx_hash`, and `protocol`. `paid_usd`
              is "0.00" until the charge is CONFIRMED settled — a signed-but-
              unsettled hold (the common case for x402, which settles
              asynchronously) reports its amount in `held_usd` instead, never
@@ -4268,11 +4268,11 @@ components:
       required:
       - url
     FetchResponse:
+      additionalProperties: false
       description: |
         Successful fetch envelope. `body_base64` is the upstream artifact
         bytes, base64-encoded. `paid_usd`, `held_usd`, `payment_status`,
-        `tx_hash`, `protocol`, and `merchant` describe the payment and
-        settlement state.
+        `tx_hash`, and `protocol` describe the payment and settlement state.
 
         `paid_usd` is "0.00" (never the nominal charge amount) until the
         charge is CONFIRMED settled on-chain — a signed-but-unsettled hold
@@ -4296,7 +4296,6 @@ components:
         payment_status: pending
         paid_usd: "0.002"
         body_base64: body_base64
-        merchant: ""
         tx_hash: tx_hash
         artifact_id: 0
         status: 200
@@ -4366,45 +4365,16 @@ components:
             `null` otherwise.
           type: integer
           nullable: true
-        merchant:
-          allOf:
-          - $ref: "#/components/schemas/Merchant"
-          description: Merchant reputation snapshot.
-          nullable: true
       required:
       - artifact_id
       - body_base64
       - headers
       - held_usd
-      - merchant
       - paid_usd
       - payment_status
       - protocol
       - status
       - tx_hash
-    Merchant:
-      properties:
-        address:
-          description: EVM address that received the payment.
-          type: string
-        settlement_count:
-          description: All-time settlement count for this merchant address.
-          minimum: 0
-          type: integer
-        first_seen_at:
-          description: First time Weft observed a payment to this address.
-          format: date-time
-          type: string
-          nullable: true
-        dispute_count:
-          description: All-time dispute count for this merchant address.
-          minimum: 0
-          type: integer
-      required:
-      - address
-      - dispute_count
-      - first_seen_at
-      - settlement_count
     FetchErrorResponse:
       description: |
         Bespoke error envelope for `/api/v1/fetch`. Every error carries the
