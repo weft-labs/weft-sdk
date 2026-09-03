@@ -15,7 +15,6 @@
 
 import * as runtime from '../runtime';
 import type {
-  CuratedMarketplaceContract,
   ErrorResponse,
   InsufficientScopeResponse,
   RateLimitResponse,
@@ -24,8 +23,6 @@ import type {
   SearchResponse,
 } from '../models/index';
 import {
-    CuratedMarketplaceContractFromJSON,
-    CuratedMarketplaceContractToJSON,
     ErrorResponseFromJSON,
     ErrorResponseToJSON,
     InsufficientScopeResponseFromJSON,
@@ -40,11 +37,6 @@ import {
     SearchResponseToJSON,
 } from '../models/index';
 
-export interface GetCuratedMarketplaceContractRequest {
-    digest: string;
-    operationId: string;
-}
-
 export interface SearchOperationRequest {
     searchRequest: SearchRequest;
 }
@@ -53,53 +45,6 @@ export interface SearchOperationRequest {
  *
  */
 export class SearchApi extends runtime.BaseAPI {
-
-    /**
-     * Public, content-addressed detail document linked from compact hosted-MCP search results. A matching document is cacheable for one year and immutable. The digest is the SHA-256 of the canonical JSON document. Every reviewed endpoint includes its request and response evidence; asynchronous endpoints also include the authored submit-and-poll lifecycle, identity-header reuse, terminal states, and known gaps.
-     * Get a curated marketplace operation contract
-     */
-    async getCuratedMarketplaceContractRaw(requestParameters: GetCuratedMarketplaceContractRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CuratedMarketplaceContract>> {
-        if (requestParameters['digest'] == null) {
-            throw new runtime.RequiredError(
-                'digest',
-                'Required parameter "digest" was null or undefined when calling getCuratedMarketplaceContract().'
-            );
-        }
-
-        if (requestParameters['operationId'] == null) {
-            throw new runtime.RequiredError(
-                'operationId',
-                'Required parameter "operationId" was null or undefined when calling getCuratedMarketplaceContract().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/contracts/curated-marketplace/{digest}/{operation_id}.json`;
-        urlPath = urlPath.replace(`{${"digest"}}`, encodeURIComponent(String(requestParameters['digest'])));
-        urlPath = urlPath.replace(`{${"operation_id"}}`, encodeURIComponent(String(requestParameters['operationId'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => CuratedMarketplaceContractFromJSON(jsonValue));
-    }
-
-    /**
-     * Public, content-addressed detail document linked from compact hosted-MCP search results. A matching document is cacheable for one year and immutable. The digest is the SHA-256 of the canonical JSON document. Every reviewed endpoint includes its request and response evidence; asynchronous endpoints also include the authored submit-and-poll lifecycle, identity-header reuse, terminal states, and known gaps.
-     * Get a curated marketplace operation contract
-     */
-    async getCuratedMarketplaceContract(requestParameters: GetCuratedMarketplaceContractRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CuratedMarketplaceContract> {
-        const response = await this.getCuratedMarketplaceContractRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
 
     /**
      * Semantic search over the Weft index of paid agent resources. The request body is the weft-search-platform `/v1/search` contract: a free-text `query`, optional `max_results`, and optional structured `filters` (price / price_atomic / type / protocol — the canonical FilterSpec v1 vocabulary, vendored verbatim from the platform). Price is a dual representation of one constraint: `price` in USD decimal strings (the reasoning form) XOR `price_atomic` in integer micro-USD (the settlement form) — mutually exclusive, set at most one.  Account-scoped: the bearer token must be a buyer-scoped API key, an OAuth token carrying `search`, or a pending or claimed `wbt_*` bootstrap bearer. Pending bootstrap access uses an anonymous bootstrap identity; after claim, the promoted bearer uses its bound User. Rejection, cancellation, expiry, and revocation end bootstrap search. Bootstrap search is limited to 60 requests per credential and 120 per IP each hour before native credential promotion.  Response negotiation: `Accept: application/json` (default) returns the structured envelope; `Accept: text/markdown` returns a rendered Markdown digest of the same results — useful for piping into a chat UI or LLM prompt.

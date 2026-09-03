@@ -4,81 +4,8 @@ All URIs are relative to *https://weft.network*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**getCuratedMarketplaceContract**](SearchApi.md#getcuratedmarketplacecontract) | **GET** /contracts/curated-marketplace/{digest}/{operation_id}.json | Get a curated marketplace operation contract |
 | [**search**](SearchApi.md#searchoperation) | **POST** /api/v1/search | Search the Weft index |
 
-
-
-## getCuratedMarketplaceContract
-
-> CuratedMarketplaceContract getCuratedMarketplaceContract(digest, operationId)
-
-Get a curated marketplace operation contract
-
-Public, content-addressed detail document linked from compact hosted-MCP search results. A matching document is cacheable for one year and immutable. The digest is the SHA-256 of the canonical JSON document. Every reviewed endpoint includes its request and response evidence; asynchronous endpoints also include the authored submit-and-poll lifecycle, identity-header reuse, terminal states, and known gaps.
-
-### Example
-
-```ts
-import {
-  Configuration,
-  SearchApi,
-} from '@weft-labs/sdk';
-import type { GetCuratedMarketplaceContractRequest } from '@weft-labs/sdk';
-
-async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
-  const api = new SearchApi();
-
-  const body = {
-    // string
-    digest: digest_example,
-    // string
-    operationId: operationId_example,
-  } satisfies GetCuratedMarketplaceContractRequest;
-
-  try {
-    const data = await api.getCuratedMarketplaceContract(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
-```
-
-### Parameters
-
-
-| Name | Type | Description  | Notes |
-|------------- | ------------- | ------------- | -------------|
-| **digest** | `string` |  | [Defaults to `undefined`] |
-| **operationId** | `string` |  | [Defaults to `undefined`] |
-
-### Return type
-
-[**CuratedMarketplaceContract**](CuratedMarketplaceContract.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-| **200** | Full immutable operation contract |  * Cache-Control - public, max-age&#x3D;31536000, immutable <br>  * ETag - Quoted SHA-256 document digest <br>  |
-| **304** | The caller already has the document identified by ETag |  -  |
-| **404** | Unknown operation or digest mismatch |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## search
