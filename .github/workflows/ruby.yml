@@ -100,7 +100,7 @@ jobs:
       # credentials only). We attach a GitHub-native build-provenance
       # attestation to the built .gem before publishing; consumers can
       # verify with `gh attestation verify weft-sdk-<version>.gem
-      # --repo weft-labs/weft-sdk`.
+      # --repo weftlabs/weft-sdk`.
       - name: Attest gem provenance
         uses: actions/attest-build-provenance@v4
         with:

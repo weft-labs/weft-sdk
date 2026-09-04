@@ -714,7 +714,7 @@ export async function runCli(
           "--yes",
           "skills",
           "add",
-          "weft-labs/skills",
+          "weftlabs/skills",
           "--skill",
           skillName,
           "--agent",

@@ -56,7 +56,7 @@ weft balance
 
 Installing the package does not write to the machine. Install the `weft` Skill
 (`SKILL.md` plus `rules/cli.md`, vendored from
-[weft-labs/skills](https://github.com/weft-labs/skills)) with:
+[weftlabs/skills](https://github.com/weftlabs/skills)) with:
 
 ```bash
 weft skill install

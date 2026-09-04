@@ -40,11 +40,11 @@ mkdir "$TEMP_DIR/go-consumer"
   cd "$TEMP_DIR/go-consumer"
   go mod init example.com/weft-quickstart >/dev/null
   go mod edit \
-    -replace "github.com/weft-labs/weft-sdk/go=$ROOT_DIR/go"
-  go get github.com/weft-labs/weft-sdk/go@v0.0.0 >/dev/null
+    -replace "github.com/weftlabs/weft-sdk/go=$ROOT_DIR/go"
+  go get github.com/weftlabs/weft-sdk/go@v0.0.0 >/dev/null
   printf '%s\n' \
     'package main' \
-    'import _ "github.com/weft-labs/weft-sdk/go"' \
+    'import _ "github.com/weftlabs/weft-sdk/go"' \
     'func main() {}' > main.go
   go run .
 )

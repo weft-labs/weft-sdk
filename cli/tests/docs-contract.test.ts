@@ -25,7 +25,7 @@ import { EXIT_SUCCESS, runCli } from "../src/cli";
  * `wbt_` secrecy rule, or any wording that implies promotional money.
  *
  * The `weft` Skill (`skills/weft/`) is vendored byte-identical from
- * weft-labs/skills at the commit pinned in `skills/SKILLS_REF`; CI diffs the
+ * weftlabs/skills at the commit pinned in `skills/SKILLS_REF`; CI diffs the
  * copy against that commit. Wording this repo does not own is therefore only
  * checked for the safety invariants, while the repo-authored CLI README
  * carries the full frozen contract.

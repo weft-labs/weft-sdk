@@ -1,4 +1,4 @@
-module github.com/weft-labs/weft-sdk/go
+module github.com/weftlabs/weft-sdk/go
 
 go 1.23
 

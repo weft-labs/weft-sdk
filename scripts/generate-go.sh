@@ -12,7 +12,7 @@ mkdir -p "${TMP_DIR}"
 "${ROOT_DIR}/scripts/run-openapi-generator.sh" \
   go \
   "${TMP_DIR}" \
-  --additional-properties=packageName=generated,moduleName=github.com/weft-labs/weft-sdk/go/generated
+  --additional-properties=packageName=generated,moduleName=github.com/weftlabs/weft-sdk/go/generated
 
 rm -rf "${OUT_DIR}/generated" "${OUT_DIR}/docs"
 mkdir -p "${OUT_DIR}/generated"
@@ -35,7 +35,7 @@ fi
 
 # Fix placeholder import path in generated docs and source
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -type f \( -name '*.go' -o -name '*.md' \) \
-  -exec sed -i.bak 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weft-labs/weft-sdk/go/generated|g' {} +
+  -exec sed -i.bak 's|github.com/GIT_USER_ID/GIT_REPO_ID|github.com/weftlabs/weft-sdk/go/generated|g' {} +
 find "${OUT_DIR}/generated" "${OUT_DIR}/docs" -name '*.bak' -delete
 
 "${ROOT_DIR}/scripts/strip-generated-whitespace.sh" \

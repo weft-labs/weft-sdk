@@ -11,7 +11,7 @@ Polyglot client SDK monorepo for Weft Labs, consumed by external developers and 
 - **TypeScript:** pnpm workspace, Node >=18, TypeScript 5, tsup, Vitest, ESLint, Prettier. `@weft-labs/sdk` is the library; `@weft-labs/cli` owns the `weft` executable.
 - **Python:** Python >=3.10, Hatchling, httpx, pytest, Ruff, strict mypy.
 - **Ruby:** Ruby 3.2 in CI, Bundler, Minitest, RubyGems packaging.
-- **Go:** Go 1.23 module at `github.com/weft-labs/weft-sdk/go`.
+- **Go:** Go 1.23 module at `github.com/weftlabs/weft-sdk/go`.
 
 ## Commands
 
