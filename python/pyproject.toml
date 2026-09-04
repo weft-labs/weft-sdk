@@ -29,9 +29,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/weft-labs/weft-sdk"
-Documentation = "https://github.com/weft-labs/weft-sdk"
-Repository = "https://github.com/weft-labs/weft-sdk"
+Homepage = "https://github.com/weftlabs/weft-sdk"
+Documentation = "https://github.com/weftlabs/weft-sdk"
+Repository = "https://github.com/weftlabs/weft-sdk"
 
 [build-system]
 requires = ["hatchling"]

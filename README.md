@@ -63,7 +63,7 @@ returns it in `meta.idempotency_key` so that a retry the user explicitly
 decides on can reuse it without being charged twice; an agent must not retry
 an uncertain paid request on its own — surface the outcome and stop. A global npm install also installs the
 `weft` Skill for supported agent hosts already present on the machine. The
-Skill is vendored from [weft-labs/skills](https://github.com/weft-labs/skills)
+Skill is vendored from [weftlabs/skills](https://github.com/weftlabs/skills)
 at the commit pinned in `skills/SKILLS_REF`. See the
 [CLI guide](cli/README.md) for credential-free bootstrap and human claim.
 
@@ -75,7 +75,7 @@ at the commit pinned in `skills/SKILLS_REF`. See the
 | CLI | `@weft-labs/cli` | Supported | `weft` executable |
 | Python | `weft-sdk` | Supported | `Client` buyer façade |
 | Ruby | `weft-sdk` | Generated client preview | Generated APIs |
-| Go | `github.com/weft-labs/weft-sdk/go` | Generated client preview | Generated APIs |
+| Go | `github.com/weftlabs/weft-sdk/go` | Generated client preview | Generated APIs |
 
 “Generated client preview” means the package is published and tracks the API
 contract, but has not yet passed a clean-install buyer quickstart gate.
@@ -86,7 +86,7 @@ contract, but has not yet passed a clean-install buyer quickstart gate.
 - [OpenAPI document](https://weft.network/docs/openapi.yaml)
 - [TypeScript package guide](typescript/README.md)
 - [Python package guide](python/README.md)
-- [GitHub issues](https://github.com/weft-labs/weft-sdk/issues)
+- [GitHub issues](https://github.com/weftlabs/weft-sdk/issues)
 
 ## Repository layout
 
@@ -95,7 +95,7 @@ contract, but has not yet passed a clean-install buyer quickstart gate.
 - `cli/` — npm package `@weft-labs/cli`
 - `python/` — PyPI package `weft-sdk`
 - `ruby/` — RubyGems package `weft-sdk`
-- `go/` — Go module `github.com/weft-labs/weft-sdk/go`
+- `go/` — Go module `github.com/weftlabs/weft-sdk/go`
 - `scripts/` — generation, conformance, and release checks
 
 All language packages share a version tied to the OpenAPI version. Generated

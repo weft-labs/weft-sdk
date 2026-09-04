@@ -9,7 +9,7 @@ OpenAPI specification. Start with the per-language guide for the client you use:
 | CLI        | `@weft-labs/cli` (npm)   | [`../cli/README.md`](../cli/README.md) |
 | Python     | `weft-sdk` (PyPI)        | [`../python/README.md`](../python/README.md) |
 | Ruby       | `weft-sdk` (RubyGems)    | [`../ruby/README.md`](../ruby/README.md) |
-| Go         | `github.com/weft-labs/weft-sdk/go` | [`../go/README.md`](../go/README.md) |
+| Go         | `github.com/weftlabs/weft-sdk/go` | [`../go/README.md`](../go/README.md) |
 
 The clients are generated. Do not hand-edit files under `*/src/generated` (or the
 Go equivalent) — they are overwritten on the next spec sync.

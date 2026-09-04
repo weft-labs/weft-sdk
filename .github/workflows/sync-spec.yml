@@ -77,7 +77,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: weft-labs
+          owner: weftlabs
           repositories: weft-app
           permission-contents: read
 
@@ -92,7 +92,7 @@ jobs:
             echo "::error::client_payload.openapi_url is required for repository_dispatch"
             exit 1
           fi
-          EXPECTED_OPENAPI_URL="https://api.github.com/repos/weft-labs/weft-app/contents/docs/openapi.yaml?ref=$APP_SHA"
+          EXPECTED_OPENAPI_URL="https://api.github.com/repos/weftlabs/weft-app/contents/docs/openapi.yaml?ref=$APP_SHA"
           if [ "$OPENAPI_URL" != "$EXPECTED_OPENAPI_URL" ]; then
             echo "::error::Unexpected OpenAPI URL: $OPENAPI_URL"
             echo "::error::Expected: $EXPECTED_OPENAPI_URL"
@@ -167,7 +167,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: weft-labs
+          owner: weftlabs
           repositories: weft-sdk
           permission-contents: write
           permission-pull-requests: write

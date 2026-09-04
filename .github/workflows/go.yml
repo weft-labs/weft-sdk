@@ -64,7 +64,7 @@ jobs:
         run: go test ./...
 
   # Go modules are published via git tags — no separate publish step needed.
-  # Tag format: go/v0.2.0 (Go module path is github.com/weft-labs/weft-sdk/go)
+  # Tag format: go/v0.2.0 (Go module path is github.com/weftlabs/weft-sdk/go)
   # After pushing a tag, pkg.go.dev will index the module automatically.
   #
   # Provenance posture: Go modules have no native registry-side attestation
@@ -109,5 +109,5 @@ jobs:
       - name: Trigger pkg.go.dev indexing
         run: |
           VERSION="${GITHUB_REF#refs/tags/go/}"
-          echo "Requesting https://proxy.golang.org/github.com/weft-labs/weft-sdk/go/@v/${VERSION}.info"
-          curl -s "https://proxy.golang.org/github.com/weft-labs/weft-sdk/go/@v/${VERSION}.info" || true
+          echo "Requesting https://proxy.golang.org/github.com/weftlabs/weft-sdk/go/@v/${VERSION}.info"
+          curl -s "https://proxy.golang.org/github.com/weftlabs/weft-sdk/go/@v/${VERSION}.info" || true

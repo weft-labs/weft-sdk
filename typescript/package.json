@@ -72,7 +72,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/weft-labs/weft-sdk"
+    "url": "https://github.com/weftlabs/weft-sdk"
   },
   "peerDependencies": {
     "@x402/core": "^2.24.0"

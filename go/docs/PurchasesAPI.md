@@ -24,7 +24,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	openapiclient "github.com/weft-labs/weft-sdk/go/generated"
+	openapiclient "github.com/weftlabs/weft-sdk/go/generated"
 )
 
 func main() {
@@ -94,7 +94,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	openapiclient "github.com/weft-labs/weft-sdk/go/generated"
+	openapiclient "github.com/weftlabs/weft-sdk/go/generated"
 )
 
 func main() {

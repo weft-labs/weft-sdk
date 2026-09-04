@@ -1,6 +1,6 @@
 name: "CD: SDK Updated Dispatch"
 
-# Fires `weft-sdk-updated` to weft-labs/weft-app whenever weft-sdk main advances
+# Fires `weft-sdk-updated` to weftlabs/weft-app whenever weft-sdk main advances
 # with changes that affect consumed artifacts. weft-app's handler opens an
 # auto-PR that pins the four SDK clients at this SHA. Re-firing with the same
 # SHA is safe: the handler dedupes via the candidate branch name
@@ -43,7 +43,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: weft-labs
+          owner: weftlabs
           repositories: weft-app
           permission-contents: write
 
@@ -60,7 +60,7 @@ jobs:
           curl -sS --fail-with-body -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $DISPATCH_TOKEN" \
-            https://api.github.com/repos/weft-labs/weft-app/dispatches \
+            https://api.github.com/repos/weftlabs/weft-app/dispatches \
             --data "$(jq -n \
               --arg sdk_sha "$SDK_SHA" \
               --arg sdk_short_sha "$SDK_SHORT_SHA" \
