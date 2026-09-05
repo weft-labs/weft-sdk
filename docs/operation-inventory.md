@@ -9,21 +9,22 @@ operations stay on the lower-level generated clients.
 | --- | --- | --- | --- |
 | `getOpenApiDocument` | — | — | Excluded: contract discovery metadata |
 | `getCuratedMarketplaceContract` | — | — | Excluded: contract discovery metadata |
+| `createAccountBootstrap` | — | `weft bootstrap` | Credential bootstrap lifecycle |
+| `getAccountBootstrap` | — | `weft auth status` | Credential bootstrap lifecycle |
+| `cancelAccountBootstrap` | — | — | Excluded: credential cancellation and revocation |
 | `enrollResource` | — | — | Excluded: seller resource enrollment |
 | `signUp` | — | — | Excluded: interactive account lifecycle |
 | `confirmAccount` | — | — | Excluded: interactive account lifecycle |
 | `resendConfirmation` | — | — | Excluded: interactive account lifecycle |
-| `signIn` | — | — | Excluded: CLI uses API keys or stored bootstrap/OAuth credentials |
+| `signIn` | — | — | Excluded: CLI uses API keys or stored bootstrap credentials |
 | `requestPasswordReset` | — | — | Excluded: interactive account lifecycle |
 | `updatePassword` | — | — | Excluded: interactive account lifecycle |
 | `getMe` | `me()` | `weft me` | Buyer runtime |
 | `listApiKeys` | — | — | Excluded: credential lifecycle |
 | `createApiKey` | — | — | Excluded: prevents secrets in CLI output/history |
 | `revokeApiKey` | — | — | Excluded: credential lifecycle |
-| `cancelAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
-| `createAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
-| `getAccountBootstrap` | — | — | Excluded: credential lifecycle (server-side bootstrap referrer) |
 | `getBalance` | `balance()` | `weft balance` | Buyer runtime |
+| `getCuratedMarketplaceContract` | — | — | Excluded: public search contract detail |
 | `search` | `search(request)` | `weft search QUERY` | Buyer runtime |
 | `fetch` | `fetch(request, options)` | `weft fetch URL --max-cost-usd USD` | Paid buyer runtime |
 | `listPayments` | — | — | Excluded: organization-scoped seller ledger |
@@ -34,9 +35,9 @@ operations stay on the lower-level generated clients.
 ## CLI contract
 
 Authentication precedence is explicit `--api-key-stdin`, then `WEFT_API_KEY`,
-then the protected local bootstrap or OAuth credential store. A
+then the protected local bootstrap or legacy OAuth credential store. A
 `--api-key VALUE` argument is rejected so credentials do not leak into shell
-history or process listings. Stored OAuth credentials refresh before expiry.
+history or process listings. Legacy stored OAuth credentials refresh before expiry.
 The API origin defaults to `https://weft.network` and can be changed with
 `WEFT_BASE_URL` or `--base-url`; stored credentials retain their API origin.
 
@@ -97,17 +98,21 @@ command syntax.
 
 | Command | Purpose |
 | --- | --- |
-| `weft bootstrap --email EMAIL --agent-name NAME --reason TEXT` | Create a temporary bootstrap, email the human a claim link, store the `wbt_` and device credentials in a mode-0600 local file |
+| `weft bootstrap --email EMAIL --agent-name NAME --reason TEXT` | Create a temporary bootstrap, email the human a claim link, store the `wbt_` credential in a mode-0600 local file |
 | `weft auth status` | Report the bootstrap lifecycle state; poll at the interval returned by `weft bootstrap` |
 
-The temporary `wbt_` credential is secret, expires 30 minutes after creation,
-and carries only the `search`, `status`, and `cancel` capabilities. Balance,
-paid fetch, wallet, transfer, withdrawal, seller, and organization mutation
-surfaces refuse it. Lifecycle states are `pending`, `claimed`, `rejected`,
-`expired`, and `consumed`; the last three are terminal. Search remains available
-through `claimed` and ends only after successful OAuth token delivery consumes
-the temporary credential. Cancellation is an API capability; no CLI cancel
-command is shipped in this version.
+The `wbt_` credential is secret. Before claim it is temporary for 30 minutes and
+has exactly `search`, `status`, and `cancel`. Human approval promotes the same
+bearer to durable `identity`, `search`, `balance`, `fetch`, `purchases`,
+`status`, and `revoke` capabilities. It remains valid until revoked. Seller,
+organization, API-key administration, dashboard-session, transfer, withdrawal,
+and MCP surfaces always refuse it. Lifecycle states are `pending`, `claimed`,
+`rejected`, `expired`, and `revoked`; the last three are terminal. Claimed
+credentials retain search. Cancellation and revocation are API capabilities; no
+CLI cancel or revoke command is shipped in this version.
+
+New bootstrap flows make no OAuth registration or token request. Existing
+stored OAuth credentials remain compatible and refresh before expiry.
 
 No promotional balance, free credit, or subsidy is part of this lifecycle. A
 paid fetch requires the human to fund the wallet after the claim.

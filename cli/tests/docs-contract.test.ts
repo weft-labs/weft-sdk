@@ -43,7 +43,7 @@ const BOOTSTRAP_STATES = [
   "claimed",
   "rejected",
   "expired",
-  "consumed",
+  "revoked",
 ] as const;
 
 const SKILL_FILES = ["SKILL.md", "rules/cli.md"];
@@ -160,7 +160,6 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       "weft search",
       "claim email",
       "weft auth status",
-      "OAuth",
       "fund the wallet",
     ];
     let cursor = 0;
@@ -174,7 +173,7 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("states that wbt_ is secret, temporary, and search-only", () => {
+  it("states the exact pre-claim and durable post-claim wbt_ contract", () => {
     for (const [label, document] of [
       ["rules/cli.md", CLI_RULES],
       ["cli/README.md", README],
@@ -185,13 +184,25 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       expect(document.toLowerCase()).toMatch(/secret/);
       expect(document.toLowerCase()).toMatch(/temporary/);
       expect(document.toLowerCase()).toMatch(/search-only/);
+      expect(document.toLowerCase()).toMatch(/durable/);
+      expect(document.toLowerCase()).toMatch(/until revoked/);
       expect(
         document.toLowerCase(),
         `${label} must give the 30-minute expiry`,
       ).toMatch(/30 minutes|30-minute/);
     }
-    for (const capability of ["`search`", "`status`", "`cancel`"]) {
+    for (const capability of [
+      "`identity`",
+      "`search`",
+      "`balance`",
+      "`fetch`",
+      "`purchases`",
+      "`status`",
+      "`cancel`",
+      "`revoke`",
+    ]) {
       expect(README).toContain(capability);
+      expect(CLI_RULES).toContain(capability);
     }
   });
 
@@ -209,11 +220,13 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("explains that claimed is consumed inside auth status", () => {
-    expect(README).toMatch(
-      /auth status[\s\S]{0,100}claimed[\s\S]{0,100}consumed/i,
-    );
-    expect(README).toMatch(/does not emit an intermediate `claimed`/i);
+  it("explains claimed same-bearer promotion without token exchange", () => {
+    for (const document of [CLI_RULES, README]) {
+      expect(document).toMatch(/auth status[\s\S]{0,300}claimed/i);
+      expect(document).toMatch(/same bearer/i);
+      expect(document).toMatch(/do(?:es)? not[\s\S]{0,100}OAuth/i);
+      expect(document).not.toMatch(/`consumed`/);
+    }
   });
 
   it("forbids the agent from handling the human's password", () => {
@@ -267,9 +280,10 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
   });
 
-  it("documents claimed-state search and stored OAuth credentials", () => {
+  it("documents claimed-state search and stored OAuth compatibility", () => {
     for (const document of [README, INVENTORY]) {
-      expect(document).toMatch(/claimed[\s\S]{0,100}search/i);
+      expect(document).toContain("`claimed`");
+      expect(document).toContain("`search`");
     }
     for (const document of [CLI_RULES, README, TYPESCRIPT_README, INVENTORY]) {
       expect(document).toMatch(/stored[\s\S]{0,100}OAuth/i);
