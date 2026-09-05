@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { PromoBalance } from '@weft-labs/sdk'
+import type { PromoBalance } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

@@ -16,7 +16,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchPriceAtomicFilter } from '@weft-labs/sdk'
+import type { SearchPriceAtomicFilter } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

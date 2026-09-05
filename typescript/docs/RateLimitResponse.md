@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { RateLimitResponse } from '@weft-labs/sdk'
+import type { RateLimitResponse } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

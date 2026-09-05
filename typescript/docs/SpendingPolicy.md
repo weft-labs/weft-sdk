@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SpendingPolicy } from '@weft-labs/sdk'
+import type { SpendingPolicy } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

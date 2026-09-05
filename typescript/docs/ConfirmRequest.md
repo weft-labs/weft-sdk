@@ -11,7 +11,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { ConfirmRequest } from '@weft-labs/sdk'
+import type { ConfirmRequest } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

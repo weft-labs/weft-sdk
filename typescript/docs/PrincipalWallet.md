@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { PrincipalWallet } from '@weft-labs/sdk'
+import type { PrincipalWallet } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchWeftFetchCompatibility } from '@weft-labs/sdk'
+import type { SearchWeftFetchCompatibility } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

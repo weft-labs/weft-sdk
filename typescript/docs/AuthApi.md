@@ -25,11 +25,11 @@ Confirm an account
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { ConfirmAccountRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { ConfirmAccountRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {
@@ -91,11 +91,11 @@ Request password reset
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { RequestPasswordResetRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { RequestPasswordResetRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {
@@ -156,11 +156,11 @@ Resend confirmation email
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { ResendConfirmationOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { ResendConfirmationOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {
@@ -221,11 +221,11 @@ Sign in with email and password
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { SignInOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { SignInOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {
@@ -287,11 +287,11 @@ Create an account
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { SignUpOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { SignUpOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {
@@ -354,11 +354,11 @@ Update password with reset token
 import {
   Configuration,
   AuthApi,
-} from '@weft-labs/sdk';
-import type { UpdatePasswordRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { UpdatePasswordRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AuthApi();
 
   const body = {

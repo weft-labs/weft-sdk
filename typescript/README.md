@@ -1,4 +1,4 @@
-# `@weft-labs/sdk`
+# `@weftlabs/sdk`
 
 The supported TypeScript client for building buyer applications on Weft.
 
@@ -16,7 +16,7 @@ export WEFT_API_KEY="wk_..."
 ## Install
 
 ```sh
-npm install @weft-labs/sdk @x402/core
+npm install @weftlabs/sdk @x402/core
 ```
 
 Node.js 18 or newer is required. The client uses
@@ -38,7 +38,7 @@ browser JavaScript.
 ## First authenticated search
 
 ```js
-import { WeftClient } from "@weft-labs/sdk";
+import { WeftClient } from "@weftlabs/sdk";
 
 const apiKey = process.env.WEFT_API_KEY;
 if (!apiKey) throw new Error("Set WEFT_API_KEY to a buyer wk_* API key");
@@ -61,7 +61,7 @@ and reuse that same key when retrying after a timeout or uncertain response.
 
 ```js
 import { randomUUID } from "node:crypto";
-import { WeftClient } from "@weft-labs/sdk";
+import { WeftClient } from "@weftlabs/sdk";
 
 const apiKey = process.env.WEFT_API_KEY;
 if (!apiKey) throw new Error("Set WEFT_API_KEY to a buyer wk_* API key");
@@ -85,13 +85,13 @@ generates a key automatically and returns it in its success envelope.
 
 ## CLI
 
-The `weft` executable is published separately as `@weft-labs/cli`.
+The `weft` executable is published separately as `@weftlabs/cli`.
 
 ```sh
-npx --package @weft-labs/cli weft me
-npx --package @weft-labs/cli weft balance
-npx --package @weft-labs/cli weft search "weather data API" --max-results 5
-npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
+npx --package @weftlabs/cli weft me
+npx --package @weftlabs/cli weft balance
+npx --package @weftlabs/cli weft search "weather data API" --max-results 5
+npx --package @weftlabs/cli weft fetch "https://merchant.example/data" \
   --max-cost-usd 0.05
 ```
 
@@ -108,7 +108,7 @@ the status and the structured response body, and retain the server request ID
 when asking for support.
 
 ```js
-import { WeftClient, WeftError } from "@weft-labs/sdk";
+import { WeftClient, WeftError } from "@weftlabs/sdk";
 
 const apiKey = process.env.WEFT_API_KEY;
 if (!apiKey) throw new Error("Set WEFT_API_KEY to a buyer wk_* API key");
@@ -152,7 +152,7 @@ try {
 yet wrap, the generated OpenAPI classes remain exported:
 
 ```js
-import { Configuration, SearchApi } from "@weft-labs/sdk";
+import { Configuration, SearchApi } from "@weftlabs/sdk";
 
 const configuration = new Configuration({
   accessToken: process.env.WEFT_API_KEY,
@@ -173,7 +173,7 @@ contract.
 Seller infrastructure can import the separately exported facilitator helpers:
 
 ```js
-import { createFacilitatorClient, getFeeInfo } from "@weft-labs/sdk/facilitator";
+import { createFacilitatorClient, getFeeInfo } from "@weftlabs/sdk/facilitator";
 
 const facilitator = createFacilitatorClient();
 const fee = await getFeeInfo();
@@ -196,7 +196,7 @@ A seller installs a scheme package too. The middleware carries the x402
 plumbing; the scheme prices the route and shapes the payment:
 
 ```sh
-npm install @weft-labs/sdk @x402/core @x402/evm express
+npm install @weftlabs/sdk @x402/core @x402/evm express
 ```
 
 <!-- example:charge-api.mjs:start -->
@@ -204,7 +204,7 @@ npm install @weft-labs/sdk @x402/core @x402/evm express
 ```js
 import express from "express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { weftPaymentMiddleware } from "@weft-labs/sdk/facilitator/middleware";
+import { weftPaymentMiddleware } from "@weftlabs/sdk/facilitator/middleware";
 
 const apiKey = process.env.WEFT_SELLER_API_KEY;
 if (!apiKey) {
@@ -257,7 +257,7 @@ configuration:
 ```js
 import { Hono } from "hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { weftPaymentMiddlewareHono } from "@weft-labs/sdk/facilitator/middleware";
+import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 
 const apiKey = process.env.WEFT_SELLER_API_KEY;
 if (!apiKey) {

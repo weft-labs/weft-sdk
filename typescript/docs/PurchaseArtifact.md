@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { PurchaseArtifact } from '@weft-labs/sdk'
+import type { PurchaseArtifact } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

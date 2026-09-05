@@ -20,7 +20,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { UserPrincipal } from '@weft-labs/sdk'
+import type { UserPrincipal } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

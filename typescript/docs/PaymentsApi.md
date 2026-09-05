@@ -21,11 +21,11 @@ Get payment details
 import {
   Configuration,
   PaymentsApi,
-} from '@weft-labs/sdk';
-import type { GetPaymentRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetPaymentRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -92,11 +92,11 @@ List payments
 import {
   Configuration,
   PaymentsApi,
-} from '@weft-labs/sdk';
-import type { ListPaymentsRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { ListPaymentsRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

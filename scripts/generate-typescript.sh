@@ -13,7 +13,7 @@ mkdir -p "${TMP_DIR}"
 "${ROOT_DIR}/scripts/run-openapi-generator.sh" \
   typescript-fetch \
   "${TMP_DIR}" \
-  --additional-properties=supportsES6=true,npmName=@weft-labs/sdk,typescriptThreePlus=true
+  --additional-properties=supportsES6=true,npmName=@weftlabs/sdk,typescriptThreePlus=true
 
 rm -rf "${OUT_DIR}/src/generated" "${OUT_DIR}/docs" "${OUT_DIR}/.openapi-generator" "${OUT_DIR}/.openapi-generator-ignore"
 mkdir -p "${OUT_DIR}/src/generated"

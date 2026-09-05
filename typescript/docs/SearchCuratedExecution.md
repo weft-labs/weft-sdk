@@ -11,7 +11,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchCuratedExecution } from '@weft-labs/sdk'
+import type { SearchCuratedExecution } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

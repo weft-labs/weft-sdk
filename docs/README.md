@@ -5,8 +5,8 @@ OpenAPI specification. Start with the per-language guide for the client you use:
 
 | Language   | Package                  | Guide                                  |
 |------------|--------------------------|----------------------------------------|
-| TypeScript | `@weft-labs/sdk` (npm)   | [`../typescript/README.md`](../typescript/README.md) |
-| CLI        | `@weft-labs/cli` (npm)   | [`../cli/README.md`](../cli/README.md) |
+| TypeScript | `@weftlabs/sdk` (npm)   | [`../typescript/README.md`](../typescript/README.md) |
+| CLI        | `@weftlabs/cli` (npm)   | [`../cli/README.md`](../cli/README.md) |
 | Python     | `weft-sdk` (PyPI)        | [`../python/README.md`](../python/README.md) |
 | Ruby       | `weft-sdk` (RubyGems)    | [`../ruby/README.md`](../ruby/README.md) |
 | Go         | `github.com/weftlabs/weft-sdk/go` | [`../go/README.md`](../go/README.md) |

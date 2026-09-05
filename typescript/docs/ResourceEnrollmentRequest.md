@@ -15,7 +15,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { ResourceEnrollmentRequest } from '@weft-labs/sdk'
+import type { ResourceEnrollmentRequest } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

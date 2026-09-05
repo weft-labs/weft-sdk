@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { AccountBootstrapApproval } from '@weft-labs/sdk'
+import type { AccountBootstrapApproval } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

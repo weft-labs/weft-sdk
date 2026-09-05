@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { weftPaymentMiddlewareHono } from "@weft-labs/sdk/facilitator/middleware";
+import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 
 const apiKey = process.env.WEFT_SELLER_API_KEY;
 if (!apiKey) {

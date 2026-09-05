@@ -21,11 +21,11 @@ Get a buyer purchase
 import {
   Configuration,
   PurchasesApi,
-} from '@weft-labs/sdk';
-import type { GetPurchaseRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetPurchaseRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -95,11 +95,11 @@ Returns the authenticated buyer\&#39;s signing and settlement ledger. Unlike &#x
 import {
   Configuration,
   PurchasesApi,
-} from '@weft-labs/sdk';
-import type { ListPurchasesRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { ListPurchasesRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

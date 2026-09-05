@@ -32,7 +32,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchEndpointHit } from '@weft-labs/sdk'
+import type { SearchEndpointHit } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

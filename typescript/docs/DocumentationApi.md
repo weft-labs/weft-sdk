@@ -20,11 +20,11 @@ Fetch this OpenAPI document
 import {
   Configuration,
   DocumentationApi,
-} from '@weft-labs/sdk';
-import type { GetOpenApiDocumentRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetOpenApiDocumentRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new DocumentationApi();
 
   try {

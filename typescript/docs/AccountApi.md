@@ -22,11 +22,11 @@ Returns the seller Organization represented by an &#x60;ax_live_*&#x60; resource
 import {
   Configuration,
   AccountApi,
-} from '@weft-labs/sdk';
-import type { GetMeRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetMeRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

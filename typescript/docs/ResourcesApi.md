@@ -22,11 +22,11 @@ Lets an unauthenticated agent (or its operator) self-enroll a Resource as a \&qu
 import {
   Configuration,
   ResourcesApi,
-} from '@weft-labs/sdk';
-import type { EnrollResourceRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { EnrollResourceRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new ResourcesApi();
 
   const body = {

@@ -1,7 +1,7 @@
 # SDK and CLI operation inventory
 
 The generated clients expose the complete OpenAPI contract. `WeftClient` and
-the separate `@weft-labs/cli` package intentionally expose the buyer runtime needed by applications
+the separate `@weftlabs/cli` package intentionally expose the buyer runtime needed by applications
 and autonomous agents; credential lifecycle, seller, and organization-scoped
 operations stay on the lower-level generated clients.
 

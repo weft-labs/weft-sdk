@@ -22,11 +22,11 @@ Semantic search over the Weft index of paid agent resources. The request body is
 import {
   Configuration,
   SearchApi,
-} from '@weft-labs/sdk';
-import type { SearchOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { SearchOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

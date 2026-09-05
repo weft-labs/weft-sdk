@@ -52,7 +52,8 @@ defaults:
 # "build"/"publish" check that failed in 0s with no logs.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Tag runs publish shared registry state and must finish once started.
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   build:
@@ -61,6 +62,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
       - name: Setup Node
@@ -76,9 +79,15 @@ jobs:
       - name: Lint
         run: pnpm run lint:check
       - name: Test
+        env:
+          WEFT_PACKAGE_ARCHIVES: ${{ runner.temp }}/npm-archives
         run: pnpm run test
-      - name: Build
-        run: pnpm run build
+      - name: Retain tested npm archives
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-archives-${{ github.sha }}
+          path: ${{ runner.temp }}/npm-archives/*.tgz
+          if-no-files-found: error
 
   publish:
     needs: build
@@ -95,6 +104,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
       - name: Setup Node
@@ -102,37 +113,13 @@ jobs:
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Verify committed generated SDK
-        run: ./scripts/check-generated.sh typescript
-      - name: Build
-        run: pnpm run build
-      - name: Verify CLI package bootstrap
-        run: |
-          if ! pnpm view @weft-labs/cli name >/dev/null 2>&1; then
-            echo "::error::@weft-labs/cli must be bootstrapped on npm and configured for trusted publishing before this release can publish either npm package."
-            exit 1
-          fi
-      # --provenance attaches a Sigstore-signed provenance statement to the
-      # publish, tying the artifact to this workflow run + commit. Required
-      # by https://docs.npmjs.com/generating-provenance-statements. Node 24
-      # ships npm >= 9.5.0 which is the minimum for the flag.
-      - name: Publish SDK to npm with provenance
-        run: |
-          VERSION="$(node -p "require('./typescript/package.json').version")"
-          if pnpm view "@weft-labs/sdk@$VERSION" version >/dev/null 2>&1; then
-            echo "@weft-labs/sdk@$VERSION is already published; continuing recovery."
-          else
-            pnpm --filter @weft-labs/sdk publish --access public --provenance --no-git-checks
-          fi
-      - name: Publish CLI to npm with provenance
-        run: |
-          VERSION="$(node -p "require('./cli/package.json').version")"
-          if pnpm view "@weft-labs/cli@$VERSION" version >/dev/null 2>&1; then
-            echo "@weft-labs/cli@$VERSION is already published; continuing recovery."
-          else
-            pnpm --filter @weft-labs/cli publish --access public --provenance --no-git-checks
-          fi
+      - name: Download tested npm archives
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-archives-${{ github.sha }}
+          path: ${{ runner.temp }}/npm-archives
+      # No dependency installation or build occurs in the OIDC-enabled job.
+      - name: Publish tested SDK then CLI archives with provenance
+        env:
+          ARCHIVE_DIRECTORY: ${{ runner.temp }}/npm-archives
+        run: node scripts/publish-npm-archives.mjs "$ARCHIVE_DIRECTORY"

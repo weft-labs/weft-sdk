@@ -23,7 +23,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { MeResponseData } from '@weft-labs/sdk'
+import type { MeResponseData } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

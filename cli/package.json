@@ -1,5 +1,5 @@
 {
-  "name": "@weft-labs/cli",
+  "name": "@weftlabs/cli",
   "version": "0.25.0",
   "description": "Command-line client for the Weft buyer runtime",
   "type": "module",
@@ -16,9 +16,9 @@
   ],
   "scripts": {
     "build": "tsup",
-    "pretest": "pnpm --filter @weft-labs/sdk build",
+    "pretest": "pnpm --filter @weftlabs/sdk build",
     "test": "vitest run",
-    "pretest:unit": "pnpm --filter @weft-labs/sdk build",
+    "pretest:unit": "pnpm --filter @weftlabs/sdk build",
     "test:unit": "vitest run",
     "lint:check": "eslint",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
@@ -39,7 +39,7 @@
     "directory": "cli"
   },
   "dependencies": {
-    "@weft-labs/sdk": "workspace:*"
+    "@weftlabs/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

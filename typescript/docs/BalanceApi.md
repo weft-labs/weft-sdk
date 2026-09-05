@@ -22,11 +22,11 @@ Read-only snapshot for the buyer behind the bearer token. The response always in
 import {
   Configuration,
   BalanceApi,
-} from '@weft-labs/sdk';
-import type { GetBalanceRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetBalanceRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

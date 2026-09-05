@@ -20,7 +20,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchFilterSpec } from '@weft-labs/sdk'
+import type { SearchFilterSpec } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

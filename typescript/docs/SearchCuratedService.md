@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchCuratedService } from '@weft-labs/sdk'
+import type { SearchCuratedService } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

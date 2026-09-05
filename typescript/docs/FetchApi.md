@@ -22,11 +22,11 @@ Universal x402/MPP fetch proxy. The caller provides a target &#x60;url&#x60;, a 
 import {
   Configuration,
   FetchApi,
-} from '@weft-labs/sdk';
-import type { FetchOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { FetchOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",

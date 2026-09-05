@@ -18,7 +18,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { BalanceResponse } from '@weft-labs/sdk'
+import type { BalanceResponse } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

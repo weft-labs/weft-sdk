@@ -13,7 +13,7 @@ importers:
 
   cli:
     dependencies:
-      '@weft-labs/sdk':
+      '@weftlabs/sdk':
         specifier: workspace:*
         version: link:../typescript
     devDependencies:

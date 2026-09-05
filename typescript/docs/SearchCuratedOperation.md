@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchCuratedOperation } from '@weft-labs/sdk'
+import type { SearchCuratedOperation } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

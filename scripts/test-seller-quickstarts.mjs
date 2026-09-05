@@ -1,7 +1,7 @@
 /**
  * Packed-artifact acceptance for the seller payment examples.
  *
- * Packs `@weft-labs/sdk`, installs it into a clean consumer directory beside
+ * Packs `@weftlabs/sdk`, installs it into a clean consumer directory beside
  * the dependencies the public guide tells a seller to install, then runs
  * `examples/charge-api.mjs` (Express) and `examples/charge-api-hono.mjs`
  * (Hono) against a stub facilitator.
@@ -263,7 +263,7 @@ try {
   const installedPackage = join(
     temporaryDirectory,
     "node_modules",
-    "@weft-labs",
+    "@weftlabs",
     "sdk",
   );
   const env = {
@@ -429,7 +429,7 @@ console.log(
   const clientDriver = join(temporaryDirectory, "drive-client.mjs");
   await writeFile(
     clientDriver,
-    `import { createFacilitatorClient } from "@weft-labs/sdk/facilitator";
+    `import { createFacilitatorClient } from "@weftlabs/sdk/facilitator";
 try {
   await createFacilitatorClient({
     url: process.env.X402_FACILITATOR_URL,

@@ -11,7 +11,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { MeResponse } from '@weft-labs/sdk'
+import type { MeResponse } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

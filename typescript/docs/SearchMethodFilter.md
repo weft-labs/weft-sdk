@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchMethodFilter } from '@weft-labs/sdk'
+import type { SearchMethodFilter } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

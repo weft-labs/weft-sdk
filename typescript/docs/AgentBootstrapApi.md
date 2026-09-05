@@ -24,11 +24,11 @@ A pending bootstrap becomes rejected. A claimed promoted credential becomes revo
 import {
   Configuration,
   AgentBootstrapApi,
-} from '@weft-labs/sdk';
-import type { CancelAccountBootstrapRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { CancelAccountBootstrapRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bootstrapAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -96,11 +96,11 @@ Creates a 30-minute, search-only bootstrap and emails a separate claim link to t
 import {
   Configuration,
   AgentBootstrapApi,
-} from '@weft-labs/sdk';
-import type { CreateAccountBootstrapRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { CreateAccountBootstrapRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const api = new AgentBootstrapApi();
 
   const body = {
@@ -165,11 +165,11 @@ Read bootstrap lifecycle status
 import {
   Configuration,
   AgentBootstrapApi,
-} from '@weft-labs/sdk';
-import type { GetAccountBootstrapRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { GetAccountBootstrapRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bootstrapAuth
     accessToken: "YOUR BEARER TOKEN",

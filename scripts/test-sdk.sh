@@ -82,7 +82,7 @@ for entry in \
     fail "$label version '${version:-missing}' does not match OpenAPI version '$SPEC_VERSION'."
 done
 
-grep -q '"@weft-labs/sdk": "workspace:\*"' "${ROOT_DIR}/cli/package.json" ||
+grep -q '"@weftlabs/sdk": "workspace:\*"' "${ROOT_DIR}/cli/package.json" ||
   fail "CLI must depend on the public SDK through the pnpm workspace protocol."
 
 [ ! -f "${ROOT_DIR}/go/generated/go.mod" ] ||

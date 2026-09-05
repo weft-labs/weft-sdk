@@ -24,11 +24,11 @@ Create an &#x60;ax_live_*&#x60; resource key for the authenticated seller Organi
 import {
   Configuration,
   APIKeysApi,
-} from '@weft-labs/sdk';
-import type { CreateApiKeyOperationRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { CreateApiKeyOperationRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -97,11 +97,11 @@ List &#x60;ax_live_*&#x60; resource keys for the seller Organization.
 import {
   Configuration,
   APIKeysApi,
-} from '@weft-labs/sdk';
-import type { ListApiKeysRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { ListApiKeysRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
@@ -160,11 +160,11 @@ Revoke an API key
 import {
   Configuration,
   APIKeysApi,
-} from '@weft-labs/sdk';
-import type { RevokeApiKeyRequest } from '@weft-labs/sdk';
+} from '@weftlabs/sdk';
+import type { RevokeApiKeyRequest } from '@weftlabs/sdk';
 
 async function example() {
-  console.log("🚀 Testing @weft-labs/sdk SDK...");
+  console.log("🚀 Testing @weftlabs/sdk SDK...");
   const config = new Configuration({
     // Configure HTTP bearer authorization: bearerAuth
     accessToken: "YOUR BEARER TOKEN",
