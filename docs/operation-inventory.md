@@ -40,13 +40,35 @@ history or process listings. Stored OAuth credentials refresh before expiry.
 The API origin defaults to `https://weft.network` and can be changed with
 `WEFT_BASE_URL` or `--base-url`; stored credentials retain their API origin.
 
-Every command prints one versioned JSON object. Success uses
+Every command prints one versioned JSON object. Most successes use
 `{"schema_version":"1","ok":true,"command":"…","data":…}` on stdout.
 Errors use
 `{"schema_version":"1","ok":false,"command":"…","error":{"code":"…","message":"…","details":…}}`
 on stderr. Fetch success also includes
 `"meta":{"idempotency_key":"…"}` so an uncertain call can be retried with
-the exact same key.
+the exact same key. Default `weft fetch` uses schema version `"2"` for results
+and for errors after fetch option validation starts. Other commands and
+`weft fetch --raw` retain schema version `"1"`.
+
+Default fetch saves exact response bytes before stdout. Its `meta` object
+precedes `data` and includes `saved_path`, `receipt_path`, `byte_count`, and
+`idempotency_key`. Both paths are absolute. `data` retains the SDK's camelCase
+receipt fields but replaces `bodyBase64` with `body_encoding`, `media_type`,
+and, for valid UTF-8 text or JSON, the complete original `body` string. JSON
+body values are not parsed or reformatted. Binary, compressed, and invalid
+UTF-8 responses use `body_encoding: "file"` and omit `body`. Fetch with `--raw`
+retains the original SDK result with `bodyBase64` and does not write files.
+
+Local files use private per-result directories and are not deleted automatically.
+`RESULT_STORAGE_UNAVAILABLE` means no fetch was sent. `RESULT_STORAGE_FAILED`
+means the response arrived but local delivery failed; its error details keep
+the body-free receipt and mark `file_complete: false`, while `meta` keeps the
+retry key. Both use exit code `5`. See [CLI result storage](../cli/README.md#fetch-results)
+for paths, permissions, cleanup, and retry instructions.
+Invalid transport Base64 returns `RESULT_DECODE_FAILED`, with the receipt and
+retry key. A failed stdout write returns `RESULT_OUTPUT_FAILED`, with the
+receipt and any saved paths. Both use exit code `5`; reading a saved local file
+requires no fetch or payment.
 
 `weft --help` returns every command, global option, authentication method, and
 exit code as JSON. `weft <command> --help` returns command-specific usage and

@@ -9,7 +9,7 @@
     "hooks:pre-push": "pnpm run lint:check && pnpm run format:check && pnpm --recursive --if-present run test:unit",
     "lint:check": "pnpm --recursive --if-present run lint:check",
     "test": "pnpm --recursive --if-present run test:unit && pnpm run test:artifacts",
-    "test:artifacts": "pnpm run build && node scripts/test-typescript-quickstarts.mjs && node scripts/test-seller-quickstarts.mjs"
+    "test:artifacts": "pnpm run build && node scripts/test-typescript-quickstarts.mjs && node scripts/test-seller-quickstarts.mjs && node scripts/test-cli-delivery.mjs"
   },
   "pnpm": {
     "overrides": {

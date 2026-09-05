@@ -21,6 +21,57 @@ npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
 npx --package @weft-labs/cli weft --help
 ```
 
+## Fetch results
+
+One `weft fetch` call saves the exact response bytes before it prints its JSON
+result. The default fetch output uses `schema_version: "2"`. The `meta` object
+comes before the body and contains `saved_path` (an absolute path), `byte_count`,
+`receipt_path`, and `idempotency_key`. The `data` object retains the SDK receipt
+fields, including `status`, `headers`, `paidUsd`, `heldUsd`, `paymentStatus`, and
+`artifactId`.
+
+For text and JSON with valid UTF-8, `data.body` contains the complete original
+text and `data.body_encoding` is `"utf-8"`. JSON is kept as text, so number
+precision, duplicate keys, whitespace, and a UTF-8 BOM are preserved. The body
+is escaped as a string in the outer JSON object. `data.media_type` identifies
+its media type. Binary, compressed, invalid UTF-8, and other non-text responses
+use `data.body_encoding: "file"` and omit `body`. Read `meta.saved_path` to use
+those bytes. Reading the local file does not make a request or spend money.
+
+Results are saved under `$HOME/.weft-results/result-<random>/` by default
+(`USERPROFILE` or the operating system home is used when `HOME` is absent).
+Set `WEFT_RESULTS_DIR` to use another storage directory. On Unix, that directory
+must belong to your user and must not be writable by another user. The storage
+path itself must not be a symlink. Each result directory has mode `0700`; its
+`body` and `receipt.json` files have mode `0600`. The receipt file contains
+metadata and the retry key, with no copy of the response body. Upstream filenames
+do not determine the local path. Payloads are never made executable.
+
+The CLI never deletes saved results. Remove individual result directories when
+you no longer need them. A failed call can leave an empty directory or a partial
+file. Do not use a file from a failed delivery as a complete result.
+
+If the CLI cannot reserve a directory, it returns
+`RESULT_STORAGE_UNAVAILABLE` before it sends the fetch. If storage fails after
+fetch, it returns `RESULT_STORAGE_FAILED` on stderr with exit code `5`, the
+receipt, and the same retry key. This is a local delivery failure; the receipt
+still describes the payment state. Fix storage and retry the same URL, method,
+and cost limit with `--idempotency-key` set to that key. The CLI does not retry
+or purchase again automatically. Keep the same key after any uncertain result;
+the server's existing retry rules and expiry still apply.
+
+Invalid Base64 from the API returns `RESULT_DECODE_FAILED` with the receipt and
+retry key; the CLI does not claim that damaged bytes were delivered. If stdout
+fails, for example because a pipe closes, `RESULT_OUTPUT_FAILED` on stderr keeps
+the receipt and saved paths. Read the saved file to recover without another
+fetch. These delivery errors use exit code `5`.
+
+Existing scripts can select `weft fetch ... --raw`. This retains the version 1
+SDK envelope with `data.bodyBase64` and does not save local files. Other commands
+retain their version 1 output. There is one fetch operation for every body size.
+Hosts can still limit the text shown to a model; use the saved path when stdout
+is clipped.
+
 ## With no credential: agent bootstrap and human claim
 
 An agent that has no Weft credential can start by itself. The flow needs the

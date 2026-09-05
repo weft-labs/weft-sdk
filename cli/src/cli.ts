@@ -10,6 +10,11 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  readableBody,
+  reserveResultDirectory,
+  writeResultFile,
+} from "./results";
+import {
   type PaidFetchRequest,
   ResponseError,
   WeftClient,
@@ -91,11 +96,12 @@ const COMMAND_HELP = {
   fetch: {
     description: "Fetch a URL within an explicit spending limit",
     usage:
-      "weft fetch <url> --max-cost-usd <amount> [--method <method>] [--idempotency-key <key>]",
+      "weft fetch <url> --max-cost-usd <amount> [--method <method>] [--idempotency-key <key>] [--raw]",
     options: [
       "--max-cost-usd <amount>",
       "--method <method>",
       "--idempotency-key <key>",
+      "--raw",
     ],
   },
   purchases: {
@@ -191,7 +197,7 @@ export interface CliDependencies {
   env?: Record<string, string | undefined>;
   fetchApi?: typeof fetch;
   readStdin?: () => Promise<string>;
-  writeOut?: (value: string) => void;
+  writeOut?: (value: string) => void | Promise<void>;
   writeErr?: (value: string) => void;
   generateIdempotencyKey?: () => string;
   runProcess?: ProcessRunner;
@@ -381,8 +387,8 @@ function parseArgs(args: string[]): ParsedArgs {
       apiKeyStdin = true;
     } else if (arg === "--base-url") {
       [baseUrl, index] = takeValue(args, index, arg);
-    } else if (arg === "--global") {
-      options.set("global", true);
+    } else if (arg === "--global" || arg === "--raw") {
+      options.set(arg.slice(2), true);
     } else if (arg.startsWith("--")) {
       const [value, nextIndex] = takeValue(args, index, arg);
       options.set(arg.slice(2), value);
@@ -639,24 +645,57 @@ async function defaultReadStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function defaultWriteOut(value: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    // The write callback reports failure before the stream emits its error.
+    // Keep the one-shot listener until that event to prevent an uncaught EPIPE.
+    const onError = (error: Error) => reject(error);
+    process.stdout.once("error", onError);
+    process.stdout.write(value, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        process.stdout.removeListener("error", onError);
+        resolve();
+      }
+    });
+  });
+}
+
 export async function runCli(
   args: string[],
   dependencies: CliDependencies = {},
 ): Promise<number> {
-  const writeOut =
-    dependencies.writeOut ?? ((value) => process.stdout.write(value));
+  const outputWriter = dependencies.writeOut ?? defaultWriteOut;
   const writeErr =
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
   let idempotencyKey: string | undefined;
+  let schemaVersion = "1";
+  let meta: Record<string, unknown> | undefined;
+  let deliveryReceipt: Record<string, unknown> | undefined;
   const fetchApi = dependencies.fetchApi ?? fetch;
+  const writeOut = async (value: string) => {
+    try {
+      await outputWriter(value);
+    } catch {
+      throw new CliError(
+        EXIT_INTERNAL,
+        command === "fetch" ? "RESULT_OUTPUT_FAILED" : "OUTPUT_FAILED",
+        "Cannot write stdout. Use the saved result paths below if present. Otherwise keep this receipt and retry the same fetch with --idempotency-key and the same key.",
+        deliveryReceipt === undefined
+          ? undefined
+          : { receipt: deliveryReceipt },
+      );
+    }
+  };
 
   try {
     rejectUnsafeCredentialArgument(args);
     const help = requestedHelp(args);
     if (help !== undefined) {
       command = "help";
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -741,7 +780,7 @@ export async function runCli(
             },
           );
         }
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -761,7 +800,7 @@ export async function runCli(
       ensureOnly(parsed.options, []);
       const installSkill = await loadSkillInstaller();
       const result = await installSkill({ force: true });
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -850,7 +889,7 @@ export async function runCli(
 
       await writeStoredCredentials(env, stored);
 
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -881,7 +920,7 @@ export async function runCli(
 
       const stored = await readStoredCredentials(env);
       if (stored?.type === "oauth") {
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -915,7 +954,7 @@ export async function runCli(
 
       const statusValue = status.data.status;
       if (statusValue !== "claimed" && statusValue !== "consumed") {
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -957,7 +996,7 @@ export async function runCli(
       };
       await writeStoredCredentials(env, oauth);
 
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -1014,7 +1053,6 @@ export async function runCli(
     });
 
     let data: unknown;
-    let meta: Record<string, unknown> | undefined;
     if (parsed.command === "me") {
       ensureOnly(parsed.options, []);
       data = await client.me();
@@ -1039,7 +1077,14 @@ export async function runCli(
         ),
       });
     } else if (parsed.command === "fetch") {
-      ensureOnly(parsed.options, ["max-cost-usd", "method", "idempotency-key"]);
+      ensureOnly(parsed.options, [
+        "max-cost-usd",
+        "method",
+        "idempotency-key",
+        "raw",
+      ]);
+      const raw = parsed.options.has("raw");
+      schemaVersion = raw ? "1" : "2";
       if (parsed.positionals.length !== 1) {
         throw new CliError(
           EXIT_USAGE,
@@ -1069,8 +1114,65 @@ export async function runCli(
         typeof explicitKey === "string"
           ? explicitKey
           : (dependencies.generateIdempotencyKey ?? randomUUID)();
-      data = await client.fetch(request, { idempotencyKey });
+      let resultDirectory: string | undefined;
+      if (!raw) {
+        try {
+          resultDirectory = await reserveResultDirectory(env);
+        } catch {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_STORAGE_UNAVAILABLE",
+            "Cannot reserve local result storage. Set WEFT_RESULTS_DIR to a directory you own that is writable only by you, with no symlink at that path, then retry. No fetch was sent.",
+          );
+        }
+      }
+      const response = await client.fetch(request, { idempotencyKey });
       meta = { idempotency_key: idempotencyKey };
+      data = response;
+      const { bodyBase64, ...receipt } = response;
+      deliveryReceipt = receipt;
+      if (resultDirectory) {
+        const savedPath = join(resultDirectory, "body");
+        const receiptPath = join(resultDirectory, "receipt.json");
+        const bytes =
+          typeof bodyBase64 === "string"
+            ? Buffer.from(bodyBase64, "base64")
+            : undefined;
+        if (!bytes || bytes.toString("base64") !== bodyBase64) {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_DECODE_FAILED",
+            "Fetch returned invalid Base64. No body was saved. Keep this receipt and retry the same request with --idempotency-key and the same key; if it persists, report the artifact ID to support.",
+            { receipt, file_complete: false },
+          );
+        }
+        try {
+          meta = {
+            ...meta,
+            saved_path: savedPath,
+            receipt_path: receiptPath,
+            byte_count: bytes.length,
+          };
+          await writeResultFile(
+            receiptPath,
+            `${JSON.stringify({ schema_version: "2", meta, data: receipt })}\n`,
+          );
+          await writeResultFile(savedPath, bytes);
+          data = { ...receipt, ...readableBody(bytes, response.headers) };
+        } catch {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_STORAGE_FAILED",
+            "Fetch returned, but local result delivery failed. Keep this receipt. Check local storage, then retry the same request with --idempotency-key and the key below. Do not use a new key.",
+            {
+              receipt,
+              saved_path: savedPath,
+              receipt_path: receiptPath,
+              file_complete: false,
+            },
+          );
+        }
+      }
     } else {
       ensureOnly(parsed.options, ["page", "per-page"]);
       if (parsed.positionals.length > 1) {
@@ -1094,13 +1196,13 @@ export async function runCli(
           });
     }
 
-    writeOut(
+    await writeOut(
       `${JSON.stringify({
-        schema_version: "1",
+        schema_version: schemaVersion,
         ok: true,
         command,
-        data,
         ...(meta === undefined ? {} : { meta }),
+        data,
       })}\n`,
     );
     return EXIT_SUCCESS;
@@ -1108,9 +1210,12 @@ export async function runCli(
     const normalized = await normalizeError(error);
     writeErr(
       `${JSON.stringify({
-        schema_version: "1",
+        schema_version: schemaVersion,
         ok: false,
         command,
+        ...(idempotencyKey === undefined
+          ? {}
+          : { meta: { ...meta, idempotency_key: idempotencyKey } }),
         error: {
           code: normalized.code,
           message: normalized.message,
@@ -1118,9 +1223,6 @@ export async function runCli(
             ? {}
             : { details: normalized.details }),
         },
-        ...(idempotencyKey === undefined
-          ? {}
-          : { meta: { idempotency_key: idempotencyKey } }),
       })}\n`,
     );
     return normalized.exitCode;
