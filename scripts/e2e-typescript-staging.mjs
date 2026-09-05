@@ -40,8 +40,11 @@ console.log(`Fetched matching OpenAPI spec from ${basePath}`);
 
 const client = new WeftClient({ apiKey, baseUrl: basePath });
 const account = await client.me();
-if (account.data.principalType !== "user") {
-  console.error("Staging credential did not resolve to a buyer user");
+if (
+  account.data.principalType !== "user" ||
+  account.data.email !== "e2e-ci@weftlabs.com"
+) {
+  console.error("Staging credential did not resolve to the e2e-ci buyer user");
   process.exit(1);
 }
 
