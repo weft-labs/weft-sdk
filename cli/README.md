@@ -60,6 +60,12 @@ and cost limit with `--idempotency-key` set to that key. The CLI does not retry
 or purchase again automatically. Keep the same key after any uncertain result;
 the server's existing retry rules and expiry still apply.
 
+Invalid Base64 from the API returns `RESULT_DECODE_FAILED` with the receipt and
+retry key; the CLI does not claim that damaged bytes were delivered. If stdout
+fails, for example because a pipe closes, `RESULT_OUTPUT_FAILED` on stderr keeps
+the receipt and saved paths. Read the saved file to recover without another
+fetch. These delivery errors use exit code `5`.
+
 Existing scripts can select `weft fetch ... --raw`. This retains the version 1
 SDK envelope with `data.bodyBase64` and does not save local files. Other commands
 retain their version 1 output. There is one fetch operation for every body size.

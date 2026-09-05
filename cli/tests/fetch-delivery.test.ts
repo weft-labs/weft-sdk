@@ -333,4 +333,47 @@ describe("fetch result delivery", () => {
     });
     expect(f.err[0]).not.toContain(Buffer.from("paid data").toString("base64"));
   });
+
+  it.each(["!!!", "SGVsbG8=!!", "A", "Zh=="])(
+    "rejects corrupt Base64 %j without claiming a saved result",
+    async (body_base64) => {
+      const f = fixture(Buffer.from("unused"));
+      f.fetchApi.mockImplementation(
+        async () =>
+          new Response(
+            JSON.stringify({ ...receipt, headers: {}, body_base64 }),
+          ),
+      );
+      expect(await runCli(args, f.dependencies)).toBe(EXIT_INTERNAL);
+      expect(f.out).toEqual([]);
+      expect(f.fetchApi).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(f.err[0])).toMatchObject({
+        meta: { idempotency_key: "retry-delivery-key" },
+        error: {
+          code: "RESULT_DECODE_FAILED",
+          details: { receipt: { artifactId: 42, heldUsd: "0.000892" } },
+        },
+      });
+      const [directory] = readdirSync(f.root);
+      expect(readdirSync(join(f.root, directory))).not.toContain("body");
+    },
+  );
+
+  it("retains paths and the receipt when stdout fails after saving", async () => {
+    const f = fixture(Buffer.from("paid data"));
+    f.dependencies.writeOut = () => {
+      throw new Error("broken pipe");
+    };
+    expect(await runCli(args, f.dependencies)).toBe(EXIT_INTERNAL);
+    const output = JSON.parse(f.err[0]);
+    expect(output).toMatchObject({
+      meta: { idempotency_key: "retry-delivery-key", byte_count: 9 },
+      error: {
+        code: "RESULT_OUTPUT_FAILED",
+        details: { receipt: { artifactId: 42, paymentStatus: "pending" } },
+      },
+    });
+    expect(readFileSync(output.meta.saved_path, "utf8")).toBe("paid data");
+    expect(f.fetchApi).toHaveBeenCalledTimes(1);
+  });
 });

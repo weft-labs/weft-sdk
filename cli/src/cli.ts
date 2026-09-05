@@ -197,7 +197,7 @@ export interface CliDependencies {
   env?: Record<string, string | undefined>;
   fetchApi?: typeof fetch;
   readStdin?: () => Promise<string>;
-  writeOut?: (value: string) => void;
+  writeOut?: (value: string) => void | Promise<void>;
   writeErr?: (value: string) => void;
   generateIdempotencyKey?: () => string;
   runProcess?: ProcessRunner;
@@ -645,25 +645,57 @@ async function defaultReadStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function defaultWriteOut(value: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    // The write callback reports failure before the stream emits its error.
+    // Keep the one-shot listener until that event to prevent an uncaught EPIPE.
+    const onError = (error: Error) => reject(error);
+    process.stdout.once("error", onError);
+    process.stdout.write(value, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        process.stdout.removeListener("error", onError);
+        resolve();
+      }
+    });
+  });
+}
+
 export async function runCli(
   args: string[],
   dependencies: CliDependencies = {},
 ): Promise<number> {
-  const writeOut =
-    dependencies.writeOut ?? ((value) => process.stdout.write(value));
+  const outputWriter = dependencies.writeOut ?? defaultWriteOut;
   const writeErr =
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
   let idempotencyKey: string | undefined;
   let schemaVersion = "1";
+  let meta: Record<string, unknown> | undefined;
+  let deliveryReceipt: Record<string, unknown> | undefined;
   const fetchApi = dependencies.fetchApi ?? fetch;
+  const writeOut = async (value: string) => {
+    try {
+      await outputWriter(value);
+    } catch {
+      throw new CliError(
+        EXIT_INTERNAL,
+        command === "fetch" ? "RESULT_OUTPUT_FAILED" : "OUTPUT_FAILED",
+        "Cannot write stdout. Use the saved result paths below if present. Otherwise keep this receipt and retry the same fetch with --idempotency-key and the same key.",
+        deliveryReceipt === undefined
+          ? undefined
+          : { receipt: deliveryReceipt },
+      );
+    }
+  };
 
   try {
     rejectUnsafeCredentialArgument(args);
     const help = requestedHelp(args);
     if (help !== undefined) {
       command = "help";
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -748,7 +780,7 @@ export async function runCli(
             },
           );
         }
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -768,7 +800,7 @@ export async function runCli(
       ensureOnly(parsed.options, []);
       const installSkill = await loadSkillInstaller();
       const result = await installSkill({ force: true });
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -857,7 +889,7 @@ export async function runCli(
 
       await writeStoredCredentials(env, stored);
 
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -888,7 +920,7 @@ export async function runCli(
 
       const stored = await readStoredCredentials(env);
       if (stored?.type === "oauth") {
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -922,7 +954,7 @@ export async function runCli(
 
       const statusValue = status.data.status;
       if (statusValue !== "claimed" && statusValue !== "consumed") {
-        writeOut(
+        await writeOut(
           `${JSON.stringify({
             schema_version: "1",
             ok: true,
@@ -964,7 +996,7 @@ export async function runCli(
       };
       await writeStoredCredentials(env, oauth);
 
-      writeOut(
+      await writeOut(
         `${JSON.stringify({
           schema_version: "1",
           ok: true,
@@ -1021,7 +1053,6 @@ export async function runCli(
     });
 
     let data: unknown;
-    let meta: Record<string, unknown> | undefined;
     if (parsed.command === "me") {
       ensureOnly(parsed.options, []);
       data = await client.me();
@@ -1098,12 +1129,24 @@ export async function runCli(
       const response = await client.fetch(request, { idempotencyKey });
       meta = { idempotency_key: idempotencyKey };
       data = response;
+      const { bodyBase64, ...receipt } = response;
+      deliveryReceipt = receipt;
       if (resultDirectory) {
-        const { bodyBase64, ...receipt } = response;
         const savedPath = join(resultDirectory, "body");
         const receiptPath = join(resultDirectory, "receipt.json");
+        const bytes =
+          typeof bodyBase64 === "string"
+            ? Buffer.from(bodyBase64, "base64")
+            : undefined;
+        if (!bytes || bytes.toString("base64") !== bodyBase64) {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_DECODE_FAILED",
+            "Fetch returned invalid Base64. No body was saved. Keep this receipt and retry the same request with --idempotency-key and the same key; if it persists, report the artifact ID to support.",
+            { receipt, file_complete: false },
+          );
+        }
         try {
-          const bytes = Buffer.from(bodyBase64, "base64");
           meta = {
             ...meta,
             saved_path: savedPath,
@@ -1153,7 +1196,7 @@ export async function runCli(
           });
     }
 
-    writeOut(
+    await writeOut(
       `${JSON.stringify({
         schema_version: schemaVersion,
         ok: true,
@@ -1170,6 +1213,9 @@ export async function runCli(
         schema_version: schemaVersion,
         ok: false,
         command,
+        ...(idempotencyKey === undefined
+          ? {}
+          : { meta: { ...meta, idempotency_key: idempotencyKey } }),
         error: {
           code: normalized.code,
           message: normalized.message,
@@ -1177,9 +1223,6 @@ export async function runCli(
             ? {}
             : { details: normalized.details }),
         },
-        ...(idempotencyKey === undefined
-          ? {}
-          : { meta: { idempotency_key: idempotencyKey } }),
       })}\n`,
     );
     return normalized.exitCode;

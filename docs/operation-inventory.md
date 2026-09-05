@@ -65,6 +65,10 @@ means the response arrived but local delivery failed; its error details keep
 the body-free receipt and mark `file_complete: false`, while `meta` keeps the
 retry key. Both use exit code `5`. See [CLI result storage](../cli/README.md#fetch-results)
 for paths, permissions, cleanup, and retry instructions.
+Invalid transport Base64 returns `RESULT_DECODE_FAILED`, with the receipt and
+retry key. A failed stdout write returns `RESULT_OUTPUT_FAILED`, with the
+receipt and any saved paths. Both use exit code `5`; reading a saved local file
+requires no fetch or payment.
 
 `weft --help` returns every command, global option, authentication method, and
 exit code as JSON. `weft <command> --help` returns command-specific usage and
