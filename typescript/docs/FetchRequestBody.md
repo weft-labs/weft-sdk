@@ -11,7 +11,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { FetchRequestBody } from '@weft-labs/sdk'
+import type { FetchRequestBody } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

@@ -1,4 +1,4 @@
-import { WeftClient } from "@weft-labs/sdk";
+import { WeftClient } from "@weftlabs/sdk";
 
 const apiKey = process.env.WEFT_API_KEY;
 if (!apiKey) {

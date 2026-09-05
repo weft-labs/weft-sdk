@@ -13,7 +13,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchResourceTypeFilter } from '@weft-labs/sdk'
+import type { SearchResourceTypeFilter } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

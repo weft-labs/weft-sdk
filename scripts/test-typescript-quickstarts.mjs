@@ -8,7 +8,7 @@ import {
 } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
 const repositoryRoot = new URL("..", import.meta.url);
@@ -17,6 +17,10 @@ const cliDirectory = new URL("../cli/", import.meta.url);
 const temporaryDirectory = await mkdtemp(
   join(tmpdir(), "weft-sdk-quickstart-"),
 );
+// CI retains these exact archives for the publisher job.
+const archiveDirectory = process.env.WEFT_PACKAGE_ARCHIVES
+  ? resolve(process.env.WEFT_PACKAGE_ARCHIVES)
+  : temporaryDirectory;
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -89,21 +93,22 @@ const server = createServer(async (request, response) => {
 });
 
 try {
-  await run("pnpm", ["pack", "--pack-destination", temporaryDirectory], {
+  await mkdir(archiveDirectory, { recursive: true });
+  await run("pnpm", ["pack", "--pack-destination", archiveDirectory], {
     cwd: sdkDirectory,
   });
-  await run("pnpm", ["pack", "--pack-destination", temporaryDirectory], {
+  await run("pnpm", ["pack", "--pack-destination", archiveDirectory], {
     cwd: cliDirectory,
   });
-  const archives = (await readdir(temporaryDirectory)).filter((name) =>
+  const archives = (await readdir(archiveDirectory)).filter((name) =>
     name.endsWith(".tgz"),
   );
   const sdkArchive = join(
-    temporaryDirectory,
+    archiveDirectory,
     archives.find((name) => name.includes("sdk")),
   );
   const cliArchive = join(
-    temporaryDirectory,
+    archiveDirectory,
     archives.find((name) => name.includes("cli")),
   );
 
@@ -113,12 +118,12 @@ try {
       name: "weft-artifact-consumer",
       private: true,
       dependencies: {
-        "@weft-labs/cli": `file:${cliArchive}`,
-        "@weft-labs/sdk": `file:${sdkArchive}`,
+        "@weftlabs/cli": `file:${cliArchive}`,
+        "@weftlabs/sdk": `file:${sdkArchive}`,
       },
       pnpm: {
         overrides: {
-          "@weft-labs/sdk": `file:${sdkArchive}`,
+          "@weftlabs/sdk": `file:${sdkArchive}`,
         },
       },
     }),
@@ -214,13 +219,13 @@ try {
   const installedPackage = join(
     temporaryDirectory,
     "node_modules",
-    "@weft-labs",
+    "@weftlabs",
     "sdk",
   );
   const installedCli = join(
     temporaryDirectory,
     "node_modules",
-    "@weft-labs",
+    "@weftlabs",
     "cli",
   );
 
@@ -284,8 +289,16 @@ try {
   if (cliPackageJson.bin?.weft !== "./bin/weft.mjs") {
     throw new Error("Packed CLI does not expose the weft binary");
   }
-  const sdkDependency = cliPackageJson.dependencies?.["@weft-labs/sdk"];
-  if (!/^\d+\.\d+\.\d+$/.test(sdkDependency)) {
+  const sdkDependency = cliPackageJson.dependencies?.["@weftlabs/sdk"];
+  if (
+    sdkDependency !== sdkPackageJson.version ||
+    cliPackageJson.version !== sdkPackageJson.version ||
+    sdkPackageJson.name !== "@weftlabs/sdk" ||
+    cliPackageJson.name !== "@weftlabs/cli" ||
+    Object.keys(cliPackageJson.dependencies).some((name) =>
+      name.startsWith("@weft-labs/"),
+    )
+  ) {
     throw new Error(
       `Packed CLI leaked a non-registry SDK dependency: ${sdkDependency}`,
     );

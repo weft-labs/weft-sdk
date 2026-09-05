@@ -36,7 +36,7 @@ describe("weft CLI", () => {
     );
     expect(packageJson.bin).toEqual({ weft: "./bin/weft.mjs" });
     expect(packageJson.dependencies).toEqual({
-      "@weft-labs/sdk": "workspace:*",
+      "@weftlabs/sdk": "workspace:*",
     });
   });
 

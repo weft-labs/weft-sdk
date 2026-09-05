@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { AccountBootstrapCreatedApproval } from '@weft-labs/sdk'
+import type { AccountBootstrapCreatedApproval } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

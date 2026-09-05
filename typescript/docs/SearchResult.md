@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchResult } from '@weft-labs/sdk'
+import type { SearchResult } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

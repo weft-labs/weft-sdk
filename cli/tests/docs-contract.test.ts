@@ -154,7 +154,7 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
 
   it("teaches install, email-only setup, bootstrap, and claim in order", () => {
     const steps = [
-      "@weft-labs/cli",
+      "@weftlabs/cli",
       "email address",
       "weft bootstrap",
       "weft search",

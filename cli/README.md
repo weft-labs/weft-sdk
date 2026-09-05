@@ -1,7 +1,7 @@
 # Weft CLI
 
 Use Weft from a shell or an autonomous agent. Application code should use the
-separate [`@weft-labs/sdk`](../typescript/README.md) package.
+separate [`@weftlabs/sdk`](../typescript/README.md) package.
 
 The CLI prints one versioned JSON object per command. It accepts credentials
 through `--api-key-stdin`, `WEFT_API_KEY`, or its protected local credential
@@ -14,11 +14,11 @@ requiring authentication.
 
 ```sh
 export WEFT_API_KEY="your-buyer-api-key"
-npx --package @weft-labs/cli weft me
-npx --package @weft-labs/cli weft search "weather data API"
-npx --package @weft-labs/cli weft fetch "https://merchant.example/data" \
+npx --package @weftlabs/cli weft me
+npx --package @weftlabs/cli weft search "weather data API"
+npx --package @weftlabs/cli weft fetch "https://merchant.example/data" \
   --max-cost-usd 0.05
-npx --package @weft-labs/cli weft --help
+npx --package @weftlabs/cli weft --help
 ```
 
 ## Fetch results
@@ -80,7 +80,7 @@ credit, or subsidy: paid fetch spends the human's own funded wallet, and the
 wallet is funded by the human after the claim.
 
 ```sh
-npm install -g @weft-labs/cli
+npm install -g @weftlabs/cli
 
 # 1. Ask the human for an email address. Never ask for a password.
 # 2. Create the temporary bootstrap and send the claim email.

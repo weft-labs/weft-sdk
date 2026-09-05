@@ -19,7 +19,7 @@ import {
   ResponseError,
   WeftClient,
   WeftError,
-} from "@weft-labs/sdk";
+} from "@weftlabs/sdk";
 
 export const EXIT_SUCCESS = 0;
 export const EXIT_USAGE = 2;

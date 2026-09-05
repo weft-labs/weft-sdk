@@ -19,7 +19,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { SearchPaymentOffer } from '@weft-labs/sdk'
+import type { SearchPaymentOffer } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

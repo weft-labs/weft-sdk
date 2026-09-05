@@ -17,7 +17,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { Fetch403Response } from '@weft-labs/sdk'
+import type { Fetch403Response } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

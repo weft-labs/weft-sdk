@@ -15,7 +15,7 @@ REASON="${WEFT_BOOTSTRAP_REASON:-Find weather data}"
 
 # `weft --help` needs no credential and lists every implemented command.
 if ! weft --help | grep -q '"name":"bootstrap"'; then
-  echo "This @weft-labs/cli build has no bootstrap command yet; run 'weft --help'." >&2
+  echo "This @weftlabs/cli build has no bootstrap command yet; run 'weft --help'." >&2
   exit 0
 fi
 

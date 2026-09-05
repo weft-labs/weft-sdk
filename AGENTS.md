@@ -8,7 +8,7 @@ Polyglot client SDK monorepo for Weft Labs, consumed by external developers and 
 
 - **Contract source:** OpenAPI 3.x at `spec/openapi.yaml`, synced from `weft-app/docs/openapi.yaml`.
 - **Code generation:** OpenAPI Generator through `scripts/generate-*.sh`; generated clients are committed.
-- **TypeScript:** pnpm workspace, Node >=18, TypeScript 5, tsup, Vitest, ESLint, Prettier. `@weft-labs/sdk` is the library; `@weft-labs/cli` owns the `weft` executable.
+- **TypeScript:** pnpm workspace, Node >=18, TypeScript 5, tsup, Vitest, ESLint, Prettier. `@weftlabs/sdk` is the library; `@weftlabs/cli` owns the `weft` executable.
 - **Python:** Python >=3.10, Hatchling, httpx, pytest, Ruff, strict mypy.
 - **Ruby:** Ruby 3.2 in CI, Bundler, Minitest, RubyGems packaging.
 - **Go:** Go 1.23 module at `github.com/weftlabs/weft-sdk/go`.

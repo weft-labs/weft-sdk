@@ -14,7 +14,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { InsufficientScopeResponse } from '@weft-labs/sdk'
+import type { InsufficientScopeResponse } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {

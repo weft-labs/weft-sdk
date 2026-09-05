@@ -12,7 +12,7 @@ Name | Type
 ## Example
 
 ```typescript
-import type { PaymentListResponse } from '@weft-labs/sdk'
+import type { PaymentListResponse } from '@weftlabs/sdk'
 
 // TODO: Update the object below with actual values
 const example = {
