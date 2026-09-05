@@ -720,7 +720,13 @@ describe("weft CLI", () => {
     );
     expect(
       await runCli(
-        ["fetch", "https://merchant.example", "--max-cost-usd", "0.10"],
+        [
+          "fetch",
+          "https://merchant.example",
+          "--max-cost-usd",
+          "0.10",
+          "--raw",
+        ],
         {
           ...io,
           env: {
@@ -748,7 +754,13 @@ describe("weft CLI", () => {
 
     expect(
       await runCli(
-        ["fetch", "https://merchant.example", "--max-cost-usd", "0.10"],
+        [
+          "fetch",
+          "https://merchant.example",
+          "--max-cost-usd",
+          "0.10",
+          "--raw",
+        ],
         {
           ...io,
           env: { WEFT_API_KEY: "wk_test" },

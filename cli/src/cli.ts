@@ -10,6 +10,11 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  readableBody,
+  reserveResultDirectory,
+  writeResultFile,
+} from "./results";
+import {
   type PaidFetchRequest,
   ResponseError,
   WeftClient,
@@ -91,11 +96,12 @@ const COMMAND_HELP = {
   fetch: {
     description: "Fetch a URL within an explicit spending limit",
     usage:
-      "weft fetch <url> --max-cost-usd <amount> [--method <method>] [--idempotency-key <key>]",
+      "weft fetch <url> --max-cost-usd <amount> [--method <method>] [--idempotency-key <key>] [--raw]",
     options: [
       "--max-cost-usd <amount>",
       "--method <method>",
       "--idempotency-key <key>",
+      "--raw",
     ],
   },
   purchases: {
@@ -381,8 +387,8 @@ function parseArgs(args: string[]): ParsedArgs {
       apiKeyStdin = true;
     } else if (arg === "--base-url") {
       [baseUrl, index] = takeValue(args, index, arg);
-    } else if (arg === "--global") {
-      options.set("global", true);
+    } else if (arg === "--global" || arg === "--raw") {
+      options.set(arg.slice(2), true);
     } else if (arg.startsWith("--")) {
       const [value, nextIndex] = takeValue(args, index, arg);
       options.set(arg.slice(2), value);
@@ -649,6 +655,7 @@ export async function runCli(
     dependencies.writeErr ?? ((value) => process.stderr.write(value));
   let command = "unknown";
   let idempotencyKey: string | undefined;
+  let schemaVersion = "1";
   const fetchApi = dependencies.fetchApi ?? fetch;
 
   try {
@@ -1039,7 +1046,14 @@ export async function runCli(
         ),
       });
     } else if (parsed.command === "fetch") {
-      ensureOnly(parsed.options, ["max-cost-usd", "method", "idempotency-key"]);
+      ensureOnly(parsed.options, [
+        "max-cost-usd",
+        "method",
+        "idempotency-key",
+        "raw",
+      ]);
+      const raw = parsed.options.has("raw");
+      schemaVersion = raw ? "1" : "2";
       if (parsed.positionals.length !== 1) {
         throw new CliError(
           EXIT_USAGE,
@@ -1069,8 +1083,53 @@ export async function runCli(
         typeof explicitKey === "string"
           ? explicitKey
           : (dependencies.generateIdempotencyKey ?? randomUUID)();
-      data = await client.fetch(request, { idempotencyKey });
+      let resultDirectory: string | undefined;
+      if (!raw) {
+        try {
+          resultDirectory = await reserveResultDirectory(env);
+        } catch {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_STORAGE_UNAVAILABLE",
+            "Cannot reserve local result storage. Set WEFT_RESULTS_DIR to a directory you own that is writable only by you, with no symlink at that path, then retry. No fetch was sent.",
+          );
+        }
+      }
+      const response = await client.fetch(request, { idempotencyKey });
       meta = { idempotency_key: idempotencyKey };
+      data = response;
+      if (resultDirectory) {
+        const { bodyBase64, ...receipt } = response;
+        const savedPath = join(resultDirectory, "body");
+        const receiptPath = join(resultDirectory, "receipt.json");
+        try {
+          const bytes = Buffer.from(bodyBase64, "base64");
+          meta = {
+            ...meta,
+            saved_path: savedPath,
+            receipt_path: receiptPath,
+            byte_count: bytes.length,
+          };
+          await writeResultFile(
+            receiptPath,
+            `${JSON.stringify({ schema_version: "2", meta, data: receipt })}\n`,
+          );
+          await writeResultFile(savedPath, bytes);
+          data = { ...receipt, ...readableBody(bytes, response.headers) };
+        } catch {
+          throw new CliError(
+            EXIT_INTERNAL,
+            "RESULT_STORAGE_FAILED",
+            "Fetch returned, but local result delivery failed. Keep this receipt. Check local storage, then retry the same request with --idempotency-key and the key below. Do not use a new key.",
+            {
+              receipt,
+              saved_path: savedPath,
+              receipt_path: receiptPath,
+              file_complete: false,
+            },
+          );
+        }
+      }
     } else {
       ensureOnly(parsed.options, ["page", "per-page"]);
       if (parsed.positionals.length > 1) {
@@ -1096,11 +1155,11 @@ export async function runCli(
 
     writeOut(
       `${JSON.stringify({
-        schema_version: "1",
+        schema_version: schemaVersion,
         ok: true,
         command,
-        data,
         ...(meta === undefined ? {} : { meta }),
+        data,
       })}\n`,
     );
     return EXIT_SUCCESS;
@@ -1108,7 +1167,7 @@ export async function runCli(
     const normalized = await normalizeError(error);
     writeErr(
       `${JSON.stringify({
-        schema_version: "1",
+        schema_version: schemaVersion,
         ok: false,
         command,
         error: {
