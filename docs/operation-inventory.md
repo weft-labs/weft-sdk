@@ -92,9 +92,8 @@ before a network request is made.
 
 ## Agent bootstrap
 
-The package implements the bootstrap lifecycle with no subsidy. Read
-`weft --help` before scripting it so the installed CLI remains the source of
-command syntax.
+The package implements the bootstrap lifecycle. Read `weft --help` before
+scripting it so the installed CLI remains the source of command syntax.
 
 | Command | Purpose |
 | --- | --- |
@@ -114,5 +113,6 @@ CLI cancel or revoke command is shipped in this version.
 New bootstrap flows make no OAuth registration or token request. Existing
 stored OAuth credentials remain compatible and refresh before expiry.
 
-No promotional balance, free credit, or subsidy is part of this lifecycle. A
-paid fetch requires the human to fund the wallet after the claim.
+Ask the human to verify the claim email. Weft applies the one-time signup grant
+after verification; then check the balance. Do not ask for a wallet top-up
+during onboarding.

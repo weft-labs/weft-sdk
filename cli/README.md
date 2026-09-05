@@ -75,9 +75,9 @@ is clipped.
 ## With no credential: agent bootstrap and human claim
 
 An agent that has no Weft credential can start by itself. The flow needs the
-human's email address and nothing else. There is no promotional balance, free
-credit, or subsidy: paid fetch spends the human's own funded wallet, and the
-wallet is funded by the human after the claim.
+human's email address and nothing else. After the human verifies the claim
+email, Weft applies the one-time signup grant. Check the balance after claim;
+do not ask for a wallet top-up during onboarding.
 
 ```sh
 npm install -g @weftlabs/cli
@@ -91,14 +91,16 @@ weft bootstrap --email "human@example.com" \
 # 3. Search immediately, before the human does anything.
 weft search "weather data API"
 
-# 4. Tell the human to open the claim email and approve the agent.
+# 4. Ask the human to verify the claim email so Weft can apply the one-time
+#    signup grant, then approve the agent.
 # 5. Poll at the interval the bootstrap response returned.
 weft auth status
 
 # 6. Auth status reports claimed. The same bearer is now durable until revoked.
 weft me
 
-# 7. Ask the human to fund the wallet before any paid fetch.
+# 7. The claim is verified and the signup grant is applied. Check the balance;
+#    do not ask for a wallet top-up during onboarding.
 weft balance
 ```
 

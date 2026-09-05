@@ -19,7 +19,7 @@ import { EXIT_SUCCESS, runCli } from "../src/cli";
 /**
  * Executable text contract for the public agent-facing documents.
  *
- * The Skill, the CLI README, and the packed example teach one subsidy-free
+ * The Skill, the CLI README, and the packed example teach one claim-verified
  * lifecycle. These assertions fail when a document drifts from the frozen
  * contract: an invented command name, a missing lifecycle state, a softened
  * `wbt_` secrecy rule, or any wording that implies promotional money.
@@ -158,9 +158,9 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       "email address",
       "weft bootstrap",
       "weft search",
-      "claim email",
+      "verify the claim email",
       "weft auth status",
-      "fund the wallet",
+      "weft balance",
     ];
     let cursor = 0;
     for (const step of steps) {
@@ -254,30 +254,30 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     expect(CLI_RULES).toMatch(/claim link[\s\S]{0,80}email only/i);
   });
 
-  it("never implies a subsidy, sponsorship, or promotional balance", () => {
+  it("teaches the verified signup grant without asking for an onboarding top-up", () => {
     for (const [label, document] of [
-      ["SKILL.md", SKILL],
       ["rules/cli.md", CLI_RULES],
       ["cli/README.md", README],
       ["agent-bootstrap.sh", EXAMPLE],
       ["operation-inventory.md", INVENTORY],
     ] as const) {
-      const claims = sentences(document).filter(
-        (sentence) =>
-          /subsid|sponsor|promotional|free credit|treasury|entitlement/i.test(
-            sentence,
-          ) && !/\bno\b|\bnot\b|\bnever\b|\bwithout\b/i.test(sentence),
+      expect(document, `${label} omits the signup grant`).toMatch(
+        /verif(?:y|ies)[\s\S]{0,60}claim email/i,
       );
-      expect(claims, `${label} implies promotional money`).toEqual([]);
+      expect(document, `${label} omits the signup grant`).toMatch(
+        /one-time[\s\S]{0,30}signup grant/i,
+      );
     }
-  });
-
-  it("names where the human adds money before any paid fetch", () => {
-    // Upstream owns the wording, so pin the CONTRACT the agent acts on — a
-    // named place to send the human — not the sentence carrying it. The
-    // previous regex matched one phrasing and broke on the first reword.
-    expect(CLI_RULES).toMatch(/https:\/\/weft\.network\/dashboard\/wallet/);
-    expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
+    for (const [label, document] of [
+      ["cli/README.md", README],
+      ["agent-bootstrap.sh", EXAMPLE],
+      ["operation-inventory.md", INVENTORY],
+    ] as const) {
+      expect(document, `${label} omits the onboarding top-up guard`).toMatch(
+        /do not ask[\s\S]{0,60}wallet top-up/i,
+      );
+    }
+    expect(CLI_RULES).not.toMatch(/fund the wallet|dashboard\/wallet/i);
   });
 
   it("documents claimed-state search and stored OAuth compatibility", () => {

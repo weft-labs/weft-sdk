@@ -3,8 +3,8 @@
 #
 # The agent needs the human's email address and nothing else.
 # It never asks for, receives, or stores the human's password.
-# No promotional balance, free credit, or subsidy exists at any point here:
-# a paid fetch spends the human's own funded wallet.
+# After the human verifies the claim email, Weft applies the one-time signup
+# grant. Do not ask for a wallet top-up during onboarding.
 #
 # Every command prints one JSON envelope. Parse it; never echo a credential.
 set -eu
@@ -34,9 +34,9 @@ POLL_INTERVAL="$(printf '%s' "$bootstrap" | node -e \
 #    30 minutes after creation.
 weft search "weather data API"
 
-# 4. Tell the human to open the claim email and approve this agent. Show them
-#    the user code from the bootstrap envelope above; the claim link is only in
-#    the email.
+# 4. Ask the human to verify the claim email so Weft can apply the one-time
+#    signup grant, then approve this agent. Show them the user code from the
+#    bootstrap envelope above; the claim link is only in the email.
 # 5. Poll at the interval the bootstrap response returned. A claimed response
 #    means the same bearer is durable with its fixed post-claim capabilities.
 while :; do
@@ -64,6 +64,6 @@ done
 #    identity, search, balance, fetch, purchases, status, and revoke capabilities.
 weft me
 
-# 7. Claiming provisions an empty wallet. Ask the human to fund it before any
-#    paid fetch.
+# 7. The claim is verified and the signup grant is applied. Check the balance;
+#    do not ask for a wallet top-up during onboarding.
 weft balance
