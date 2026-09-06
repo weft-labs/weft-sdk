@@ -19,7 +19,7 @@ import { EXIT_SUCCESS, runCli } from "../src/cli";
 /**
  * Executable text contract for the public agent-facing documents.
  *
- * The Skill, the CLI README, and the packed example teach one subsidy-free
+ * The Skill, the CLI README, and the packed example teach one claim-verified
  * lifecycle. These assertions fail when a document drifts from the frozen
  * contract: an invented command name, a missing lifecycle state, a softened
  * `wbt_` secrecy rule, or any wording that implies promotional money.
@@ -43,7 +43,7 @@ const BOOTSTRAP_STATES = [
   "claimed",
   "rejected",
   "expired",
-  "consumed",
+  "revoked",
 ] as const;
 
 const SKILL_FILES = ["SKILL.md", "rules/cli.md"];
@@ -158,10 +158,9 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       "email address",
       "weft bootstrap",
       "weft search",
-      "claim email",
+      "verify the claim email",
       "weft auth status",
-      "OAuth",
-      "fund the wallet",
+      "weft balance",
     ];
     let cursor = 0;
     for (const step of steps) {
@@ -174,7 +173,7 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("states that wbt_ is secret, temporary, and search-only", () => {
+  it("states the exact pre-claim and durable post-claim wbt_ contract", () => {
     for (const [label, document] of [
       ["rules/cli.md", CLI_RULES],
       ["cli/README.md", README],
@@ -185,13 +184,25 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
       expect(document.toLowerCase()).toMatch(/secret/);
       expect(document.toLowerCase()).toMatch(/temporary/);
       expect(document.toLowerCase()).toMatch(/search-only/);
+      expect(document.toLowerCase()).toMatch(/durable/);
+      expect(document.toLowerCase()).toMatch(/until revoked/);
       expect(
         document.toLowerCase(),
         `${label} must give the 30-minute expiry`,
       ).toMatch(/30 minutes|30-minute/);
     }
-    for (const capability of ["`search`", "`status`", "`cancel`"]) {
+    for (const capability of [
+      "`identity`",
+      "`search`",
+      "`balance`",
+      "`fetch`",
+      "`purchases`",
+      "`status`",
+      "`cancel`",
+      "`revoke`",
+    ]) {
       expect(README).toContain(capability);
+      expect(CLI_RULES).toContain(capability);
     }
   });
 
@@ -209,11 +220,13 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     }
   });
 
-  it("explains that claimed is consumed inside auth status", () => {
-    expect(README).toMatch(
-      /auth status[\s\S]{0,100}claimed[\s\S]{0,100}consumed/i,
-    );
-    expect(README).toMatch(/does not emit an intermediate `claimed`/i);
+  it("explains claimed same-bearer promotion without token exchange", () => {
+    for (const document of [CLI_RULES, README]) {
+      expect(document).toMatch(/auth status[\s\S]{0,300}claimed/i);
+      expect(document).toMatch(/same bearer/i);
+      expect(document).toMatch(/do(?:es)? not[\s\S]{0,100}OAuth/i);
+      expect(document).not.toMatch(/`consumed`/);
+    }
   });
 
   it("forbids the agent from handling the human's password", () => {
@@ -241,35 +254,36 @@ describe("public documents teach the frozen bootstrap lifecycle", () => {
     expect(CLI_RULES).toMatch(/claim link[\s\S]{0,80}email only/i);
   });
 
-  it("never implies a subsidy, sponsorship, or promotional balance", () => {
+  it("teaches the verified signup grant without asking for an onboarding top-up", () => {
     for (const [label, document] of [
-      ["SKILL.md", SKILL],
       ["rules/cli.md", CLI_RULES],
       ["cli/README.md", README],
       ["agent-bootstrap.sh", EXAMPLE],
       ["operation-inventory.md", INVENTORY],
     ] as const) {
-      const claims = sentences(document).filter(
-        (sentence) =>
-          /subsid|sponsor|promotional|free credit|treasury|entitlement/i.test(
-            sentence,
-          ) && !/\bno\b|\bnot\b|\bnever\b|\bwithout\b/i.test(sentence),
+      expect(document, `${label} omits the signup grant`).toMatch(
+        /verif(?:y|ies)[\s\S]{0,60}claim email/i,
       );
-      expect(claims, `${label} implies promotional money`).toEqual([]);
+      expect(document, `${label} omits the signup grant`).toMatch(
+        /one-time[\s\S]{0,30}signup grant/i,
+      );
     }
+    for (const [label, document] of [
+      ["cli/README.md", README],
+      ["agent-bootstrap.sh", EXAMPLE],
+      ["operation-inventory.md", INVENTORY],
+    ] as const) {
+      expect(document, `${label} omits the onboarding top-up guard`).toMatch(
+        /do not ask[\s\S]{0,60}wallet top-up/i,
+      );
+    }
+    expect(CLI_RULES).not.toMatch(/fund the wallet|dashboard\/wallet/i);
   });
 
-  it("names where the human adds money before any paid fetch", () => {
-    // Upstream owns the wording, so pin the CONTRACT the agent acts on — a
-    // named place to send the human — not the sentence carrying it. The
-    // previous regex matched one phrasing and broke on the first reword.
-    expect(CLI_RULES).toMatch(/https:\/\/weft\.network\/dashboard\/wallet/);
-    expect(README.toLowerCase()).toMatch(/fund the wallet|funded by the human/);
-  });
-
-  it("documents claimed-state search and stored OAuth credentials", () => {
+  it("documents claimed-state search and stored OAuth compatibility", () => {
     for (const document of [README, INVENTORY]) {
-      expect(document).toMatch(/claimed[\s\S]{0,100}search/i);
+      expect(document).toContain("`claimed`");
+      expect(document).toContain("`search`");
     }
     for (const document of [CLI_RULES, README, TYPESCRIPT_README, INVENTORY]) {
       expect(document).toMatch(/stored[\s\S]{0,100}OAuth/i);

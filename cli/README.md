@@ -75,9 +75,9 @@ is clipped.
 ## With no credential: agent bootstrap and human claim
 
 An agent that has no Weft credential can start by itself. The flow needs the
-human's email address and nothing else. There is no promotional balance, free
-credit, or subsidy: paid fetch spends the human's own funded wallet, and the
-wallet is funded by the human after the claim.
+human's email address and nothing else. After the human verifies the claim
+email, Weft applies the one-time signup grant. Check the balance after claim;
+do not ask for a wallet top-up during onboarding.
 
 ```sh
 npm install -g @weftlabs/cli
@@ -91,15 +91,16 @@ weft bootstrap --email "human@example.com" \
 # 3. Search immediately, before the human does anything.
 weft search "weather data API"
 
-# 4. Tell the human to open the claim email and approve the agent.
+# 4. Ask the human to verify the claim email so Weft can apply the one-time
+#    signup grant, then approve the agent.
 # 5. Poll at the interval the bootstrap response returned.
 weft auth status
 
-# 6. After approval the CLI exchanges OAuth device tokens for the temporary
-#    credential, and normal authenticated commands work again.
+# 6. Auth status reports claimed. The same bearer is now durable until revoked.
 weft me
 
-# 7. Ask the human to fund the wallet before any paid fetch.
+# 7. The claim is verified and the signup grant is applied. Check the balance;
+#    do not ask for a wallet top-up during onboarding.
 weft balance
 ```
 
@@ -144,19 +145,24 @@ untouched. Restart the agent host after the first install. Set
 leaves the Skill in place; remove the host's `skills/weft` directory if you
 also want to remove the Skill.
 
-`weft bootstrap` registers its OAuth client, creates the bootstrap, and writes
-the temporary and device credentials to a local credential file created with
-mode `0600`. After approval, the stored OAuth credential replaces the temporary
-credential and refreshes before expiry. Normal output never prints a secret.
+`weft bootstrap` creates the bootstrap and writes the `wbt_` credential to a
+local credential file created with mode `0600`. The response contains the
+bootstrap capabilities and approval data. `weft auth status` updates those
+fields after the server promotes the same bearer. It never requests an OAuth
+exchange token, and normal output never prints secrets.
 
-### The temporary `wbt_` credential
+### The `wbt_` credential
 
 - **Secret.** Never print, log, paste, commit, or email it. The CLI stores it
   for you.
-- **Temporary.** It expires 30 minutes after creation and has no refresh.
-- **Search-only.** Its capabilities are `search`, `status`, and `cancel`.
-  Balance, paid fetch, wallet, transfer, withdrawal, seller, and organization
-  mutation surfaces all refuse it. A refusal there is the contract, not a bug.
+- **Temporary before claim.** Its search-only claim window expires after 30
+  minutes. Pre-claim capabilities are exactly `search`, `status`, and `cancel`.
+- **Durable after claim.** Human approval promotes the same bearer to exactly
+  `identity`, `search`, `balance`, `fetch`, `purchases`, `status`, and `revoke`.
+  It has no post-claim expiry and remains valid until the human disconnects it.
+- **Always refused elsewhere.** Seller, organization, API-key administration,
+  dashboard-session, transfer, withdrawal, and MCP surfaces reject it before
+  and after claim.
 
 The human's password is never part of this flow. The agent does not choose,
 receive, or store it. An existing user completes fresh authentication on the
@@ -167,18 +173,18 @@ existing account.
 
 | Status | Meaning | Agent action |
 | --- | --- | --- |
-| `pending` | Waiting for the human. Search works. | Keep polling at the returned interval. |
-| `claimed` | The human approved. Search continues until OAuth delivery succeeds. | Complete the OAuth device exchange. |
-| `rejected` | The human declined. Terminal. | Stop; do not re-create the same bootstrap. |
-| `expired` | The 30-minute window closed unclaimed. Terminal. | Offer to start a new bootstrap. |
-| `consumed` | OAuth tokens were delivered. Terminal. | Use the OAuth credential. |
+| `pending` | Waiting for the human. Search works. | Poll at the returned interval. |
+| `claimed` | The human approved. The same bearer is durable with the fixed post-claim capabilities. | Continue with normal commands. |
+| `rejected` | The human declined. Terminal. | Stop and start a new bootstrap. |
+| `expired` | The 30-minute window closed unclaimed. Terminal. | Start a new bootstrap. |
+| `revoked` | The human disconnected the credential. Terminal; all later authentication fails. | Start a new bootstrap only if the human requests it. |
 
-These are server lifecycle states. `weft auth status` handles `claimed` by
-performing the OAuth exchange and emits `consumed` after successful delivery;
-it does not emit an intermediate `claimed` result.
+`weft auth status` returns `claimed` after approval and keeps the same bearer.
+It does not register an OAuth client or call `/oauth/token`.
 
-`rejected`, `expired`, and `consumed` are terminal. A `pending` or `claimed`
-bootstrap can search; `claimed` also keeps status and OAuth token exchange.
+`rejected`, `expired`, and `revoked` are terminal. Existing stored OAuth
+credentials from older CLI releases remain supported and refresh normally;
+new bootstrap flows do not create OAuth credentials.
 
 See [`examples/agent-bootstrap.sh`](examples/agent-bootstrap.sh) for the same
 sequence as a script, and

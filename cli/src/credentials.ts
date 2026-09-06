@@ -17,6 +17,21 @@ const LOCK_RETRY_MS = 50;
 const LOCK_TIMEOUT_MS = 10_000;
 
 export interface BootstrapCredentials {
+  base_url: string;
+  id: string;
+  status: string;
+  capabilities: string[];
+  expires_at: string | null;
+  approval: {
+    method: string;
+    expires_in: number;
+    interval: number;
+    user_code?: string;
+  };
+  temporary_api_key: string;
+}
+
+export interface LegacyBootstrapCredentials {
   version: 1;
   type: "bootstrap";
   base_url: string;
@@ -40,7 +55,8 @@ export interface OAuthCredentials {
   expiry: string;
 }
 
-export type StoredCredentials = BootstrapCredentials | OAuthCredentials;
+export type StoredCredentials =
+  BootstrapCredentials | LegacyBootstrapCredentials | OAuthCredentials;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -50,8 +66,32 @@ function isBootstrapCredentials(
   value: Record<string, unknown>,
 ): BootstrapCredentials | undefined {
   if (
+    typeof value.base_url === "string" &&
+    typeof value.id === "string" &&
+    typeof value.status === "string" &&
+    Array.isArray(value.capabilities) &&
+    value.capabilities.every((capability) => typeof capability === "string") &&
+    (typeof value.expires_at === "string" || value.expires_at === null) &&
+    isObject(value.approval) &&
+    typeof value.approval.method === "string" &&
+    typeof value.approval.expires_in === "number" &&
+    typeof value.approval.interval === "number" &&
+    (value.approval.user_code === undefined ||
+      typeof value.approval.user_code === "string") &&
+    typeof value.temporary_api_key === "string"
+  ) {
+    return value as BootstrapCredentials;
+  }
+
+  return undefined;
+}
+
+function isLegacyBootstrapCredentials(
+  value: Record<string, unknown>,
+): LegacyBootstrapCredentials | undefined {
+  if (
+    value.version === 1 &&
     value.type === "bootstrap" &&
-    typeof value.version === "number" &&
     typeof value.base_url === "string" &&
     typeof value.bootstrap_id === "string" &&
     typeof value.temporary_api_key === "string" &&
@@ -60,7 +100,7 @@ function isBootstrapCredentials(
     typeof value.expiry === "string" &&
     typeof value.polling_interval === "number"
   ) {
-    return value as BootstrapCredentials;
+    return value as LegacyBootstrapCredentials;
   }
 
   return undefined;
@@ -106,7 +146,11 @@ export async function readStoredCredentials(
     const raw = await readFile(path, "utf8");
     const parsed: unknown = JSON.parse(raw);
     if (!isObject(parsed)) throw new Error("Stored credentials malformed");
-    return isBootstrapCredentials(parsed) ?? isOAuthCredentials(parsed);
+    return (
+      isBootstrapCredentials(parsed) ??
+      isLegacyBootstrapCredentials(parsed) ??
+      isOAuthCredentials(parsed)
+    );
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;
@@ -114,6 +158,15 @@ export async function readStoredCredentials(
 }
 
 export async function writeStoredCredentials(
+  env: Record<string, string | undefined>,
+  credentials: StoredCredentials,
+): Promise<void> {
+  await withCredentialsLock(env, () =>
+    writeStoredCredentialsWhileLocked(env, credentials),
+  );
+}
+
+export async function writeStoredCredentialsWhileLocked(
   env: Record<string, string | undefined>,
   credentials: StoredCredentials,
 ): Promise<void> {

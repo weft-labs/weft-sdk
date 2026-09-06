@@ -3,8 +3,8 @@
 #
 # The agent needs the human's email address and nothing else.
 # It never asks for, receives, or stores the human's password.
-# No promotional balance, free credit, or subsidy exists at any point here:
-# a paid fetch spends the human's own funded wallet.
+# After the human verifies the claim email, Weft applies the one-time signup
+# grant. Do not ask for a wallet top-up during onboarding.
 #
 # Every command prints one JSON envelope. Parse it; never echo a credential.
 set -eu
@@ -28,18 +28,17 @@ bootstrap="$(weft bootstrap \
   --reason "$REASON")"
 printf '%s\n' "$bootstrap"
 POLL_INTERVAL="$(printf '%s' "$bootstrap" | node -e \
-  'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(String(JSON.parse(s).data.polling_interval)))')"
+   'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(String(JSON.parse(s).data.approval.interval)))')"
 
 # 3. Search immediately. The temporary credential is search-only and expires
 #    30 minutes after creation.
 weft search "weather data API"
 
-# 4. Tell the human to open the claim email and approve this agent. Show them
-#    the user code from the bootstrap envelope above; the claim link is only in
-#    the email.
+# 4. Ask the human to verify the claim email so Weft can apply the one-time
+#    signup grant, then approve this agent. Show them the user code from the
+#    bootstrap envelope above; the claim link is only in the email.
 # 5. Poll at the interval the bootstrap response returned. A claimed response
-#    completes the OAuth exchange and reports consumed. Other terminal states
-#    need a new bootstrap.
+#    means the same bearer is durable with its fixed post-claim capabilities.
 while :; do
   sleep "$POLL_INTERVAL"
   auth="$(weft auth status)"
@@ -48,8 +47,8 @@ while :; do
     'let s=""; process.stdin.on("data", d => s += d).on("end", () => process.stdout.write(JSON.parse(s).data.status))')"
   case "$status" in
     pending) ;;
-    consumed) break ;;
-    rejected|expired)
+    claimed) break ;;
+    rejected|expired|revoked)
       echo "Bootstrap ended with status: $status" >&2
       exit 1
       ;;
@@ -60,10 +59,11 @@ while :; do
   esac
 done
 
-# 6. After approval the CLI replaces the temporary credential with the OAuth
-#    tokens the human approved, and ordinary commands work again.
+# 6. After approval the CLI keeps the same bearer. It does not register an OAuth
+#    client or exchange a device code. Ordinary commands now use its durable
+#    identity, search, balance, fetch, purchases, status, and revoke capabilities.
 weft me
 
-# 7. Claiming provisions an empty wallet. Ask the human to fund it before any
-#    paid fetch.
+# 7. The claim is verified and the signup grant is applied. Check the balance;
+#    do not ask for a wallet top-up during onboarding.
 weft balance
